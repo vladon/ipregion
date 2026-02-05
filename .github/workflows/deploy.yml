@@ -54,7 +54,8 @@ jobs:
       - name: Inject version into script
         run: |
           # Create a temporary copy with version injected
-          sed -i "s|^SCRIPT_VERSION_METADATA=.*|SCRIPT_VERSION_METADATA=\"${{ steps.version.outputs.version_metadata }}\"|" ipregion.sh
+          # Use # as delimiter to avoid conflicts with pipe characters in version metadata
+          sed -i "s#^SCRIPT_VERSION_METADATA=.*#SCRIPT_VERSION_METADATA=\"${{ steps.version.outputs.version_metadata }}\"#" ipregion.sh
 
           # Verify injection
           echo "Injected version line:"
