@@ -1,4 +1,4 @@
-name: Deploy to FTPS
+name: Deploy static site
 
 on:
   push:
@@ -7,26 +7,31 @@ on:
     paths:
       - ipregion.sh
       - index.php
+      - .github/workflows/deploy.yml
   release:
     types: [published]
   workflow_dispatch:
 
+concurrency:
+  group: deploy-ipregion-vladon-sh
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for tags
+          fetch-depth: 0
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y jq lftp
+        run: sudo apt-get update && sudo apt-get install -y jq rsync
 
       - name: Extract version metadata
         id: version
         run: |
-          # Check if this is a release build
           if [[ "${{ github.event_name }}" == "release" ]]; then
             VERSION_TYPE="tag"
             VERSION_VALUE="${{ github.event.release.tag_name }}"
@@ -37,42 +42,49 @@ jobs:
             COMMIT_HASH=""
           fi
 
-          # Get commit date in ISO 8601 format
           BUILD_DATE=$(git log -1 --format=%cI HEAD)
-
-          # Create version metadata string
           VERSION_METADATA="${VERSION_TYPE}|${VERSION_VALUE}|${BUILD_DATE}|${COMMIT_HASH}"
 
-          echo "version_type=${VERSION_TYPE}" >> $GITHUB_OUTPUT
-          echo "version_value=${VERSION_VALUE}" >> $GITHUB_OUTPUT
-          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
-          echo "commit_hash=${COMMIT_HASH}" >> $GITHUB_OUTPUT
-          echo "version_metadata=${VERSION_METADATA}" >> $GITHUB_OUTPUT
-
+          echo "version_type=${VERSION_TYPE}" >> "$GITHUB_OUTPUT"
+          echo "version_value=${VERSION_VALUE}" >> "$GITHUB_OUTPUT"
+          echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=${COMMIT_HASH}" >> "$GITHUB_OUTPUT"
+          echo "version_metadata=${VERSION_METADATA}" >> "$GITHUB_OUTPUT"
           echo "Version metadata: ${VERSION_METADATA}"
 
       - name: Inject version into script
         run: |
-          # Create a temporary copy with version injected
-          # Use # as delimiter to avoid conflicts with pipe characters in version metadata
           sed -i "s#^SCRIPT_VERSION_METADATA=.*#SCRIPT_VERSION_METADATA=\"${{ steps.version.outputs.version_metadata }}\"#" ipregion.sh
-
-          # Verify injection
-          echo "Injected version line:"
           grep "^SCRIPT_VERSION_METADATA=" ipregion.sh
 
       - name: Run tests
         run: bash tests/run.sh
 
-      - name: Upload files via FTPS
-        env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASS: ${{ secrets.FTP_PASS }}
-          FTP_CA_PEM: ${{ secrets.FTP_CA_PEM }}
+      - name: Configure SSH
         run: |
-          echo "$FTP_CA_PEM" > /tmp/ftps-ca.pem
-          lftp -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; set ssl:verify-certificate yes; set ssl:ca-file /tmp/ftps-ca.pem; set ftp:passive-mode true; set net:timeout 20; set net:max-retries 2; set net:reconnect-interval-base 5; set net:reconnect-interval-max 5; set cmd:fail-exit true; pwd; ls; put -O / ipregion.sh -o ipregion.sh.tmp; mv /ipregion.sh.tmp /ipregion.sh; put -O / index.php -o index.php.tmp; mv /index.php.tmp /index.php; bye" \
-            "ftp://$FTP_USER:$FTP_PASS@$FTP_HOST" || \
-          lftp -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; set ssl:verify-certificate yes; set ssl:ca-file /tmp/ftps-ca.pem; set ftp:passive-mode true; set net:timeout 20; set net:max-retries 2; set net:reconnect-interval-base 5; set net:reconnect-interval-max 5; set cmd:fail-exit true; pwd; ls; put -O / ipregion.sh; put -O / index.php; bye" \
-            "ftp://$FTP_USER:$FTP_PASS@$FTP_HOST"
+          set -eu
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.HH01_DEPLOY_KEY }}" > ~/.ssh/hh01_deploy_key
+          chmod 600 ~/.ssh/hh01_deploy_key
+          cat > ~/.ssh/config <<'EOF'
+          Host ru00-jump
+            HostName ru00.vladon.ooo
+            User deploy
+            IdentityFile ~/.ssh/hh01_deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+
+          Host hh01-ipregion
+            HostName 2a10:ccc1:1333:18::a
+            User deploy
+            IdentityFile ~/.ssh/hh01_deploy_key
+            IdentitiesOnly yes
+            ProxyJump ru00-jump
+            StrictHostKeyChecking accept-new
+          EOF
+
+      - name: Deploy files
+        run: |
+          rsync -az --delete \
+            ipregion.sh index.php README.md LICENSE \
+            hh01-ipregion:/srv/www/ipregion.vladon.sh/
