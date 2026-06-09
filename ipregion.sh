@@ -3289,9 +3289,9 @@ parse_gemini_user_status_code() {
   echo "$status"
 }
 
-gemini_web_availability_from_batch() {
+gemini_batch_needs_stream_probe() {
   local batch_response="$1"
-  local line inner_json status models_count
+  local line inner_json status session_ok enabled_models
 
   if [[ -z "$batch_response" ]]; then
     echo ""
@@ -3315,18 +3315,21 @@ gemini_web_availability_from_batch() {
   status=$(process_json "$inner_json" '.[14]')
 
   case "$status" in
-  1000 | 1040)
-    echo "Yes"
+  1060 | 1014 | 1033)
+    echo "no"
     ;;
-  1060)
-    echo "No"
+  1000 | 1040)
+    echo "stream"
     ;;
   1016)
-    models_count=$(process_json "$inner_json" '.[15] | length')
-    if [[ "$models_count" =~ ^[0-9]+$ ]] && [[ "$models_count" -gt 0 ]]; then
-      echo "Yes"
+    session_ok=$(process_json "$inner_json" '.[2]')
+    enabled_models=$(process_json "$inner_json" '
+      [.[15][]? | select(type == "array" and (.[7] == true or .[7] == "true"))] | length
+    ')
+    if [[ "$session_ok" == "true" && "$enabled_models" =~ ^[0-9]+$ && "$enabled_models" -gt 0 ]]; then
+      echo "stream"
     else
-      echo "No"
+      echo "no"
     fi
     ;;
   *)
@@ -3335,9 +3338,99 @@ gemini_web_availability_from_batch() {
   esac
 }
 
+gemini_build_stream_generate_freq() {
+  local uuid
+
+  if [[ -r /proc/sys/kernel/random/uuid ]]; then
+    uuid=$(</proc/sys/kernel/random/uuid)
+  else
+    uuid=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n' | sed -E 's/(.{8})(.{4})(.{4})(.{4})(.{12})/\1-\2-\3-\4-\5/')
+  fi
+
+  jq -nc --arg uuid "$uuid" '
+    (
+      [range(80)] | map(null)
+      | .[0] = ["hi", 0, null, null, null, null, 0]
+      | .[1] = ["en"]
+      | .[2] = ["", "", "", null, null, null, null, null, null, ""]
+      | .[6] = [0]
+      | .[7] = 1
+      | .[10] = 1
+      | .[11] = 0
+      | .[17] = [[4]]
+      | .[18] = 0
+      | .[27] = 1
+      | .[30] = [4]
+      | .[41] = [2]
+      | .[53] = 0
+      | .[59] = $uuid
+      | .[61] = []
+      | .[68] = 1
+      | .[79] = 1
+    ) as $inner
+    | [null, ($inner | tojson)]
+  '
+}
+
+gemini_stream_generate_has_reply() {
+  local response="$1"
+  local line inner_json reply blocked_code
+
+  if [[ -z "$response" ]]; then
+    echo "no"
+    return
+  fi
+
+  if grep_wrapper -qiE 'not available in your|isn.t available|not supported in your|unsupported country|location.rejected' <<<"$response"; then
+    echo "no"
+    return
+  fi
+
+  while IFS= read -r line; do
+    [[ ! "$line" =~ ^\[\[\"wrb\.fr\" ]] && continue
+
+    inner_json=$(process_json "$line" '.[0][2]')
+
+    if [[ -z "$inner_json" || ${#inner_json} -lt 50 ]]; then
+      continue
+    fi
+
+    blocked_code=$(process_json "$inner_json" '
+      [.. | numbers | select(. == 1060 or . == 1014 or . == 1033)] | first // empty
+    ')
+
+    if [[ -n "$blocked_code" ]]; then
+      echo "no"
+      return
+    fi
+
+    reply=$(process_json "$inner_json" '
+      [
+        .. | arrays
+        | select(
+            length >= 2
+            and (.[0] | type) == "string"
+            and (.[0] | startswith("rc_"))
+            and (.[1] | type) == "array"
+          )
+        | .[1][]
+        | select(type == "string" and length > 1)
+      ] | last // empty
+    ')
+
+    if [[ -n "$reply" ]]; then
+      echo "yes"
+      return
+    fi
+  done < <(grep_wrapper '^\[\["wrb.fr"' <<<"$response")
+
+  echo "no"
+}
+
 lookup_gemini() {
   local ip_version="$1"
   local response batch_response sid bl encoded_bl availability color_name reqid batch_url
+  local probe_status stream_freq stream_url stream_response stream_reply
 
   response=$(curl_wrapper GET "https://gemini.google.com" \
     --user-agent "$USER_AGENT" \
@@ -3369,12 +3462,42 @@ lookup_gemini() {
     --header "X-Same-Domain: 1" \
     --data 'f.req=%5B%5B%5B%22otAQ7b%22%2C%22%5B%5D%22%2Cnull%2C%22generic%22%5D%5D%5D')
 
-  availability=$(gemini_web_availability_from_batch "$batch_response")
+  probe_status=$(gemini_batch_needs_stream_probe "$batch_response")
 
-  if [[ -z "$availability" ]]; then
+  case "$probe_status" in
+  stream)
+    stream_freq=$(gemini_build_stream_generate_freq)
+    if [[ -z "$stream_freq" ]]; then
+      echo ""
+      return
+    fi
+
+    reqid=$((reqid + 1))
+    stream_url="https://gemini.google.com/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate?bl=${encoded_bl}&hl=en&_reqid=${reqid}&rt=c"
+    stream_response=$(curl_wrapper POST "$stream_url" \
+      --ip-version "$ip_version" \
+      --user-agent "$USER_AGENT" \
+      --header "Content-Type: application/x-www-form-urlencoded;charset=UTF-8" \
+      --header "Origin: https://gemini.google.com" \
+      --header "Referer: https://gemini.google.com/app" \
+      --header "X-Same-Domain: 1" \
+      --data-urlencode "f.req=$stream_freq")
+
+    stream_reply=$(gemini_stream_generate_has_reply "$stream_response")
+    if [[ "$stream_reply" == "yes" ]]; then
+      availability="Yes"
+    else
+      availability="No"
+    fi
+    ;;
+  no)
+    availability="No"
+    ;;
+  *)
     echo ""
     return
-  fi
+    ;;
+  esac
 
   if [[ "$availability" == "Yes" ]]; then
     color_name="SERVICE"
