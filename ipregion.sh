@@ -158,6 +158,7 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE]="YouTube"
   [YOUTUBE_PREMIUM]="YouTube Premium"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
+  [GEMINI]="Google Gemini"
   [APPLE]="Apple"
   [STEAM]="Steam"
   [TIKTOK]="Tiktok"
@@ -172,6 +173,7 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE"
   "YOUTUBE_PREMIUM"
   "GOOGLE_SEARCH_CAPTCHA"
+  "GEMINI"
   "APPLE"
   "STEAM"
   "TIKTOK"
@@ -186,6 +188,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE]="lookup_youtube"
   [YOUTUBE_PREMIUM]="lookup_youtube_premium"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
+  [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
   [STEAM]="lookup_steam"
   [TIKTOK]="lookup_tiktok"
@@ -3257,6 +3260,100 @@ lookup_google_search_captcha() {
   fi
 
   print_value_or_colored "$is_captcha" "$color_name"
+}
+
+parse_gemini_user_status_code() {
+  local batch_response="$1"
+  local line inner_json status
+
+  if [[ -z "$batch_response" ]]; then
+    echo ""
+    return
+  fi
+
+  line=$(grep_wrapper '^\[\["wrb.fr","otAQ7b"' <<<"$batch_response" | head -n1)
+
+  if [[ -z "$line" ]]; then
+    echo ""
+    return
+  fi
+
+  inner_json=$(process_json "$line" '.[0][2]')
+
+  if [[ -z "$inner_json" ]]; then
+    echo ""
+    return
+  fi
+
+  status=$(process_json "$inner_json" '.[14]')
+  echo "$status"
+}
+
+gemini_availability_from_status() {
+  local status="$1"
+
+  case "$status" in
+    1000 | 1016 | 1040)
+      echo "Yes"
+      ;;
+    1060)
+      echo "No"
+      ;;
+    *)
+      echo ""
+      ;;
+  esac
+}
+
+lookup_gemini() {
+  local ip_version="$1"
+  local response batch_response sid bl encoded_bl status availability color_name reqid batch_url
+
+  response=$(curl_wrapper GET "https://gemini.google.com" \
+    --user-agent "$USER_AGENT" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return
+  fi
+
+  sid=$(grep_wrapper --perl '"FdrFJe":"\K[^"]*' <<<"$response")
+  bl=$(grep_wrapper --perl '"cfb2h":"\K[^"]*' <<<"$response")
+
+  if [[ -z "$sid" || -z "$bl" ]]; then
+    echo ""
+    return
+  fi
+
+  encoded_bl=$(jq -nr --arg bl "$bl" '$bl|@uri')
+  reqid=$((RANDOM % 900000 + 100000))
+  batch_url="https://gemini.google.com/_/BardChatUi/data/batchexecute?rpcids=otAQ7b&source-path=%2Fapp&bl=${encoded_bl}&f.sid=${sid}&hl=en&_reqid=${reqid}&rt=c"
+
+  batch_response=$(curl_wrapper POST "$batch_url" \
+    --ip-version "$ip_version" \
+    --user-agent "$USER_AGENT" \
+    --header "Content-Type: application/x-www-form-urlencoded;charset=UTF-8" \
+    --header "Origin: https://gemini.google.com" \
+    --header "Referer: https://gemini.google.com/" \
+    --header "X-Same-Domain: 1" \
+    --data 'f.req=%5B%5B%5B%22otAQ7b%22%2C%22%5B%5D%22%2Cnull%2C%22generic%22%5D%5D%5D')
+
+  status=$(parse_gemini_user_status_code "$batch_response")
+  availability=$(gemini_availability_from_status "$status")
+
+  if [[ -z "$availability" ]]; then
+    echo ""
+    return
+  fi
+
+  if [[ "$availability" == "Yes" ]]; then
+    color_name="SERVICE"
+  else
+    color_name="HEART"
+  fi
+
+  print_value_or_colored "$availability" "$color_name"
 }
 
 lookup_apple() {
