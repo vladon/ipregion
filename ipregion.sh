@@ -354,6 +354,9 @@ Examples:
   $SCRIPT_NAME --output result.json
   $SCRIPT_NAME --output result.csv
 
+Environment:
+  GEMINI_API_KEY       Use the Gemini API for the Google Gemini check (recommended on VPS)
+
 EOF
 }
 
@@ -3293,7 +3296,7 @@ gemini_availability_from_status() {
   local status="$1"
 
   case "$status" in
-  1000 | 1016 | 1040)
+  1000 | 1040)
     echo "Yes"
     ;;
   1060)
@@ -3305,9 +3308,48 @@ gemini_availability_from_status() {
   esac
 }
 
-lookup_gemini() {
+gemini_api_availability_from_response() {
+  local response="$1"
+  local error_msg
+
+  if [[ -z "$response" ]] || is_status_string "$response"; then
+    echo ""
+    return
+  fi
+
+  error_msg=$(process_json "$response" '.error.message // empty')
+  if [[ -n "$error_msg" ]]; then
+    if grep_wrapper -qiE 'not supported|not available|User location' <<<"$error_msg"; then
+      echo "No"
+      return
+    fi
+    echo ""
+    return
+  fi
+
+  if [[ -n "$(process_json "$response" '.candidates[0]')" ]]; then
+    echo "Yes"
+    return
+  fi
+
+  echo ""
+}
+
+lookup_gemini_api() {
   local ip_version="$1"
-  local response batch_response sid bl encoded_bl status availability color_name reqid batch_url
+  local response
+
+  response=$(curl_wrapper POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}" \
+    --ip-version "$ip_version" \
+    --user-agent "$USER_AGENT" \
+    --json '{"contents":[{"parts":[{"text":"ping"}]}]}')
+
+  gemini_api_availability_from_response "$response"
+}
+
+lookup_gemini_web() {
+  local ip_version="$1"
+  local response batch_response sid bl encoded_bl status reqid batch_url
 
   response=$(curl_wrapper GET "https://gemini.google.com" \
     --user-agent "$USER_AGENT" \
@@ -3340,7 +3382,18 @@ lookup_gemini() {
     --data 'f.req=%5B%5B%5B%22otAQ7b%22%2C%22%5B%5D%22%2Cnull%2C%22generic%22%5D%5D%5D')
 
   status=$(parse_gemini_user_status_code "$batch_response")
-  availability=$(gemini_availability_from_status "$status")
+  gemini_availability_from_status "$status"
+}
+
+lookup_gemini() {
+  local ip_version="$1"
+  local availability color_name
+
+  if [[ -n "${GEMINI_API_KEY:-}" ]]; then
+    availability=$(lookup_gemini_api "$ip_version")
+  else
+    availability=$(lookup_gemini_web "$ip_version")
+  fi
 
   if [[ -z "$availability" ]]; then
     echo ""
