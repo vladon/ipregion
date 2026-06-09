@@ -24,12 +24,22 @@ INTERFACE_NAME=""
 DEBUG=false
 IPV4_SUPPORTED=0
 IPV6_SUPPORTED=0
+EXTERNAL_IPV4=""
+EXTERNAL_IPV6=""
+EXTERNAL_IPV4_SOURCE=""
+EXTERNAL_IPV6_SOURCE=""
+EXTERNAL_IPV4_CACHE_HIT=false
+EXTERNAL_IPV6_CACHE_HIT=false
+EXTERNAL_IPV4_TIMESTAMP=""
+EXTERNAL_IPV6_TIMESTAMP=""
 PARALLEL_JOBS=0
 PARALLEL_PIDS=()
 FORCE_SPINNER=false
 PROGRESS_LOG=false
 LAST_PROGRESS_MSG=""
 HEADER_PRINTED=false
+SHOW_METRICS=false
+OUTPUT_FILE=""
 
 # Cache configuration
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ipregion"
@@ -44,6 +54,15 @@ CACHE_SHOWN=false
 RESULT_JSON=""
 ARR_PRIMARY=()
 ARR_CUSTOM=()
+REGISTERED_COUNTRY_IPV4=""
+REGISTERED_COUNTRY_IPV6=""
+ASN_NUMBER=""
+ASN_NAME=""
+MAXMIND_PROFILE_IPV4=""
+MAXMIND_PROFILE_IPV6=""
+CURL_META_FILE=""
+CACHE_LAST_SOURCE=""
+CACHE_LAST_TIMESTAMP=""
 
 COLOR_HEADER="1;36"
 COLOR_SERVICE="1;32"
@@ -61,6 +80,7 @@ COLOR_RESET="0"
 LOG_INFO="INFO"
 LOG_WARN="WARNING"
 LOG_ERROR="ERROR"
+LOG_DEBUG="DEBUG"
 
 STATUS_NA="N/A"
 STATUS_DENIED="Denied"
@@ -185,6 +205,8 @@ EXCLUDED_SERVICES=(
   # "IPAPI_CO"
   "GOOGLE_SEARCH_CAPTCHA"
 )
+INCLUDED_SERVICES=()
+EXCLUDED_SERVICES_CLI=()
 
 IDENTITY_SERVICES=(
   # Primary services
@@ -258,6 +280,7 @@ log() {
       "$LOG_ERROR") color_code=ERROR ;;
       "$LOG_WARN") color_code=WARN ;;
       "$LOG_INFO") color_code=INFO ;;
+      "$LOG_DEBUG") color_code=NULL ;;
       *) color_code=RESET ;;
     esac
 
@@ -299,6 +322,10 @@ Options:
   --cache-ttl SEC      Set cache TTL in seconds (default: $CACHE_TTL)
   --clear-cache        Clear the IP cache
   --show-cache         Show cached IP addresses
+  --include-service S  Run only selected services (repeatable; case-insensitive)
+  --exclude-service S  Skip selected services (repeatable; case-insensitive)
+  --metrics            Show per-service HTTP/latency metrics in table output
+  -o, --output FILE    Save results to file (.json or .csv)
 
 Examples:
   $SCRIPT_NAME                       # Check all services with default settings
@@ -318,6 +345,11 @@ Examples:
   $SCRIPT_NAME --clear-cache         # Clear the IP cache
   $SCRIPT_NAME --no-cache            # Disable IP address caching
   $SCRIPT_NAME --cache-ttl 1800      # Set cache TTL to 30 minutes
+  $SCRIPT_NAME --include-service MAXMIND --include-service GOOGLE
+  $SCRIPT_NAME --exclude-service YOUTUBE
+  $SCRIPT_NAME --metrics
+  $SCRIPT_NAME --output result.json
+  $SCRIPT_NAME --output result.csv
 
 EOF
 }
@@ -359,7 +391,7 @@ print_startup_message() {
 
   printf "%s %s\n" \
     "$(color INFO '[INFO]')" \
-    "Starting with group=$GROUPS_TO_SHOW timeout=${CURL_TIMEOUT}s parallel=$parallel_display ipv4=$ipv4 ipv6=$ipv6 proxy=$proxy interface=$iface cache=$cache_status verbose=$VERBOSE debug=$DEBUG" >&2
+    "Starting with group=$GROUPS_TO_SHOW timeout=${CURL_TIMEOUT}s parallel=$parallel_display ipv4=$ipv4 ipv6=$ipv6 proxy=$proxy interface=$iface cache=$cache_status metrics=$SHOW_METRICS output=${OUTPUT_FILE:-stdout} verbose=$VERBOSE debug=$DEBUG" >&2
 }
 
 setup_debug() {
@@ -1055,6 +1087,51 @@ is_valid_package_name() {
   [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9+._-]*$ ]]
 }
 
+normalize_service_name() {
+  local name="$1"
+  name="${name^^}"
+  name="${name//-/_}"
+  echo "$name"
+}
+
+is_service_in_list() {
+  local needle="$1"
+  shift
+  local item
+
+  for item in "$@"; do
+    if [[ "$item" == "$needle" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+validate_known_service() {
+  local service_name="$1"
+
+  if [[ -n "${PRIMARY_SERVICES[$service_name]}" || -n "${CUSTOM_SERVICES[$service_name]}" ]]; then
+    return 0
+  fi
+
+  return 1
+}
+
+should_skip_service() {
+  local service_name="$1"
+
+  if ((${#INCLUDED_SERVICES[@]} > 0)) && ! is_service_in_list "$service_name" "${INCLUDED_SERVICES[@]}"; then
+    return 0
+  fi
+
+  if is_service_in_list "$service_name" "${EXCLUDED_SERVICES[@]}" || is_service_in_list "$service_name" "${EXCLUDED_SERVICES_CLI[@]}"; then
+    return 0
+  fi
+
+  return 1
+}
+
 parse_arguments() {
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -1157,6 +1234,41 @@ parse_arguments() {
       --show-cache)
         CACHE_SHOWN=true
         shift
+        ;;
+      --include-service)
+        if [[ -z "$2" ]]; then
+          error_exit "Missing value for --include-service"
+        fi
+        local include_service
+        include_service=$(normalize_service_name "$2")
+        if ! validate_known_service "$include_service"; then
+          error_exit "Unknown service for --include-service: $2"
+        fi
+        INCLUDED_SERVICES+=("$include_service")
+        shift 2
+        ;;
+      --exclude-service)
+        if [[ -z "$2" ]]; then
+          error_exit "Missing value for --exclude-service"
+        fi
+        local exclude_service
+        exclude_service=$(normalize_service_name "$2")
+        if ! validate_known_service "$exclude_service"; then
+          error_exit "Unknown service for --exclude-service: $2"
+        fi
+        EXCLUDED_SERVICES_CLI+=("$exclude_service")
+        shift 2
+        ;;
+      --metrics)
+        SHOW_METRICS=true
+        shift
+        ;;
+      -o | --output)
+        if [[ -z "$2" ]]; then
+          error_exit "Missing value for --output"
+        fi
+        OUTPUT_FILE="$2"
+        shift 2
         ;;
       *)
         error_exit "Unknown option: $1"
@@ -1380,7 +1492,10 @@ preferred_ip() {
 # Cache Management Functions
 load_ip_cache() {
   local ip_version="$1"
-  local cache_content cached_ip cached_timestamp current_timestamp cache_age
+  local cache_content cached_ip cached_timestamp cached_source current_timestamp cache_age
+
+  CACHE_LAST_SOURCE=""
+  CACHE_LAST_TIMESTAMP=""
 
   if [[ "$CACHE_ENABLED" != true ]]; then
     return 1
@@ -1405,6 +1520,7 @@ load_ip_cache() {
 
   cached_ip=$(echo "$cache_content" | jq -r --arg v "ipv$ip_version" '.[$v].address // empty' 2>/dev/null)
   cached_timestamp=$(echo "$cache_content" | jq -r --arg v "ipv$ip_version" '.[$v].timestamp // empty' 2>/dev/null)
+  cached_source=$(echo "$cache_content" | jq -r --arg v "ipv$ip_version" '.[$v].source // empty' 2>/dev/null)
 
   if [[ -z "$cached_ip" ]] || [[ -z "$cached_timestamp" ]]; then
     log "$LOG_WARN" "Cache missing IPv${ip_version} data"
@@ -1432,6 +1548,8 @@ load_ip_cache() {
   fi
 
   log "$LOG_INFO" "Using cached IPv${ip_version} address: $cached_ip (age: ${cache_age}s)"
+  CACHE_LAST_SOURCE="$cached_source"
+  CACHE_LAST_TIMESTAMP="$cached_timestamp"
   echo "$cached_ip"
   return 0
 }
@@ -1596,7 +1714,7 @@ fetch_ip_from_service_with_retry() {
 fetch_external_ip() {
   local ip_version="$1"
   local service ip
-  local from_cache=false
+  local now
 
   spinner_update "External IPv$ip_version address"
   log "$LOG_INFO" "Getting external IPv${ip_version} address"
@@ -1624,6 +1742,16 @@ fetch_external_ip() {
     if [[ -n "$ip" ]]; then
       log "$LOG_INFO" "Successfully obtained IPv${ip_version} address from $service: $ip"
       save_ip_cache "$ip_version" "$ip" "$service"
+      now=$(date +%s)
+      if [[ "$ip_version" == "4" ]]; then
+        EXTERNAL_IPV4_SOURCE="$service"
+        EXTERNAL_IPV4_CACHE_HIT=false
+        EXTERNAL_IPV4_TIMESTAMP="$now"
+      else
+        EXTERNAL_IPV6_SOURCE="$service"
+        EXTERNAL_IPV6_CACHE_HIT=false
+        EXTERNAL_IPV6_TIMESTAMP="$now"
+      fi
       echo "$ip"
       return 0
     else
@@ -1634,7 +1762,15 @@ fetch_external_ip() {
   log "$LOG_WARN" "Failed to obtain IPv${ip_version} address from any service, trying cache"
   ip=$(load_ip_cache "$ip_version")
   if [[ -n "$ip" ]]; then
-    from_cache=true
+    if [[ "$ip_version" == "4" ]]; then
+      EXTERNAL_IPV4_SOURCE="${CACHE_LAST_SOURCE:-cache}"
+      EXTERNAL_IPV4_CACHE_HIT=true
+      EXTERNAL_IPV4_TIMESTAMP="$CACHE_LAST_TIMESTAMP"
+    else
+      EXTERNAL_IPV6_SOURCE="${CACHE_LAST_SOURCE:-cache}"
+      EXTERNAL_IPV6_CACHE_HIT=true
+      EXTERNAL_IPV6_TIMESTAMP="$CACHE_LAST_TIMESTAMP"
+    fi
     echo "$ip"
     return 0
   fi
@@ -1645,7 +1781,6 @@ fetch_external_ip() {
 
 discover_external_ips() {
   local ipv4_failed=false ipv6_failed=false
-  local ipv4_from_cache=false ipv6_from_cache=false
 
   if ipv4_enabled; then
     EXTERNAL_IPV4=$(fetch_external_ip 4)
@@ -1674,38 +1809,90 @@ discover_external_ips() {
   fi
 }
 
+load_maxmind_profile() {
+  local ip_version="$1"
+  local response
+
+  if [[ "$ip_version" == "4" && -n "$MAXMIND_PROFILE_IPV4" ]]; then
+    return 0
+  fi
+
+  if [[ "$ip_version" == "6" && -n "$MAXMIND_PROFILE_IPV6" ]]; then
+    return 0
+  fi
+
+  response=$(curl_wrapper GET "https://geoip.maxmind.com/geoip/v2.1/city/me" \
+    --header "Referer: https://www.maxmind.com" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]] || ! is_valid_json "$response"; then
+    log "$LOG_WARN" "Failed to load MaxMind profile for IPv${ip_version}"
+    return 1
+  fi
+
+  if [[ "$ip_version" == "4" ]]; then
+    MAXMIND_PROFILE_IPV4="$response"
+  else
+    MAXMIND_PROFILE_IPV6="$response"
+  fi
+
+  return 0
+}
+
+get_registered_country() {
+  local ip_version="$1"
+  local profile
+
+  if ! load_maxmind_profile "$ip_version"; then
+    echo ""
+    return 1
+  fi
+
+  if [[ "$ip_version" == "4" ]]; then
+    profile="$MAXMIND_PROFILE_IPV4"
+  else
+    profile="$MAXMIND_PROFILE_IPV6"
+  fi
+
+  process_json "$profile" ".registered_country.names.en"
+}
+
 get_asn() {
-  local ip_version
-  local ip
-  local response traits
+  local ip_version ip profile traits
 
   ip_version=$(preferred_ip_version)
   ip=$(preferred_ip)
 
   spinner_update "ASN info"
   log "$LOG_INFO" "Getting ASN info for IP $ip"
-  asn=""
-  asn_name=""
+  ASN_NUMBER=""
+  ASN_NAME=""
 
-  response=$(curl_wrapper GET "https://geoip.maxmind.com/geoip/v2.1/city/me" \
-    --header "Referer: https://www.maxmind.com" \
-    --ip-version "$ip_version")
-  traits=$(process_json "$response" ".traits")
-  asn=$(process_json "$traits" ".autonomous_system_number")
-  asn_name=$(process_json "$traits" ".autonomous_system_organization")
+  if ! load_maxmind_profile "$ip_version"; then
+    return 1
+  fi
 
-  log "$LOG_INFO" "ASN info: AS$asn $asn_name"
+  if [[ "$ip_version" == "4" ]]; then
+    profile="$MAXMIND_PROFILE_IPV4"
+  else
+    profile="$MAXMIND_PROFILE_IPV6"
+  fi
+
+  traits=$(process_json "$profile" ".traits")
+  ASN_NUMBER=$(process_json "$traits" ".autonomous_system_number")
+  ASN_NAME=$(process_json "$traits" ".autonomous_system_organization")
+
+  log "$LOG_INFO" "ASN info: AS$ASN_NUMBER $ASN_NAME"
 }
 
-get_registered_country() {
-  local ip_version="$1"
-  local response
+load_registered_countries() {
+  if can_use_ipv4; then
+    REGISTERED_COUNTRY_IPV4=$(get_registered_country 4)
+  fi
 
-  response=$(curl_wrapper GET "https://geoip.maxmind.com/geoip/v2.1/city/me" \
-    --header "Referer: https://www.maxmind.com" \
-    --ip-version "$ip_version")
-
-  process_json "$response" ".registered_country.names.en"
+  if can_use_ipv6; then
+    REGISTERED_COUNTRY_IPV6=$(get_registered_country 6)
+  fi
 }
 
 is_ipv6_over_ipv4_service() {
@@ -1794,7 +1981,8 @@ curl_wrapper() {
   local url="$2"
   shift 2
   local ip_version user_agent json data data_urlencode file forms headers
-  local response_with_code response http_code curl_exit
+  local response_with_meta response http_code latency_seconds latency_ms curl_exit
+  local error_type=""
   local curl_args=(
     --silent
     --compressed
@@ -1803,7 +1991,7 @@ curl_wrapper() {
     --retry-all-errors
     --retry "$CURL_RETRIES"
     --max-time "$CURL_TIMEOUT"
-    -w '\n%{http_code}'
+    -w '\n%{http_code}\n%{time_total}'
   )
 
   case "$method" in
@@ -1896,26 +2084,49 @@ curl_wrapper() {
 
   curl_args+=("$url")
 
-  response_with_code=$(curl "${curl_args[@]}")
+  response_with_meta=$(curl "${curl_args[@]}")
   curl_exit=$?
-  if [[ $curl_exit -ne 0 || -z "$response_with_code" ]]; then
+  if [[ $curl_exit -ne 0 || -z "$response_with_meta" ]]; then
+    error_type="curl_error"
+    if [[ -n "$CURL_META_FILE" ]]; then
+      printf "http_code=;latency_ms=;error_type=%s\n" "$error_type" >"$CURL_META_FILE"
+    fi
     log "$LOG_WARN" "curl request failed for $url"
     echo ""
     return
   fi
 
-  http_code=$(printf '%s\n' "$response_with_code" | tail -n 1)
-  response=$(printf '%s\n' "$response_with_code" | sed '$d')
+  latency_seconds=$(printf '%s\n' "$response_with_meta" | tail -n 1)
+  http_code=$(printf '%s\n' "$response_with_meta" | tail -n 2 | head -n 1)
+  response=$(printf '%s\n' "$response_with_meta" | sed '$d' | sed '$d')
+
+  if [[ "$latency_seconds" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    latency_ms=$(awk -v t="$latency_seconds" 'BEGIN { printf "%d", t * 1000 }')
+  else
+    latency_ms=""
+  fi
 
   if [[ ! "$http_code" =~ ^[0-9]{3}$ ]]; then
+    error_type="invalid_http_code"
+    if [[ -n "$CURL_META_FILE" ]]; then
+      printf "http_code=;latency_ms=%s;error_type=%s\n" "$latency_ms" "$error_type" >"$CURL_META_FILE"
+    fi
     log "$LOG_WARN" "Unexpected HTTP code for $url"
     echo "$response"
     return
   fi
 
   if [[ "$http_code" =~ ^[45][0-9]{2}$ ]]; then
+    error_type="http_${http_code}"
+    if [[ -n "$CURL_META_FILE" ]]; then
+      printf "http_code=%s;latency_ms=%s;error_type=%s\n" "$http_code" "$latency_ms" "$error_type" >"$CURL_META_FILE"
+    fi
     status_from_http_code "$http_code"
     return 0
+  fi
+
+  if [[ -n "$CURL_META_FILE" ]]; then
+    printf "http_code=%s;latency_ms=%s;error_type=none\n" "$http_code" "$latency_ms" >"$CURL_META_FILE"
   fi
 
   echo "$response"
@@ -2057,16 +2268,53 @@ process_response() {
   process_json "$response" "$jq_filter"
 }
 
+read_curl_metric_field() {
+  local file="$1"
+  local key="$2"
+
+  if [[ ! -f "$file" ]]; then
+    echo ""
+    return
+  fi
+
+  sed -n "s/.*${key}=\\([^;]*\\).*/\\1/p" "$file" | head -n1
+}
+
+build_service_metric() {
+  local metric_file="$1"
+  local transport_version="$2"
+  local http_code latency_ms error_type
+
+  http_code=$(read_curl_metric_field "$metric_file" "http_code")
+  latency_ms=$(read_curl_metric_field "$metric_file" "latency_ms")
+  error_type=$(read_curl_metric_field "$metric_file" "error_type")
+
+  if [[ -z "$error_type" ]]; then
+    error_type="none"
+  fi
+
+  printf "http_code=%s;latency_ms=%s;transport_ip_version=%s;error_type=%s" \
+    "$http_code" "$latency_ms" "$transport_version" "$error_type"
+}
+
 process_with_custom_handler() {
   local service="$1"
   local display_name="$2"
   local handler_func="${PRIMARY_SERVICES_CUSTOM_HANDLERS[$service]}"
   local ipv4_result=""
   local ipv6_result=""
+  local ipv4_metric=""
+  local ipv6_metric=""
+  local metric_file
 
   if can_use_ipv4; then
     log "$LOG_INFO" "Checking $display_name via IPv4 (custom handler)"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
     ipv4_result=$("$handler_func" 4 4)
+    ipv4_metric=$(build_service_metric "$metric_file" 4)
+    rm -f "$metric_file"
+    CURL_META_FILE=""
   fi
 
   if can_use_ipv6; then
@@ -2079,10 +2327,15 @@ process_with_custom_handler() {
     fi
 
     log "$LOG_INFO" "$log_msg"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
     ipv6_result=$("$handler_func" "$transport" 6)
+    ipv6_metric=$(build_service_metric "$metric_file" "$transport")
+    rm -f "$metric_file"
+    CURL_META_FILE=""
   fi
 
-  add_result "primary" "$display_name" "$ipv4_result" "$ipv6_result"
+  add_result "primary" "$display_name" "$ipv4_result" "$ipv6_result" "$ipv4_metric" "$ipv6_metric"
 }
 
 process_with_probe() {
@@ -2090,24 +2343,40 @@ process_with_probe() {
   local display_name="$2"
   local ipv4_result=""
   local ipv6_result=""
+  local ipv4_metric=""
+  local ipv6_metric=""
+  local metric_file
+  local transport
 
   if can_use_ipv4; then
     log "$LOG_INFO" "Checking $display_name via IPv4"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
     ipv4_result=$(probe_service "$service" 4 "$EXTERNAL_IPV4")
+    ipv4_metric=$(build_service_metric "$metric_file" 4)
+    rm -f "$metric_file"
+    CURL_META_FILE=""
   fi
 
   if can_use_ipv6; then
+    transport=6
     local log_msg="Checking $display_name via IPv6"
 
     if is_ipv6_over_ipv4_service "$service"; then
+      transport=4
       log_msg="Checking $display_name (IPv6 address, IPv4 transport)"
     fi
 
     log "$LOG_INFO" "$log_msg"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
     ipv6_result=$(probe_service "$service" 6 "$EXTERNAL_IPV6")
+    ipv6_metric=$(build_service_metric "$metric_file" "$transport")
+    rm -f "$metric_file"
+    CURL_META_FILE=""
   fi
 
-  add_result "primary" "$display_name" "$ipv4_result" "$ipv6_result"
+  add_result "primary" "$display_name" "$ipv4_result" "$ipv6_result" "$ipv4_metric" "$ipv6_metric"
 }
 
 process_service() {
@@ -2138,7 +2407,10 @@ process_custom_service() {
   local service="$1"
   local ipv4_result=""
   local ipv6_result=""
+  local ipv4_metric=""
+  local ipv6_metric=""
   local display_name handler_func group
+  local metric_file
 
   if [[ -n "${CUSTOM_SERVICES[$service]}" ]]; then
     display_name="${CUSTOM_SERVICES[$service]}"
@@ -2159,15 +2431,25 @@ process_custom_service() {
 
   if can_use_ipv4; then
     log "$LOG_INFO" "Checking $display_name via IPv4"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
     ipv4_result=$("$handler_func" 4)
+    ipv4_metric=$(build_service_metric "$metric_file" 4)
+    rm -f "$metric_file"
+    CURL_META_FILE=""
   fi
 
   if can_use_ipv6; then
     log "$LOG_INFO" "Checking $display_name via IPv6"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
     ipv6_result=$("$handler_func" 6)
+    ipv6_metric=$(build_service_metric "$metric_file" 6)
+    rm -f "$metric_file"
+    CURL_META_FILE=""
   fi
 
-  add_result "$group" "$display_name" "$ipv4_result" "$ipv6_result"
+  add_result "$group" "$display_name" "$ipv4_result" "$ipv6_result" "$ipv4_metric" "$ipv6_metric"
 }
 
 run_service_group() {
@@ -2181,7 +2463,7 @@ run_service_group() {
   log "$LOG_INFO" "Running $group group services"
 
   for service_name in "${services_array[@]}"; do
-    if printf "%s\n" "${EXCLUDED_SERVICES[@]}" | grep_wrapper -Fxq "$service_name"; then
+    if should_skip_service "$service_name"; then
       log "$LOG_INFO" "Skipping service: $service_name"
       continue
     fi
@@ -2215,7 +2497,7 @@ run_service_group_parallel() {
   temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/ipregion_parallel_XXXXXX")
 
   for service_name in "${services_array[@]}"; do
-    if printf "%s\n" "${EXCLUDED_SERVICES[@]}" | grep_wrapper -Fxq "$service_name"; then
+    if should_skip_service "$service_name"; then
       log "$LOG_INFO" "Skipping service: $service_name"
       continue
     fi
@@ -2240,11 +2522,15 @@ run_service_group_parallel() {
       "Waiting for remaining $group checks..." >&2
   fi
 
-  wait
+  local pid
+  local -a remaining_group_pids=("${PARALLEL_PIDS[@]}")
+  for pid in "${remaining_group_pids[@]}"; do
+    wait "$pid" 2>/dev/null || true
+  done
   PARALLEL_PIDS=()
 
   for service_name in "${services_array[@]}"; do
-    if printf "%s\n" "${EXCLUDED_SERVICES[@]}" | grep_wrapper -Fxq "$service_name"; then
+    if should_skip_service "$service_name"; then
       continue
     fi
 
@@ -2266,7 +2552,7 @@ run_all_services() {
     service_name=${func#lookup_}
     service_name_uppercase=${service_name^^}
 
-    if printf "%s\n" "${EXCLUDED_SERVICES[@]}" | grep_wrapper -Fxq "$service_name_uppercase"; then
+    if should_skip_service "$service_name_uppercase"; then
       log "$LOG_INFO" "Skipping service: $service_name_uppercase"
       continue
     fi
@@ -2292,14 +2578,36 @@ finalize_json() {
     t_custom=$(printf '%s\n' "${ARR_CUSTOM[@]//|||/$'\t'}")
   fi
 
-  # TODO: Add registered country to the JSON output
   RESULT_JSON=$(
     jq -n \
       --rawfile p <(printf "%s" "$t_primary") \
       --rawfile c <(printf "%s" "$t_custom") \
       --arg ipv4 "$EXTERNAL_IPV4" \
       --arg ipv6 "$EXTERNAL_IPV6" \
+      --arg ipv4_source "$EXTERNAL_IPV4_SOURCE" \
+      --arg ipv6_source "$EXTERNAL_IPV6_SOURCE" \
+      --arg ipv4_cache_hit "$EXTERNAL_IPV4_CACHE_HIT" \
+      --arg ipv6_cache_hit "$EXTERNAL_IPV6_CACHE_HIT" \
+      --arg ipv4_ts "$EXTERNAL_IPV4_TIMESTAMP" \
+      --arg ipv6_ts "$EXTERNAL_IPV6_TIMESTAMP" \
+      --arg registered_country_ipv4 "$REGISTERED_COUNTRY_IPV4" \
+      --arg registered_country_ipv6 "$REGISTERED_COUNTRY_IPV6" \
+      --arg asn_number "$ASN_NUMBER" \
+      --arg asn_name "$ASN_NAME" \
       --arg version "1" '
+        def parse_metric($raw):
+          if ($raw | length) == 0 then null
+          else
+            ($raw | split(";") | map(select(length > 0) | split("="))) as $pairs
+            | ($pairs | map({key: .[0], value: (.[1] // "")}) | from_entries) as $m
+            | {
+                http_code: ($m.http_code | if . == null or . == "" then null else (tonumber?) end),
+                latency_ms: ($m.latency_ms | if . == null or . == "" then null else (tonumber?) end),
+                transport_ip_version: ($m.transport_ip_version | if . == null or . == "" then null else (tonumber?) end),
+                error_type: ($m.error_type | if . == null or . == "" or . == "none" then null else . end)
+              }
+          end;
+
         def lines_to_array($raw):
           if ($raw | length) == 0 then [] else
           ($raw | split("\n"))
@@ -2309,18 +2617,63 @@ finalize_json() {
               | {
                   service: $f[0],
                   ipv4: ( ($f[1] // "") | if length>0 then . else null end ),
-                  ipv6: ( ($f[2] // "") | if length>0 then . else null end )
+                  ipv6: ( ($f[2] // "") | if length>0 then . else null end ),
+                  metrics: {
+                    ipv4: parse_metric($f[3] // ""),
+                    ipv6: parse_metric($f[4] // "")
+                  }
                 }
             )
           end;
 
-        {
+        def country_consensus($rows; $field):
+          ($rows
+           | map(if $field == "ipv4" then .ipv4 else .ipv6 end)
+           | map(select(. != null and (. | test("^[A-Z]{2}$"))))
+          ) as $codes
+          | ($codes | length) as $total
+          | if $total == 0 then null
+            else
+              ($codes | group_by(.) | map({country: .[0], count: length}) | sort_by(-.count, .country) | .[0]) as $top
+              | {
+                  country: $top.country,
+                  count: $top.count,
+                  total: $total,
+                  confidence: (($top.count / $total) * 100 | floor)
+                }
+            end;
+
+        (lines_to_array($p)) as $primary
+        | (lines_to_array($c)) as $custom
+        | {
           version: ($version|tonumber),
-          ipv4: ($ipv4 | select(length > 0) // null),
-          ipv6: ($ipv6 | select(length > 0) // null),
+          ip: {
+            ipv4: {
+              address: ($ipv4 | select(length > 0) // null),
+              source: ($ipv4_source | select(length > 0) // null),
+              cache_hit: ($ipv4_cache_hit == "true"),
+              timestamp: ($ipv4_ts | if length > 0 then (tonumber?) else null end),
+              registered_country: ($registered_country_ipv4 | select(length > 0) // null)
+            },
+            ipv6: {
+              address: ($ipv6 | select(length > 0) // null),
+              source: ($ipv6_source | select(length > 0) // null),
+              cache_hit: ($ipv6_cache_hit == "true"),
+              timestamp: ($ipv6_ts | if length > 0 then (tonumber?) else null end),
+              registered_country: ($registered_country_ipv6 | select(length > 0) // null)
+            }
+          },
+          asn: {
+            number: ($asn_number | if length > 0 then (tonumber?) else null end),
+            name: ($asn_name | select(length > 0) // null)
+          },
+          consensus: {
+            ipv4: country_consensus($primary; "ipv4"),
+            ipv6: country_consensus($primary; "ipv6")
+          },
           results: {
-            primary: lines_to_array($p),
-            custom:  lines_to_array($c)
+            primary: $primary,
+            custom:  $custom
           }
         }
       '
@@ -2332,11 +2685,17 @@ add_result() {
   local service="$2"
   local ipv4="$3"
   local ipv6="$4"
+  local ipv4_metric="$5"
+  local ipv6_metric="$6"
 
   ipv4=${ipv4//$'\n'/}
   ipv4=${ipv4//$'\t'/ }
   ipv6=${ipv6//$'\n'/}
   ipv6=${ipv6//$'\t'/ }
+  ipv4_metric=${ipv4_metric//$'\n'/}
+  ipv4_metric=${ipv4_metric//$'\t'/ }
+  ipv6_metric=${ipv6_metric//$'\n'/}
+  ipv6_metric=${ipv6_metric//$'\t'/ }
 
   if [[ "$PROGRESS_LOG" == true && "$JSON_OUTPUT" != "true" ]]; then
     printf "%s %s\n" \
@@ -2344,31 +2703,35 @@ add_result() {
       "Done: $service" >&2
   fi
 
-  if [[ -n "$RESULT_FILE" ]]; then
-    printf "%s|||%s|||%s|||%s\n" "$group" "$service" "$ipv4" "$ipv6" >>"$RESULT_FILE"
+  if [[ -n "${RESULT_FILE:-}" ]]; then
+    printf "%s|||%s|||%s|||%s|||%s|||%s\n" "$group" "$service" "$ipv4" "$ipv6" "$ipv4_metric" "$ipv6_metric" >>"$RESULT_FILE"
     return
   fi
 
   case "$group" in
-    primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6") ;;
-    custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6") ;;
+    primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+    custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
 add_result_line() {
   local line="$1"
-  local group rest service ipv4 ipv6
+  local group rest service ipv4 ipv6 ipv4_metric ipv6_metric
 
   group="${line%%|||*}"
   rest="${line#*|||}"
   service="${rest%%|||*}"
   rest="${rest#*|||}"
   ipv4="${rest%%|||*}"
-  ipv6="${rest#*|||}"
+  rest="${rest#*|||}"
+  ipv6="${rest%%|||*}"
+  rest="${rest#*|||}"
+  ipv4_metric="${rest%%|||*}"
+  ipv6_metric="${rest#*|||}"
 
   case "$group" in
-    primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6") ;;
-    custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6") ;;
+    primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+    custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
@@ -2476,25 +2839,144 @@ print_table_group() {
   fi
 }
 
+print_metrics_group() {
+  local group="$1"
+  local title="$2"
+  local separator=$'\t'
+  local show_ipv4=0
+  local show_ipv6=0
+
+  if [[ "$SHOW_METRICS" != true ]]; then
+    return
+  fi
+
+  if can_use_ipv4; then
+    show_ipv4=1
+  fi
+
+  if can_use_ipv6; then
+    show_ipv6=1
+  fi
+
+  printf "%s\n\n" "$(color HEADER "$title")"
+  if is_command_available "column"; then
+    {
+      printf "%s" "$(color TABLE_HEADER 'Service')"
+      if [[ $show_ipv4 -eq 1 ]]; then
+        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv4 metric')"
+      fi
+      if [[ $show_ipv6 -eq 1 ]]; then
+        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv6 metric')"
+      fi
+      printf "\n"
+
+      jq -r --arg group "$group" '
+        (.results // {}) as $r
+        | ($r[$group] // [])
+        | .[]
+        | [
+            .service,
+            (
+              .metrics.ipv4
+              | if . == null then "N/A" else
+                  ((.http_code // "n/a")|tostring) + " / " +
+                  ((.latency_ms // "n/a")|tostring) + "ms / " +
+                  ((.error_type // "ok")|tostring)
+                end
+            ),
+            (
+              .metrics.ipv6
+              | if . == null then "N/A" else
+                  ((.http_code // "n/a")|tostring) + " / " +
+                  ((.latency_ms // "n/a")|tostring) + "ms / " +
+                  ((.error_type // "ok")|tostring)
+                end
+            )
+          ]
+        | @tsv
+      ' <<<"$RESULT_JSON" | while IFS=$'\t' read -r s m4 m6; do
+        printf "%s" "$(color SERVICE "$s")"
+        if [[ $show_ipv4 -eq 1 ]]; then
+          printf "%s%s" "$separator" "$m4"
+        fi
+        if [[ $show_ipv6 -eq 1 ]]; then
+          printf "%s%s" "$separator" "$m6"
+        fi
+        printf "\n"
+      done
+    } | column -t -s "$separator"
+    return
+  fi
+
+  log "$LOG_WARN" "column is not available; displaying unaligned metrics output"
+  {
+    printf "%s" "$(color TABLE_HEADER 'Service')"
+    if [[ $show_ipv4 -eq 1 ]]; then
+      printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv4 metric')"
+    fi
+    if [[ $show_ipv6 -eq 1 ]]; then
+      printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv6 metric')"
+    fi
+    printf "\n"
+
+    jq -r --arg group "$group" '
+      (.results // {}) as $r
+      | ($r[$group] // [])
+      | .[]
+      | [
+          .service,
+          (
+            .metrics.ipv4
+            | if . == null then "N/A" else
+                ((.http_code // "n/a")|tostring) + " / " +
+                ((.latency_ms // "n/a")|tostring) + "ms / " +
+                ((.error_type // "ok")|tostring)
+              end
+          ),
+          (
+            .metrics.ipv6
+            | if . == null then "N/A" else
+                ((.http_code // "n/a")|tostring) + " / " +
+                ((.latency_ms // "n/a")|tostring) + "ms / " +
+                ((.error_type // "ok")|tostring)
+              end
+          )
+        ]
+      | @tsv
+    ' <<<"$RESULT_JSON" | while IFS=$'\t' read -r s m4 m6; do
+      printf "%s" "$(color SERVICE "$s")"
+      if [[ $show_ipv4 -eq 1 ]]; then
+        printf "%s%s" "$separator" "$m4"
+      fi
+      if [[ $show_ipv6 -eq 1 ]]; then
+        printf "%s%s" "$separator" "$m6"
+      fi
+      printf "\n"
+    done
+  }
+}
+
 print_header() {
   local ipv4 ipv6
   local na="N/A"
   local asn_value asn_name_value asn_display
+  local consensus_ipv4 consensus_ipv6
 
-  ipv4=$(process_json "$RESULT_JSON" ".ipv4")
-  ipv6=$(process_json "$RESULT_JSON" ".ipv6")
+  ipv4=$(process_json "$RESULT_JSON" ".ip.ipv4.address")
+  ipv6=$(process_json "$RESULT_JSON" ".ip.ipv6.address")
+  consensus_ipv4=$(process_json "$RESULT_JSON" ".consensus.ipv4.country")
+  consensus_ipv6=$(process_json "$RESULT_JSON" ".consensus.ipv6.country")
 
-  # TODO: Get registered country while initializing
   if [[ "$ipv4" != "null" ]]; then
-    printf "%s: %s, %s %s\n" "$(color HEADER 'IPv4')" "$(bold "$(mask_ipv4 "$ipv4")")" "registered in" "$(bold "$(get_registered_country 4)")"
+    printf "%s: %s, %s %s\n" "$(color HEADER 'IPv4')" "$(bold "$(mask_ipv4 "$ipv4")")" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV4:-$STATUS_NA}")"
   fi
 
   if [[ "$ipv6" != "null" ]]; then
-    printf "%s: %s, %s %s\n" "$(color HEADER 'IPv6')" "$(bold "$(mask_ipv6 "$ipv6")")" "registered in" "$(bold "$(get_registered_country 6)")"
+    printf "%s: %s, %s %s\n" "$(color HEADER 'IPv6')" "$(bold "$(mask_ipv6 "$ipv6")")" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV6:-$STATUS_NA}")"
   fi
 
-  asn_value="$asn"
-  asn_name_value="$asn_name"
+  asn_value="$ASN_NUMBER"
+  asn_name_value="$ASN_NAME"
 
   if [[ -z "$asn_value" || "$asn_value" == "null" ]]; then
     asn_display="$na"
@@ -2505,10 +2987,99 @@ print_header() {
   fi
 
   printf "%s: %s\n\n" "$(color HEADER 'ASN')" "$(bold "$asn_display")"
+
+  if [[ "$consensus_ipv4" != "null" && -n "$consensus_ipv4" ]]; then
+    printf "%s: %s\n" "$(color HEADER 'IPv4 consensus')" "$(bold "$consensus_ipv4")"
+  fi
+
+  if [[ "$consensus_ipv6" != "null" && -n "$consensus_ipv6" ]]; then
+    printf "%s: %s\n" "$(color HEADER 'IPv6 consensus')" "$(bold "$consensus_ipv6")"
+  fi
+
+  if [[ "$consensus_ipv4" != "null" || "$consensus_ipv6" != "null" ]]; then
+    printf "\n"
+  fi
+}
+
+detect_output_format() {
+  local output_file="$1"
+  local lower_file
+  lower_file="${output_file,,}"
+
+  if [[ "$lower_file" == *.csv ]]; then
+    echo "csv"
+    return 0
+  fi
+
+  if [[ "$lower_file" == *.json ]]; then
+    echo "json"
+    return 0
+  fi
+
+  return 1
+}
+
+write_output_file() {
+  local output_format
+
+  if [[ -z "$OUTPUT_FILE" ]]; then
+    return 0
+  fi
+
+  output_format=$(detect_output_format "$OUTPUT_FILE")
+  if [[ -z "$output_format" ]]; then
+    error_exit "Unsupported output format for $OUTPUT_FILE. Use .json or .csv"
+  fi
+
+  mkdir -p "$(dirname "$OUTPUT_FILE")"
+
+  if [[ "$output_format" == "json" ]]; then
+    printf "%s\n" "$RESULT_JSON" | jq >"$OUTPUT_FILE"
+  else
+    jq -r '
+      ["group","service","ipv4","ipv6","ipv4_http_code","ipv4_latency_ms","ipv4_transport_ip_version","ipv4_error_type","ipv6_http_code","ipv6_latency_ms","ipv6_transport_ip_version","ipv6_error_type"],
+      (.results.primary[] | [
+        "primary",
+        .service,
+        (.ipv4 // ""),
+        (.ipv6 // ""),
+        (.metrics.ipv4.http_code // ""),
+        (.metrics.ipv4.latency_ms // ""),
+        (.metrics.ipv4.transport_ip_version // ""),
+        (.metrics.ipv4.error_type // ""),
+        (.metrics.ipv6.http_code // ""),
+        (.metrics.ipv6.latency_ms // ""),
+        (.metrics.ipv6.transport_ip_version // ""),
+        (.metrics.ipv6.error_type // "")
+      ]),
+      (.results.custom[] | [
+        "custom",
+        .service,
+        (.ipv4 // ""),
+        (.ipv6 // ""),
+        (.metrics.ipv4.http_code // ""),
+        (.metrics.ipv4.latency_ms // ""),
+        (.metrics.ipv4.transport_ip_version // ""),
+        (.metrics.ipv4.error_type // ""),
+        (.metrics.ipv6.http_code // ""),
+        (.metrics.ipv6.latency_ms // ""),
+        (.metrics.ipv6.transport_ip_version // ""),
+        (.metrics.ipv6.error_type // "")
+      ])
+      | @csv
+    ' <<<"$RESULT_JSON" >"$OUTPUT_FILE"
+  fi
+
+  if [[ "$JSON_OUTPUT" != true ]]; then
+    printf "%s %s\n" \
+      "$(color INFO '[INFO]')" \
+      "Saved output to $OUTPUT_FILE" >&2
+  fi
 }
 
 print_results() {
   finalize_json
+  write_output_file
 
   if [[ "$JSON_OUTPUT" == true ]]; then
     echo "$RESULT_JSON" | jq
@@ -2528,14 +3099,18 @@ print_results() {
   case "$GROUPS_TO_SHOW" in
     primary)
       print_table_group "primary" "GeoIP services"
+      print_metrics_group "primary" "GeoIP service metrics"
       ;;
     custom)
       print_table_group "custom" "Popular services"
+      print_metrics_group "custom" "Popular service metrics"
       ;;
     *)
       print_table_group "custom" "Popular services"
+      print_metrics_group "custom" "Popular service metrics"
       printf "\n"
       print_table_group "primary" "GeoIP services"
+      print_metrics_group "primary" "GeoIP service metrics"
       ;;
   esac
 
@@ -2789,6 +3364,7 @@ main() {
   fi
 
   discover_external_ips
+  load_registered_countries
   get_asn
 
   if [[ "$JSON_OUTPUT" != "true" ]]; then

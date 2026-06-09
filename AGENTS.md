@@ -65,3 +65,14 @@ Some services don't support IPv6 transport. Listed in `IPV6_OVER_IPV4_SERVICES` 
 3. Add jq filter in `process_response()` case statement
 4. If special headers needed: add to `SERVICE_HEADERS`
 5. If non-JSON: add handler to `PRIMARY_SERVICES_CUSTOM_HANDLERS`
+
+## /init
+
+When starting work in this repository, follow this boot sequence:
+
+1. Read `AGENTS.md` and scan `README.md` for current behavior and constraints.
+2. Inspect workspace state with `git status --short` before making edits.
+3. Use `rg`/`rg --files` for fast code discovery; keep edits minimal and style-consistent.
+4. For behavior changes in `ipregion.sh`, run `bash tests/run.sh` before finishing.
+5. For network/service-related changes, also run at least one manual check such as `./ipregion.sh -g primary` or `./ipregion.sh -g custom`.
+6. Do not revert unrelated local changes; only touch files required for the task.

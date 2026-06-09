@@ -63,6 +63,19 @@ assert_empty() {
   fi
 }
 
+assert_contains() {
+  local value="$1"
+  local needle="$2"
+  local name="$3"
+
+  if [[ "$value" == *"$needle"* ]]; then
+    echo "OK: $name"
+  else
+    echo "FAIL: $name (expected '$needle' in '$value')"
+    failures=$((failures + 1))
+  fi
+}
+
 assert_true "is_valid_ipv4 accepts valid value" is_valid_ipv4 "1.2.3.4"
 assert_false "is_valid_ipv4 rejects invalid value" is_valid_ipv4 "256.1.1.1"
 assert_false "is_valid_ipv4 rejects short value" is_valid_ipv4 "1.2.3"
@@ -73,6 +86,61 @@ assert_false "is_valid_ipv6 rejects invalid value" is_valid_ipv6 "not-an-ip"
 assert_eq "1" "$(process_json '{"a":1}' '.a')" "process_json returns value from valid JSON"
 assert_empty "$(process_json "" ".a")" "process_json returns empty on empty input"
 assert_empty "$(process_json "{invalid-json}" ".a")" "process_json returns empty on invalid input"
+
+assert_true "is_valid_proxy_addr accepts host:port" is_valid_proxy_addr "127.0.0.1:1080"
+assert_true "is_valid_proxy_addr accepts [ipv6]:port" is_valid_proxy_addr "[2001:db8::1]:1080"
+assert_false "is_valid_proxy_addr rejects bad port" is_valid_proxy_addr "127.0.0.1:99999"
+
+assert_eq "GOOGLE_SEARCH_CAPTCHA" "$(normalize_service_name "google-search-captcha")" "normalize_service_name normalizes separators"
+assert_eq "Denied" "$(status_from_http_code 403)" "status_from_http_code maps 403"
+assert_eq "Rate-limit" "$(status_from_http_code 429)" "status_from_http_code maps 429"
+assert_eq "Server error" "$(status_from_http_code 503)" "status_from_http_code maps 5xx"
+assert_eq "N/A" "$(status_from_http_code 404)" "status_from_http_code maps 4xx"
+
+INCLUDED_SERVICES=("MAXMIND")
+EXCLUDED_SERVICES=("GOOGLE_SEARCH_CAPTCHA")
+EXCLUDED_SERVICES_CLI=("YOUTUBE")
+assert_true "should_skip_service skips non-included service" should_skip_service "RIPE"
+assert_false "should_skip_service keeps included service" should_skip_service "MAXMIND"
+assert_true "should_skip_service skips default excluded service" should_skip_service "GOOGLE_SEARCH_CAPTCHA"
+assert_true "should_skip_service skips cli excluded service" should_skip_service "YOUTUBE"
+
+INCLUDED_SERVICES=()
+EXCLUDED_SERVICES=("GOOGLE_SEARCH_CAPTCHA")
+EXCLUDED_SERVICES_CLI=()
+
+ARR_PRIMARY=()
+ARR_CUSTOM=()
+EXTERNAL_IPV4="1.2.3.4"
+EXTERNAL_IPV6="2001:db8::1"
+EXTERNAL_IPV4_SOURCE="ident.me"
+EXTERNAL_IPV6_SOURCE="ifconfig.co"
+EXTERNAL_IPV4_CACHE_HIT=false
+EXTERNAL_IPV6_CACHE_HIT=true
+EXTERNAL_IPV4_TIMESTAMP="1700000000"
+EXTERNAL_IPV6_TIMESTAMP="1700000010"
+REGISTERED_COUNTRY_IPV4="United States"
+REGISTERED_COUNTRY_IPV6="Germany"
+ASN_NUMBER="15169"
+ASN_NAME="Google LLC"
+
+add_result "primary" "MAXMIND" "US" "DE" "http_code=200;latency_ms=120;transport_ip_version=4;error_type=none" "http_code=200;latency_ms=140;transport_ip_version=6;error_type=none"
+add_result "primary" "RIPE" "US" "FR" "http_code=200;latency_ms=100;transport_ip_version=4;error_type=none" "http_code=429;latency_ms=90;transport_ip_version=6;error_type=http_429"
+add_result "custom" "Google" "US" "DE" "http_code=200;latency_ms=80;transport_ip_version=4;error_type=none" "http_code=200;latency_ms=95;transport_ip_version=6;error_type=none"
+
+finalize_json
+
+assert_eq "1.2.3.4" "$(process_json "$RESULT_JSON" ".ip.ipv4.address")" "finalize_json includes ipv4 address"
+assert_eq "ident.me" "$(process_json "$RESULT_JSON" ".ip.ipv4.source")" "finalize_json includes ipv4 source"
+assert_eq "true" "$(process_json "$RESULT_JSON" ".ip.ipv6.cache_hit")" "finalize_json includes cache hit flag"
+assert_eq "United States" "$(process_json "$RESULT_JSON" ".ip.ipv4.registered_country")" "finalize_json includes registered country"
+assert_eq "15169" "$(process_json "$RESULT_JSON" ".asn.number")" "finalize_json includes ASN number"
+assert_eq "US" "$(process_json "$RESULT_JSON" ".consensus.ipv4.country")" "finalize_json computes ipv4 consensus"
+assert_eq "200" "$(process_json "$RESULT_JSON" ".results.primary[0].metrics.ipv4.http_code")" "finalize_json parses metrics"
+assert_eq "http_429" "$(process_json "$RESULT_JSON" ".results.primary[1].metrics.ipv6.error_type")" "finalize_json keeps error_type"
+
+assert_eq "json" "$(detect_output_format "out.json")" "detect_output_format json"
+assert_eq "csv" "$(detect_output_format "out.csv")" "detect_output_format csv"
 
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."

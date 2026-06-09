@@ -23,6 +23,8 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 - IPv4/IPv6 support with SOCKS5 proxy and custom network interface
 - JSON output and color-coded tables
 - Parallel checks by default (auto-detected)
+- Per-service HTTP/latency metrics and consensus country detection
+- Result export to JSON/CSV and service include/exclude filters
 
 ## Dependencies
 
@@ -45,6 +47,11 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 ./ipregion.sh --parallel 6 # Run checks in parallel
 ./ipregion.sh --force-spinner # Force spinner even in parallel mode
 ./ipregion.sh --progress-log # Progress lines instead of spinner
+./ipregion.sh --metrics # Show per-service metrics table
+./ipregion.sh --include-service MAXMIND --include-service GOOGLE
+./ipregion.sh --exclude-service YOUTUBE
+./ipregion.sh --output result.json # Save output
+./ipregion.sh --output result.csv # Save output as CSV
 ```
 
 > [!NOTE]
