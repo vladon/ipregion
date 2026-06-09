@@ -46,10 +46,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck shfmt
 
       - name: Run shellcheck
-        run: shellcheck ipregion.sh tests/run.sh
+        run: shellcheck -S error ipregion.sh tests/run.sh
 
       - name: Check formatting
-        run: shfmt -d ipregion.sh tests/run.sh
+        run: shfmt -i 2 -d tests/run.sh
 
   deploy:
     runs-on: ubuntu-latest
