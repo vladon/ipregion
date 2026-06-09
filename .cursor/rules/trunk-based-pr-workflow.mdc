@@ -1,0 +1,25 @@
+---
+description: Trunk-based development via PR, review, and merge to master
+alwaysApply: true
+---
+
+# Trunk-based PR workflow
+
+Never commit directly to `master`. All changes land through a short-lived branch and pull request.
+
+## Required sequence
+
+1. **Branch** — `git checkout -b <type>/<short-description>` from up-to-date `master`
+2. **Implement** — make focused changes; run `bash tests/run.sh` when `ipregion.sh` changes
+3. **Commit** — one clear commit per logical change
+4. **Push & PR** — `git push -u origin HEAD` then `gh pr create --base master`
+5. **Review** — review the PR diff for correctness, regressions, and test coverage before merging
+6. **Merge** — `gh pr merge --merge --delete-branch` after review passes (and CI is green if applicable)
+7. **Sync** — `git checkout master && git pull --ff-only`
+
+## Conventions
+
+- Keep branches short-lived; merge frequently (trunk-based, not long-lived feature branches)
+- PR body: Summary bullets + Test plan checklist
+- Do not force-push or merge with blocking review findings
+- Do not skip the review step, even for docs-only changes
