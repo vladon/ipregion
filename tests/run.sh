@@ -99,9 +99,13 @@ assert_eq "1060" "$(parse_gemini_user_status_code '[["wrb.fr","otAQ7b","[6,[fals
 assert_empty "$(parse_gemini_user_status_code '')" "parse_gemini_user_status_code handles empty input"
 
 assert_eq "Yes" "$(gemini_availability_from_status 1000)" "gemini_availability_from_status maps available"
-assert_eq "Yes" "$(gemini_availability_from_status 1016)" "gemini_availability_from_status maps unauthenticated"
+assert_empty "$(gemini_availability_from_status 1016)" "gemini_availability_from_status leaves unsigned web status inconclusive"
 assert_eq "No" "$(gemini_availability_from_status 1060)" "gemini_availability_from_status maps location rejected"
 assert_empty "$(gemini_availability_from_status 1033)" "gemini_availability_from_status leaves account issues empty"
+
+assert_eq "No" "$(gemini_api_availability_from_response '{"error":{"message":"User location is not supported for the API use."}}')" "gemini_api_availability_from_response maps location error"
+assert_eq "Yes" "$(gemini_api_availability_from_response '{"candidates":[{"content":{"parts":[{"text":"pong"}]}}]}')" "gemini_api_availability_from_response maps success"
+assert_empty "$(gemini_api_availability_from_response '{"error":{"message":"API key not valid."}}')" "gemini_api_availability_from_response ignores invalid key"
 assert_eq "Denied" "$(status_from_http_code 403)" "status_from_http_code maps 403"
 assert_eq "Rate-limit" "$(status_from_http_code 429)" "status_from_http_code maps 429"
 assert_eq "Server error" "$(status_from_http_code 503)" "status_from_http_code maps 5xx"
