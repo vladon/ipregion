@@ -241,19 +241,19 @@ color() {
   local code
 
   case "$color_name" in
-    HEADER) code="$COLOR_HEADER" ;;
-    SERVICE) code="$COLOR_SERVICE" ;;
-    HEART) code="$COLOR_HEART" ;;
-    URL) code="$COLOR_URL" ;;
-    ASN) code="$COLOR_ASN" ;;
-    TABLE_HEADER) code="$COLOR_TABLE_HEADER" ;;
-    TABLE_VALUE) code="$COLOR_TABLE_VALUE" ;;
-    NULL) code="$COLOR_NULL" ;;
-    ERROR) code="$COLOR_ERROR" ;;
-    WARN) code="$COLOR_WARN" ;;
-    INFO) code="$COLOR_INFO" ;;
-    RESET) code="$COLOR_RESET" ;;
-    *) code="$color_name" ;;
+  HEADER) code="$COLOR_HEADER" ;;
+  SERVICE) code="$COLOR_SERVICE" ;;
+  HEART) code="$COLOR_HEART" ;;
+  URL) code="$COLOR_URL" ;;
+  ASN) code="$COLOR_ASN" ;;
+  TABLE_HEADER) code="$COLOR_TABLE_HEADER" ;;
+  TABLE_VALUE) code="$COLOR_TABLE_VALUE" ;;
+  NULL) code="$COLOR_NULL" ;;
+  ERROR) code="$COLOR_ERROR" ;;
+  WARN) code="$COLOR_WARN" ;;
+  INFO) code="$COLOR_INFO" ;;
+  RESET) code="$COLOR_RESET" ;;
+  *) code="$color_name" ;;
   esac
 
   printf "\033[%sm%s\033[0m" "$code" "$text"
@@ -280,11 +280,11 @@ log() {
     timestamp=$(get_timestamp "%d.%m.%Y %H:%M:%S")
 
     case "$log_level" in
-      "$LOG_ERROR") color_code=ERROR ;;
-      "$LOG_WARN") color_code=WARN ;;
-      "$LOG_INFO") color_code=INFO ;;
-      "$LOG_DEBUG") color_code=NULL ;;
-      *) color_code=RESET ;;
+    "$LOG_ERROR") color_code=ERROR ;;
+    "$LOG_WARN") color_code=WARN ;;
+    "$LOG_INFO") color_code=INFO ;;
+    "$LOG_DEBUG") color_code=NULL ;;
+    *) color_code=RESET ;;
     esac
 
     printf "[%s] [%s]: %s\n" "$timestamp" "$(color $color_code "$log_level")" "$message" >&2
@@ -365,7 +365,7 @@ print_startup_message() {
   local cache_status="${CACHE_ENABLED:-false}"
   local cache_ttl_display="${CACHE_TTL}s"
 
-  if (( PARALLEL_JOBS <= 0 )); then
+  if ((PARALLEL_JOBS <= 0)); then
     parallel_display="unknown"
   fi
 
@@ -544,7 +544,7 @@ supports_wait_n() {
   major=${BASH_VERSINFO[0]:-0}
   minor=${BASH_VERSINFO[1]:-0}
 
-  (( major > 4 || (major == 4 && minor >= 3) ))
+  ((major > 4 || (major == 4 && minor >= 3)))
 }
 
 prune_parallel_pids() {
@@ -563,14 +563,14 @@ prune_parallel_pids() {
 }
 
 wait_for_parallel_slot() {
-  while (( ${#PARALLEL_PIDS[@]} >= PARALLEL_JOBS )); do
+  while ((${#PARALLEL_PIDS[@]} >= PARALLEL_JOBS)); do
     if supports_wait_n; then
       wait -n 2>/dev/null || true
       prune_parallel_pids
     else
       log "$LOG_INFO" "Bash < 4.3 detected; using legacy parallel wait loop"
       prune_parallel_pids
-      if (( ${#PARALLEL_PIDS[@]} < PARALLEL_JOBS )); then
+      if ((${#PARALLEL_PIDS[@]} < PARALLEL_JOBS)); then
         break
       fi
       sleep 0.1
@@ -613,31 +613,31 @@ detect_package_manager() {
   local pkg_manager
 
   case "$distro" in
-    ubuntu | debian | termux)
-      pkg_manager="apt"
-      ;;
-    arch | manjaro)
-      pkg_manager="pacman"
-      ;;
-    fedora)
+  ubuntu | debian | termux)
+    pkg_manager="apt"
+    ;;
+  arch | manjaro)
+    pkg_manager="pacman"
+    ;;
+  fedora)
+    pkg_manager="dnf"
+    ;;
+  centos | rhel)
+    if is_command_available "dnf"; then
       pkg_manager="dnf"
-      ;;
-    centos | rhel)
-      if is_command_available "dnf"; then
-        pkg_manager="dnf"
-      else
-        pkg_manager="yum"
-      fi
-      ;;
-    opensuse*)
-      pkg_manager="zypper"
-      ;;
-    alpine)
-      pkg_manager="apk"
-      ;;
-    *)
-      error_exit "Unknown distro: $distro"
-      ;;
+    else
+      pkg_manager="yum"
+    fi
+    ;;
+  opensuse*)
+    pkg_manager="zypper"
+    ;;
+  alpine)
+    pkg_manager="apk"
+    ;;
+  *)
+    error_exit "Unknown distro: $distro"
+    ;;
   esac
 
   echo "$pkg_manager"
@@ -681,18 +681,18 @@ get_install_args() {
   local install_args
 
   case "$pkg_manager" in
-    apt)
-      install_args=("install" "-y")
-      ;;
-    pacman)
-      install_args=("-Sy" "--noconfirm")
-      ;;
-    dnf | yum | zypper)
-      install_args=("install" "-y")
-      ;;
-    apk)
-      install_args=("add" "--no-cache")
-      ;;
+  apt)
+    install_args=("install" "-y")
+    ;;
+  pacman)
+    install_args=("-Sy" "--noconfirm")
+    ;;
+  dnf | yum | zypper)
+    install_args=("install" "-y")
+    ;;
+  apk)
+    install_args=("add" "--no-cache")
+    ;;
   esac
 
   echo "${install_args[@]}"
@@ -756,12 +756,12 @@ prompt_for_installation() {
   response=${response,,}
 
   case "$response" in
-    y | yes)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
+  y | yes)
+    return 0
+    ;;
+  *)
+    return 1
+    ;;
   esac
 }
 
@@ -776,12 +776,12 @@ prompt_for_debug_upload() {
   response=${response,,}
 
   case "$response" in
-    y | yes)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
+  y | yes)
+    return 0
+    ;;
+  *)
+    return 1
+    ;;
   esac
 }
 
@@ -852,18 +852,18 @@ format_value() {
   local value="$1"
 
   case "$value" in
-    "$STATUS_NA")
-      color NULL "$value"
-      ;;
-    "$STATUS_DENIED" | "$STATUS_SERVER_ERROR")
-      color ERROR "$value"
-      ;;
-    "$STATUS_RATE_LIMIT")
-      color WARN "$value"
-      ;;
-    *)
-      bold "$value"
-      ;;
+  "$STATUS_NA")
+    color NULL "$value"
+    ;;
+  "$STATUS_DENIED" | "$STATUS_SERVER_ERROR")
+    color ERROR "$value"
+    ;;
+  "$STATUS_RATE_LIMIT")
+    color WARN "$value"
+    ;;
+  *)
+    bold "$value"
+    ;;
   esac
 }
 
@@ -927,25 +927,25 @@ mask_ipv6() {
     fi
   done
 
-  total=$(( ${#left_arr[@]} + ${#right_arr[@]} ))
+  total=$((${#left_arr[@]} + ${#right_arr[@]}))
   if [[ "$ip" == *"::"* ]]; then
-    missing=$(( 8 - total ))
-    if (( missing < 1 )); then
+    missing=$((8 - total))
+    if ((missing < 1)); then
       echo "$ip"
       return
     fi
-  elif (( total != 8 )); then
+  elif ((total != 8)); then
     echo "$ip"
     return
   fi
 
-  expanded=( "${left_arr[@]}" )
+  expanded=("${left_arr[@]}")
   for ((h = 0; h < missing; h++)); do
     expanded+=("0")
   done
-  expanded+=( "${right_arr[@]}" )
+  expanded+=("${right_arr[@]}")
 
-  if (( ${#expanded[@]} < 3 )); then
+  if ((${#expanded[@]} < 3)); then
     echo "$ip"
     return
   fi
@@ -987,27 +987,27 @@ get_script_version() {
   IFS='|' read -r version_type version_value build_date commit_hash <<<"$SCRIPT_VERSION_METADATA"
 
   case "$version_type" in
-    tag)
-      # Release build: v2.1.0 (1a2b3c4d)
-      if [[ -n "$commit_hash" ]]; then
-        echo "${version_value} (${commit_hash})"
-      else
-        echo "$version_value"
-      fi
-      ;;
-    commit)
-      # Development build: 1a2b3c4d (2025-01-15 10:30 UTC)
-      if [[ -n "$build_date" ]]; then
-        local formatted_date=$(echo "$build_date" | sed 's/T/ /; s/Z/ UTC/')
-        echo "${version_value} (${formatted_date})"
-      else
-        echo "$version_value"
-      fi
-      ;;
-    *)
-      # Fallback for unknown version
-      echo "unknown"
-      ;;
+  tag)
+    # Release build: v2.1.0 (1a2b3c4d)
+    if [[ -n "$commit_hash" ]]; then
+      echo "${version_value} (${commit_hash})"
+    else
+      echo "$version_value"
+    fi
+    ;;
+  commit)
+    # Development build: 1a2b3c4d (2025-01-15 10:30 UTC)
+    if [[ -n "$build_date" ]]; then
+      local formatted_date=$(echo "$build_date" | sed 's/T/ /; s/Z/ UTC/')
+      echo "${version_value} (${formatted_date})"
+    else
+      echo "$version_value"
+    fi
+    ;;
+  *)
+    # Fallback for unknown version
+    echo "unknown"
+    ;;
   esac
 }
 
@@ -1138,144 +1138,144 @@ should_skip_service() {
 parse_arguments() {
   while [[ $# -gt 0 ]]; do
     case $1 in
-      -h | --help)
-        display_help
-        exit 0
+    -h | --help)
+      display_help
+      exit 0
+      ;;
+    -v | --verbose)
+      VERBOSE=true
+      shift
+      ;;
+    -d | --debug)
+      DEBUG=true
+      shift
+      ;;
+    -j | --json)
+      JSON_OUTPUT=true
+      shift
+      ;;
+    -g | --group)
+      case "$2" in
+      primary | custom | all)
+        GROUPS_TO_SHOW="$2"
         ;;
-      -v | --verbose)
-        VERBOSE=true
-        shift
-        ;;
-      -d | --debug)
-        DEBUG=true
-        shift
-        ;;
-      -j | --json)
-        JSON_OUTPUT=true
-        shift
-        ;;
-      -g | --group)
-        case "$2" in
-          primary | custom | all)
-            GROUPS_TO_SHOW="$2"
-            ;;
-          "")
-            error_exit "Missing value for --group. Expected: primary, custom, or all"
-            ;;
-          *)
-            error_exit "Invalid group: $2. Expected: primary, custom, or all"
-            ;;
-        esac
-        shift 2
-        ;;
-      -t | --timeout)
-        if [[ "$2" =~ ^[0-9]+$ ]]; then
-          CURL_TIMEOUT="$2"
-        else
-          error_exit "Invalid timeout value: $2. Timeout must be a positive integer"
-        fi
-        shift 2
-        ;;
-      -P | --parallel)
-        if [[ "$2" =~ ^[0-9]+$ ]] && ((10#$2 >= 1)); then
-          PARALLEL_JOBS="$2"
-        else
-          error_exit "Invalid parallel value: $2. Parallel jobs must be a positive integer"
-        fi
-        shift 2
-        ;;
-      -S | --force-spinner)
-        FORCE_SPINNER=true
-        shift
-        ;;
-      --progress-log)
-        PROGRESS_LOG=true
-        shift
-        ;;
-      -4 | --ipv4)
-        IPV4_ONLY=true
-        shift
-        ;;
-      -6 | --ipv6)
-        IPV6_ONLY=true
-        shift
-        ;;
-      -p | --proxy)
-        if ! is_valid_proxy_addr "$2"; then
-          error_exit "Invalid proxy address: $2. Expected host:port or [ipv6]:port"
-        fi
-        PROXY_ADDR="$2"
-        log "$LOG_INFO" "Using SOCKS5 proxy: $PROXY_ADDR"
-        shift 2
-        ;;
-      -i | --interface)
-        if ! is_valid_interface_name "$2"; then
-          error_exit "Invalid interface name: $2"
-        fi
-        INTERFACE_NAME="$2"
-        log "$LOG_INFO" "Using interface: $INTERFACE_NAME"
-        shift 2
-        ;;
-      --no-cache)
-        CACHE_ENABLED=false
-        log "$LOG_INFO" "Cache disabled"
-        shift
-        ;;
-      --cache-ttl)
-        if [[ "$2" =~ ^[0-9]+$ ]] && ((10#$2 >= 0)); then
-          CACHE_TTL="$2"
-          log "$LOG_INFO" "Cache TTL set to ${CACHE_TTL}s"
-        else
-          error_exit "Invalid cache TTL value: $2. TTL must be a non-negative integer"
-        fi
-        shift 2
-        ;;
-      --clear-cache)
-        CACHE_CLEARED=true
-        shift
-        ;;
-      --show-cache)
-        CACHE_SHOWN=true
-        shift
-        ;;
-      --include-service)
-        if [[ -z "$2" ]]; then
-          error_exit "Missing value for --include-service"
-        fi
-        local include_service
-        include_service=$(normalize_service_name "$2")
-        if ! validate_known_service "$include_service"; then
-          error_exit "Unknown service for --include-service: $2"
-        fi
-        INCLUDED_SERVICES+=("$include_service")
-        shift 2
-        ;;
-      --exclude-service)
-        if [[ -z "$2" ]]; then
-          error_exit "Missing value for --exclude-service"
-        fi
-        local exclude_service
-        exclude_service=$(normalize_service_name "$2")
-        if ! validate_known_service "$exclude_service"; then
-          error_exit "Unknown service for --exclude-service: $2"
-        fi
-        EXCLUDED_SERVICES_CLI+=("$exclude_service")
-        shift 2
-        ;;
-      --metrics)
-        SHOW_METRICS=true
-        shift
-        ;;
-      -o | --output)
-        if [[ -z "$2" ]]; then
-          error_exit "Missing value for --output"
-        fi
-        OUTPUT_FILE="$2"
-        shift 2
+      "")
+        error_exit "Missing value for --group. Expected: primary, custom, or all"
         ;;
       *)
-        error_exit "Unknown option: $1"
+        error_exit "Invalid group: $2. Expected: primary, custom, or all"
         ;;
+      esac
+      shift 2
+      ;;
+    -t | --timeout)
+      if [[ "$2" =~ ^[0-9]+$ ]]; then
+        CURL_TIMEOUT="$2"
+      else
+        error_exit "Invalid timeout value: $2. Timeout must be a positive integer"
+      fi
+      shift 2
+      ;;
+    -P | --parallel)
+      if [[ "$2" =~ ^[0-9]+$ ]] && ((10#$2 >= 1)); then
+        PARALLEL_JOBS="$2"
+      else
+        error_exit "Invalid parallel value: $2. Parallel jobs must be a positive integer"
+      fi
+      shift 2
+      ;;
+    -S | --force-spinner)
+      FORCE_SPINNER=true
+      shift
+      ;;
+    --progress-log)
+      PROGRESS_LOG=true
+      shift
+      ;;
+    -4 | --ipv4)
+      IPV4_ONLY=true
+      shift
+      ;;
+    -6 | --ipv6)
+      IPV6_ONLY=true
+      shift
+      ;;
+    -p | --proxy)
+      if ! is_valid_proxy_addr "$2"; then
+        error_exit "Invalid proxy address: $2. Expected host:port or [ipv6]:port"
+      fi
+      PROXY_ADDR="$2"
+      log "$LOG_INFO" "Using SOCKS5 proxy: $PROXY_ADDR"
+      shift 2
+      ;;
+    -i | --interface)
+      if ! is_valid_interface_name "$2"; then
+        error_exit "Invalid interface name: $2"
+      fi
+      INTERFACE_NAME="$2"
+      log "$LOG_INFO" "Using interface: $INTERFACE_NAME"
+      shift 2
+      ;;
+    --no-cache)
+      CACHE_ENABLED=false
+      log "$LOG_INFO" "Cache disabled"
+      shift
+      ;;
+    --cache-ttl)
+      if [[ "$2" =~ ^[0-9]+$ ]] && ((10#$2 >= 0)); then
+        CACHE_TTL="$2"
+        log "$LOG_INFO" "Cache TTL set to ${CACHE_TTL}s"
+      else
+        error_exit "Invalid cache TTL value: $2. TTL must be a non-negative integer"
+      fi
+      shift 2
+      ;;
+    --clear-cache)
+      CACHE_CLEARED=true
+      shift
+      ;;
+    --show-cache)
+      CACHE_SHOWN=true
+      shift
+      ;;
+    --include-service)
+      if [[ -z "$2" ]]; then
+        error_exit "Missing value for --include-service"
+      fi
+      local include_service
+      include_service=$(normalize_service_name "$2")
+      if ! validate_known_service "$include_service"; then
+        error_exit "Unknown service for --include-service: $2"
+      fi
+      INCLUDED_SERVICES+=("$include_service")
+      shift 2
+      ;;
+    --exclude-service)
+      if [[ -z "$2" ]]; then
+        error_exit "Missing value for --exclude-service"
+      fi
+      local exclude_service
+      exclude_service=$(normalize_service_name "$2")
+      if ! validate_known_service "$exclude_service"; then
+        error_exit "Unknown service for --exclude-service: $2"
+      fi
+      EXCLUDED_SERVICES_CLI+=("$exclude_service")
+      shift 2
+      ;;
+    --metrics)
+      SHOW_METRICS=true
+      shift
+      ;;
+    -o | --output)
+      if [[ -z "$2" ]]; then
+        error_exit "Missing value for --output"
+      fi
+      OUTPUT_FILE="$2"
+      shift 2
+      ;;
+    *)
+      error_exit "Unknown option: $1"
+      ;;
     esac
   done
 }
@@ -1284,12 +1284,12 @@ is_status_string() {
   local value="$1"
 
   case "$value" in
-    "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "$STATUS_RATE_LIMIT" | "$STATUS_NA")
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
+  "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "$STATUS_RATE_LIMIT" | "$STATUS_NA")
+    return 0
+    ;;
+  *)
+    return 1
+    ;;
   esac
 }
 
@@ -1297,21 +1297,21 @@ status_from_http_code() {
   local code="$1"
 
   case "$code" in
-    403)
-      echo "$STATUS_DENIED"
-      ;;
-    429)
-      echo "$STATUS_RATE_LIMIT"
-      ;;
-    5*)
-      echo "$STATUS_SERVER_ERROR"
-      ;;
-    4*)
-      echo "$STATUS_NA"
-      ;;
-    *)
-      echo ""
-      ;;
+  403)
+    echo "$STATUS_DENIED"
+    ;;
+  429)
+    echo "$STATUS_RATE_LIMIT"
+    ;;
+  5*)
+    echo "$STATUS_SERVER_ERROR"
+    ;;
+  4*)
+    echo "$STATUS_NA"
+    ;;
+  *)
+    echo ""
+    ;;
   esac
 }
 
@@ -1597,7 +1597,7 @@ save_ip_cache() {
 
   mkdir -p "$CACHE_DIR"
   temp_file=$(mktemp "$CACHE_FILE.XXXXXX")
-  echo "$cache_content" > "$temp_file"
+  echo "$cache_content" >"$temp_file"
   chmod 0600 "$temp_file"
   mv "$temp_file" "$CACHE_FILE"
 
@@ -1998,48 +1998,48 @@ curl_wrapper() {
   )
 
   case "$method" in
-    HEAD)
-      curl_args+=(--head)
-      ;;
-    *)
-      curl_args+=(--request "$method")
-      ;;
+  HEAD)
+    curl_args+=(--head)
+    ;;
+  *)
+    curl_args+=(--request "$method")
+    ;;
   esac
 
   while (($#)); do
     case "$1" in
-      --ip-version)
-        ip_version="$2"
-        shift 2
-        ;;
-      --user-agent)
-        user_agent="$2"
-        shift 2
-        ;;
-      --header)
-        headers+=("$2")
-        shift 2
-        ;;
-      --json)
-        json="$2"
-        shift 2
-        ;;
-      --data)
-        data="$2"
-        shift 2
-        ;;
-      --data-urlencode)
-        data_urlencode="$2"
-        shift 2
-        ;;
-      --file)
-        file="$2"
-        shift 2
-        ;;
-      --form)
-        forms+=("$2")
-        shift 2
-        ;;
+    --ip-version)
+      ip_version="$2"
+      shift 2
+      ;;
+    --user-agent)
+      user_agent="$2"
+      shift 2
+      ;;
+    --header)
+      headers+=("$2")
+      shift 2
+      ;;
+    --json)
+      json="$2"
+      shift 2
+      ;;
+    --data)
+      data="$2"
+      shift 2
+      ;;
+    --data-urlencode)
+      data_urlencode="$2"
+      shift 2
+      ;;
+    --file)
+      file="$2"
+      shift 2
+      ;;
+    --form)
+      forms+=("$2")
+      shift 2
+      ;;
     esac
   done
 
@@ -2218,54 +2218,54 @@ process_response() {
   fi
 
   case "$service" in
-    MAXMIND)
-      jq_filter='.country.iso_code'
-      ;;
-    RIPE)
-      jq_filter='.country'
-      ;;
-    IP2LOCATION_IO)
-      jq_filter='.country_code'
-      ;;
-    IPINFO_IO)
-      jq_filter='.data.country'
-      ;;
-    IPAPI_CO)
-      jq_filter='.country'
-      ;;
-    CLOUDFLARE)
-      jq_filter='.country'
-      ;;
-    COUNTRY_IS)
-      jq_filter='.country'
-      ;;
-    GEOJS_IO)
-      jq_filter='.[0].country'
-      ;;
-    IPAPI_IS)
-      jq_filter='.location.country_code'
-      ;;
-    IPBASE_COM)
-      jq_filter='.data.location.country.alpha2'
-      ;;
-    IPQUERY_IO)
-      jq_filter='.location.country_code'
-      ;;
-    IPWHOIS_IO)
-      jq_filter='.country_code'
-      ;;
-    IPWHO_IS)
-      jq_filter='.country_code'
-      ;;
-    IPAPI_COM)
-      jq_filter='.countryCode'
-      ;;
-    DETECTOR404)
-      jq_filter='.data.country.ccode'
-      ;;
-    *)
-      echo "$response"
-      ;;
+  MAXMIND)
+    jq_filter='.country.iso_code'
+    ;;
+  RIPE)
+    jq_filter='.country'
+    ;;
+  IP2LOCATION_IO)
+    jq_filter='.country_code'
+    ;;
+  IPINFO_IO)
+    jq_filter='.data.country'
+    ;;
+  IPAPI_CO)
+    jq_filter='.country'
+    ;;
+  CLOUDFLARE)
+    jq_filter='.country'
+    ;;
+  COUNTRY_IS)
+    jq_filter='.country'
+    ;;
+  GEOJS_IO)
+    jq_filter='.[0].country'
+    ;;
+  IPAPI_IS)
+    jq_filter='.location.country_code'
+    ;;
+  IPBASE_COM)
+    jq_filter='.data.location.country.alpha2'
+    ;;
+  IPQUERY_IO)
+    jq_filter='.location.country_code'
+    ;;
+  IPWHOIS_IO)
+    jq_filter='.country_code'
+    ;;
+  IPWHO_IS)
+    jq_filter='.country_code'
+    ;;
+  IPAPI_COM)
+    jq_filter='.countryCode'
+    ;;
+  DETECTOR404)
+    jq_filter='.data.country.ccode'
+    ;;
+  *)
+    echo "$response"
+    ;;
   esac
 
   process_json "$response" "$jq_filter"
@@ -2472,9 +2472,9 @@ run_service_group() {
     fi
 
     case "$group" in
-      custom)
-        is_custom=true
-        ;;
+    custom)
+      is_custom=true
+      ;;
     esac
 
     if [[ "$is_custom" == true ]]; then
@@ -2712,8 +2712,8 @@ add_result() {
   fi
 
   case "$group" in
-    primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
-    custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
@@ -2733,8 +2733,8 @@ add_result_line() {
   ipv6_metric="${rest#*|||}"
 
   case "$group" in
-    primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
-    custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
@@ -3100,21 +3100,21 @@ print_results() {
   fi
 
   case "$GROUPS_TO_SHOW" in
-    primary)
-      print_table_group "primary" "GeoIP services"
-      print_metrics_group "primary" "GeoIP service metrics"
-      ;;
-    custom)
-      print_table_group "custom" "Popular services"
-      print_metrics_group "custom" "Popular service metrics"
-      ;;
-    *)
-      print_table_group "custom" "Popular services"
-      print_metrics_group "custom" "Popular service metrics"
-      printf "\n"
-      print_table_group "primary" "GeoIP services"
-      print_metrics_group "primary" "GeoIP service metrics"
-      ;;
+  primary)
+    print_table_group "primary" "GeoIP services"
+    print_metrics_group "primary" "GeoIP service metrics"
+    ;;
+  custom)
+    print_table_group "custom" "Popular services"
+    print_metrics_group "custom" "Popular service metrics"
+    ;;
+  *)
+    print_table_group "custom" "Popular services"
+    print_metrics_group "custom" "Popular service metrics"
+    printf "\n"
+    print_table_group "primary" "GeoIP services"
+    print_metrics_group "primary" "GeoIP service metrics"
+    ;;
   esac
 
   if [[ "$restart_spinner" == true ]]; then
@@ -3293,15 +3293,15 @@ gemini_availability_from_status() {
   local status="$1"
 
   case "$status" in
-    1000 | 1016 | 1040)
-      echo "Yes"
-      ;;
-    1060)
-      echo "No"
-      ;;
-    *)
-      echo ""
-      ;;
+  1000 | 1016 | 1040)
+    echo "Yes"
+    ;;
+  1060)
+    echo "No"
+    ;;
+  *)
+    echo ""
+    ;;
   esac
 }
 
@@ -3427,7 +3427,7 @@ main() {
 
   trap spinner_cleanup EXIT INT TERM
 
-  if (( PARALLEL_JOBS <= 0 )); then
+  if ((PARALLEL_JOBS <= 0)); then
     PARALLEL_JOBS=$(detect_parallel_jobs)
   fi
 
@@ -3442,7 +3442,7 @@ main() {
   detect_distro
   install_dependencies
 
-  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && ( "$PARALLEL_JOBS" -le 1 || "$FORCE_SPINNER" == true ) ]]; then
+  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && ("$PARALLEL_JOBS" -le 1 || "$FORCE_SPINNER" == true) ]]; then
     spinner_start
   fi
 
@@ -3481,29 +3481,29 @@ main() {
   fi
 
   case "$GROUPS_TO_SHOW" in
-    primary)
-      if (( PARALLEL_JOBS > 1 )); then
-        run_service_group_parallel "primary"
-      else
-        run_service_group "primary"
-      fi
-      ;;
-    custom)
-      if (( PARALLEL_JOBS > 1 )); then
-        run_service_group_parallel "custom"
-      else
-        run_service_group "custom"
-      fi
-      ;;
-    *)
-      if (( PARALLEL_JOBS > 1 )); then
-        run_service_group_parallel "primary"
-        run_service_group_parallel "custom"
-      else
-        run_service_group "primary"
-        run_service_group "custom"
-      fi
-      ;;
+  primary)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "primary"
+    else
+      run_service_group "primary"
+    fi
+    ;;
+  custom)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "custom"
+    else
+      run_service_group "custom"
+    fi
+    ;;
+  *)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "primary"
+      run_service_group_parallel "custom"
+    else
+      run_service_group "primary"
+      run_service_group "custom"
+    fi
+    ;;
   esac
 
   if [[ "$PROGRESS_LOG" == true && "$JSON_OUTPUT" != "true" ]]; then
@@ -3512,7 +3512,7 @@ main() {
       "Rendering results..." >&2
   fi
 
-  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && ( "$PARALLEL_JOBS" -le 1 || "$FORCE_SPINNER" == true ) ]]; then
+  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && ("$PARALLEL_JOBS" -le 1 || "$FORCE_SPINNER" == true) ]]; then
     spinner_stop
   fi
 
