@@ -95,20 +95,20 @@ jobs:
         run: |
           set -eu
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.HH01_DEPLOY_KEY }}" > ~/.ssh/hh01_deploy_key
-          chmod 600 ~/.ssh/hh01_deploy_key
+          printf '%s\n' "${{ secrets.HH01_DEPLOY_KEY }}" > ~/.ssh/orange_deploy_key
+          chmod 600 ~/.ssh/orange_deploy_key
           cat > ~/.ssh/config <<'EOF'
           Host ru00-jump
             HostName ru00.vladon.ooo
             User deploy
-            IdentityFile ~/.ssh/hh01_deploy_key
+            IdentityFile ~/.ssh/orange_deploy_key
             IdentitiesOnly yes
             StrictHostKeyChecking accept-new
 
-          Host hh01-ipregion
-            HostName 2a10:ccc1:1333:18::a
+          Host orange-ipregion
+            HostName orange.0xd.net
             User deploy
-            IdentityFile ~/.ssh/hh01_deploy_key
+            IdentityFile ~/.ssh/orange_deploy_key
             IdentitiesOnly yes
             ProxyJump ru00-jump
             StrictHostKeyChecking accept-new
@@ -118,4 +118,4 @@ jobs:
         run: |
           rsync -az --delete \
             ipregion.sh index.php README.md LICENSE \
-            hh01-ipregion:/srv/www/ipregion.vladon.sh/
+            orange-ipregion:/srv/www/ipregion.vladon.sh/
