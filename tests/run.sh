@@ -598,6 +598,7 @@ dc_probe_stub() {
   return 1
 }
 tcp_probe() { dc_probe_stub "$@"; }
+host_resolves() { [[ "${DNS_STUB_MODE:-ok}" == "ok" ]]; }
 JSON_OUTPUT=true
 DC_PROBE_MODE="up"
 assert_eq "Yes" "$(lookup_telegram_dc 4)" "telegram dc maps reachable dc to Yes"
@@ -646,8 +647,12 @@ assert_eq "No" "$(lookup_instagram_transport 4)" "instagram transport maps unrea
 assert_eq "No" "$(lookup_threads_transport 4)" "threads transport maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_steam_transport 4)" "steam transport maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_netflix_transport 4)" "netflix transport maps unreachable endpoint to No"
-unset -f tcp_probe dc_probe_stub
-unset DC_PROBE_MODE
+DNS_STUB_MODE="blocked"
+DC_PROBE_MODE="up"
+assert_eq "DNS block" "$(lookup_telegram_dc 4)" "telegram dc maps failed resolution to DNS block"
+assert_eq "DNS block" "$(lookup_netflix_transport 4)" "netflix transport maps failed resolution to DNS block"
+unset -f tcp_probe dc_probe_stub host_resolves
+unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false
 
 if [[ "$failures" -gt 0 ]]; then
