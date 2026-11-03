@@ -37,6 +37,8 @@
 [1;32mVK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mVK API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mRUTUBE Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mOzon Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGrok[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDeepSeek[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mPerplexity[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
