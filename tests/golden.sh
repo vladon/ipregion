@@ -26,6 +26,16 @@ source "$ROOT_DIR/ipregion.sh"
 
 # Deterministic network stubs ----------------------------------------------
 
+# print_results pipes rows through the external column(1); BSD and util-linux
+# column pad differently (and handle ANSI differently), which would make the
+# golden depend on the local column build. Route it to cat for the duration of
+# the run so the snapshot covers the script's own output up to the pipe.
+SHIM_DIR=$(mktemp -d)
+printf '#!/usr/bin/env sh\nexec cat\n' >"$SHIM_DIR/column"
+chmod +x "$SHIM_DIR/column"
+PATH="$SHIM_DIR:$PATH"
+trap 'rm -rf "$SHIM_DIR"' EXIT
+
 stub_body() {
   case "$1" in
   *instagram.com*)
