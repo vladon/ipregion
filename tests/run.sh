@@ -210,10 +210,32 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
+assert_true "primary registry defines IPREGISTRY" test -n "${PRIMARY_SERVICES[IPREGISTRY]:-}"
+assert_contains "${PRIMARY_SERVICES[IPREGISTRY]:-}" "hostname=true" "ipregistry url template kept"
+
+# Ported upstream services: Reddit guest access status handling (curl_wrapper stubbed)
+reddit_stub_wrapper() {
+  if [[ -n "${REDDIT_STUB_RESPONSE:-}" ]]; then
+    printf "%s" "$REDDIT_STUB_RESPONSE"
+  fi
+}
+curl_wrapper() { reddit_stub_wrapper "$@"; }
+JSON_OUTPUT=true
+REDDIT_STUB_RESPONSE="Denied"
+assert_eq "No" "$(lookup_reddit_guest_access 4)" "reddit guest access maps Denied to No"
+REDDIT_STUB_RESPONSE="normal page body"
+assert_eq "Yes" "$(lookup_reddit_guest_access 4)" "reddit guest access maps page to Yes"
+REDDIT_STUB_RESPONSE=""
+assert_empty "$(lookup_reddit_guest_access 4)" "reddit guest access maps empty response to N/A"
+REDDIT_STUB_RESPONSE="Rate-limit"
+assert_eq "Rate-limit" "$(lookup_reddit_guest_access 4)" "reddit guest access passes other status strings through"
+unset -f curl_wrapper reddit_stub_wrapper
+unset REDDIT_STUB_RESPONSE
+JSON_OUTPUT=false
 
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
