@@ -63,6 +63,7 @@ MAXMIND_PROFILE_IPV6=""
 CURL_META_FILE=""
 CACHE_LAST_SOURCE=""
 CACHE_LAST_TIMESTAMP=""
+UPLOADED_URL_PATTERN='^https?://[^[:space:]]+$'
 
 COLOR_HEADER="1;36"
 COLOR_SERVICE="1;32"
@@ -395,6 +396,19 @@ print_startup_message() {
   printf "%s %s\n" \
     "$(color INFO '[INFO]')" \
     "Starting with group=$GROUPS_TO_SHOW timeout=${CURL_TIMEOUT}s parallel=$parallel_display ipv4=$ipv4 ipv6=$ipv6 proxy=$proxy interface=$iface cache=$cache_status metrics=$SHOW_METRICS output=${OUTPUT_FILE:-stdout} verbose=$VERBOSE debug=$DEBUG" >&2
+
+  if [[ "$VERBOSE" == true ]]; then
+    if [[ -n "$INTERFACE_NAME" ]]; then
+      printf "%s %s\n" \
+        "$(color INFO '[INFO]')" \
+        "Interface: $INTERFACE_NAME (--interface)" >&2
+    fi
+    if [[ -n "$PROXY_ADDR" ]]; then
+      printf "%s %s\n" \
+        "$(color INFO '[INFO]')" \
+        "Proxy: socks5h://$PROXY_ADDR" >&2
+    fi
+  fi
 }
 
 setup_debug() {
@@ -487,22 +501,77 @@ redact_debug_log() {
   printf "%s" "$redacted_file"
 }
 
-upload_debug() {
-  local ip_version
-  local user_agent="ipregion-script/1.0 (github.com/vernette/ipregion)"
-  local upload_file
+debug_paste_upload() {
+  local service_name="$1"
+  local endpoint="$2"
+  shift 2
+  local response_file http_code curl_exit response_body
+  local ip_version curl_args=()
 
   ip_version=$(preferred_ip_version)
+  if [[ "$ip_version" == "4" ]]; then
+    curl_args+=(-4)
+  else
+    curl_args+=(-6)
+  fi
+
+  if [[ -n "$PROXY_ADDR" ]]; then
+    curl_args+=(--proxy "socks5h://$PROXY_ADDR")
+  fi
+
+  response_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_upload_XXXXXX")
+
+  http_code=$(curl \
+    --silent \
+    --http1.1 \
+    --output "$response_file" \
+    --write-out '%{http_code}' \
+    --max-time 60 \
+    --speed-limit 1024 \
+    --speed-time 10 \
+    "${curl_args[@]}" \
+    "$@" \
+    "$endpoint" 2>/dev/null)
+  curl_exit=$?
+
+  response_body=$(<"$response_file")
+  rm -f "$response_file"
+
+  if ((curl_exit != 0)); then
+    printf "%s\n" "[WARN] $service_name upload failed: curl exit $curl_exit" >&2
+    return 1
+  fi
+
+  if [[ ! "$http_code" =~ ^2 ]]; then
+    printf "%s\n" "[WARN] $service_name upload failed: HTTP ${http_code:-unknown}" >&2
+    return 1
+  fi
+
+  if [[ ! "$response_body" =~ $UPLOADED_URL_PATTERN ]]; then
+    printf "%s\n" "[WARN] $service_name upload failed: invalid response" >&2
+    return 1
+  fi
+
+  printf "%s" "$response_body"
+}
+
+upload_debug() {
+  local upload_file upload_url
+
   upload_file=$(redact_debug_log "$DEBUG_LOG_FILE")
 
-  curl_wrapper POST "https://0x0.st" \
-    --user-agent "$user_agent" \
-    --form "file=@$upload_file" \
-    --form "secret=" \
-    --form "expires=24" \
-    --ip-version "$ip_version"
+  upload_url=$(debug_paste_upload "x0.at" "https://x0.at" \
+    --form "file=@$upload_file")
+
+  if [[ -z "$upload_url" ]]; then
+    upload_url=$(debug_paste_upload "litterbox" "https://litterbox.catbox.me/resources/internals/api.php" \
+      --form "reqtype=fileupload" \
+      --form "time=24h" \
+      --form "fileToUpload=@$upload_file")
+  fi
 
   rm -f "$upload_file"
+  printf "%s" "$upload_url"
 }
 
 cleanup_debug() {
@@ -523,11 +592,16 @@ cleanup_debug() {
 
   if [[ -t 0 ]] && prompt_for_debug_upload </dev/tty; then
     debug_url="$(upload_debug)"
-    printf "  %s\n\n%s\n%s\n\n%s\n" \
-      "Remote URL: $debug_url" \
-      "$(color INFO 'PRIVACY NOTICE: This file is uploaded to 0x0.st - a public file hoster.')" \
-      "$(color INFO 'The file will be automatically deleted in 24 hours.')" \
-      "$(color INFO 'If you open a GitHub Issue, please download the log and attach it')"
+    if [[ "$debug_url" =~ $UPLOADED_URL_PATTERN ]]; then
+      printf "  %s\n\n%s\n%s\n\n%s\n" \
+        "Remote URL: $debug_url" \
+        "$(color INFO 'PRIVACY NOTICE: This file is uploaded to x0.at - a public file hoster.')" \
+        "$(color INFO 'The file will be automatically deleted in 24 hours.')" \
+        "$(color INFO 'If you open a GitHub Issue, please download the log and attach it')"
+    else
+      printf "  %s\n" \
+        "$(color WARN 'Upload failed (see log above). You can share the local file manually if needed.')"
+    fi
   else
     printf "\n%s\n" \
       "$(color INFO 'Upload skipped. You can share the local file manually if needed.')"
@@ -855,7 +929,7 @@ format_value() {
   "$STATUS_NA")
     color NULL "$value"
     ;;
-  "$STATUS_DENIED" | "$STATUS_SERVER_ERROR")
+  "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "IP block")
     color ERROR "$value"
     ;;
   "$STATUS_RATE_LIMIT")
@@ -1801,6 +1875,9 @@ discover_external_ips() {
   fi
 
   if [[ "$ipv4_failed" == true ]] && [[ "$ipv6_failed" == true ]]; then
+    if [[ -n "$INTERFACE_NAME" ]]; then
+      error_exit "Failed to obtain external IPv4 and IPv6 address through interface $INTERFACE_NAME. Check network connectivity, DNS settings, proxy configuration, and firewall rules."
+    fi
     error_exit "Failed to obtain external IPv4 and IPv6 address. Check network connectivity, DNS settings, proxy configuration, and firewall rules."
   fi
 
@@ -1845,21 +1922,24 @@ load_maxmind_profile() {
 
 get_registered_country() {
   local ip_version="$1"
-  local profile
+  local ip="$2"
+  local response
 
-  if ! load_maxmind_profile "$ip_version"; then
+  if [[ -z "$ip" ]]; then
     echo ""
     return 1
   fi
 
-  if [[ "$ip_version" == "4" ]]; then
-    profile="$MAXMIND_PROFILE_IPV4"
-  else
-    profile="$MAXMIND_PROFILE_IPV6"
+  response=$(curl_wrapper GET "https://stat.ripe.net/data/rir-stats-country/data.json?resource=$ip" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return 1
   fi
 
   local country
-  country=$(process_json "$profile" ".registered_country.names.en")
+  country=$(process_json "$response" ".data.located_resources[0].location")
   if [[ -z "$country" || "$country" == "null" ]]; then
     echo ""
     return 1
@@ -1907,11 +1987,11 @@ get_asn() {
 
 load_registered_countries() {
   if can_use_ipv4; then
-    REGISTERED_COUNTRY_IPV4=$(get_registered_country 4)
+    REGISTERED_COUNTRY_IPV4=$(get_registered_country 4 "$EXTERNAL_IPV4")
   fi
 
   if can_use_ipv6; then
-    REGISTERED_COUNTRY_IPV6=$(get_registered_country 6)
+    REGISTERED_COUNTRY_IPV6=$(get_registered_country 6 "$EXTERNAL_IPV6")
   fi
 }
 
@@ -1944,7 +2024,7 @@ spinner_start() {
         printf "\r\033[K%s %s %s" \
           "$(color HEADER "${spinstr:$i:1}")" \
           "$(color HEADER "Checking:")" \
-          "$(color SERVICE "$current_service")"
+          "$(color SERVICE "$current_service")" >&2
 
         sleep $delay
       done
@@ -1963,7 +2043,7 @@ spinner_stop() {
     fi
     wait "$spinner_pid" 2>/dev/null
     spinner_pid=""
-    printf "\\r%*s\\r" 40 " "
+    printf "\\r%*s\\r" 40 " " >&2
   fi
 
   if [[ -f "$SPINNER_SERVICE_FILE" ]]; then
@@ -2991,12 +3071,18 @@ print_header() {
   consensus_ipv4=$(process_json "$RESULT_JSON" ".consensus.ipv4.country")
   consensus_ipv6=$(process_json "$RESULT_JSON" ".consensus.ipv6.country")
 
+  local via_suffix=""
+
+  if [[ -n "$INTERFACE_NAME" ]]; then
+    via_suffix=" via $INTERFACE_NAME"
+  fi
+
   if [[ "$ipv4" != "null" ]]; then
-    printf "%s: %s, %s %s\n" "$(color HEADER 'IPv4')" "$(bold "$(mask_ipv4 "$ipv4")")" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV4:-$STATUS_NA}")"
+    printf "%s: %s%s, %s %s\n" "$(color HEADER 'IPv4')" "$(bold "$(mask_ipv4 "$ipv4")")" "$via_suffix" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV4:-$STATUS_NA}")"
   fi
 
   if [[ "$ipv6" != "null" ]]; then
-    printf "%s: %s, %s %s\n" "$(color HEADER 'IPv6')" "$(bold "$(mask_ipv6 "$ipv6")")" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV6:-$STATUS_NA}")"
+    printf "%s: %s%s, %s %s\n" "$(color HEADER 'IPv6')" "$(bold "$(mask_ipv6 "$ipv6")")" "$via_suffix" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV6:-$STATUS_NA}")"
   fi
 
   asn_value="$ASN_NUMBER"
@@ -3237,21 +3323,18 @@ lookup_youtube() {
 
 lookup_youtube_premium() {
   local ip_version="$1"
-  local response is_available
+  local response is_available color_name
 
-  response=$(curl_wrapper GET "https://www.youtube.com/premium" \
-    --ip-version "$ip_version" \
-    --user-agent "$USER_AGENT" \
-    --header "Accept-Language: en-US,en;q=0.9")
+  response=$(curl_wrapper POST "https://www.youtube.com/youtubei/v1/browse" \
+    --json '{"context":{"client":{"clientName":"MWEB","clientVersion":"2.20261020.00.00","hl":"en","gl":"US"}},"browseId":"SPunlimited"}' \
+    --ip-version "$ip_version")
 
   if [[ -z "$response" ]]; then
     echo ""
     return
   fi
 
-  is_available=$(grep_wrapper -io "youtube premium is not available in your country" <<<"$response")
-
-  if [[ -z "$is_available" ]]; then
+  if grep_wrapper -qi "premiumPurchaseButtonRenderer" <<<"$response"; then
     is_available="Yes"
     color_name="SERVICE"
   else
@@ -3264,7 +3347,7 @@ lookup_youtube_premium() {
 
 lookup_google_search_captcha() {
   local ip_version="$1"
-  local response is_captcha color_name
+  local response
 
   response=$(curl_wrapper GET "https://www.google.com/search?q=cats" --ip-version "$ip_version" \
     --user-agent "$USER_AGENT" \
@@ -3275,17 +3358,13 @@ lookup_google_search_captcha() {
     return
   fi
 
-  is_captcha=$(grep_wrapper -iE "unusual traffic from|is blocked|unaddressed abuse" <<<"$response")
-
-  if [[ -z "$is_captcha" ]]; then
-    is_captcha="No"
-    color_name="SERVICE"
-  else
-    is_captcha="Yes"
-    color_name="HEART"
+  if [[ "$response" == "$STATUS_RATE_LIMIT" ]] ||
+    grep_wrapper -qiE "unusual traffic from|is blocked|unaddressed abuse" <<<"$response"; then
+    print_value_or_colored "IP block" "ERROR"
+    return
   fi
 
-  print_value_or_colored "$is_captcha" "$color_name"
+  print_value_or_colored "No" "SERVICE"
 }
 
 parse_gemini_user_status_code() {
