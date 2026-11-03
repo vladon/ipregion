@@ -227,6 +227,9 @@ declare -A CUSTOM_SERVICES=(
   [MESSENGER_ACCESS]="Messenger Access"
   [THREADS_ACCESS]="Threads Access"
   [SIGNAL_ACCESS]="Signal Access"
+  [DOUYIN_CN]="Douyin (CN)"
+  [VK]="VK"
+  [OK_RU]="OK"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -272,6 +275,9 @@ CUSTOM_SERVICES_ORDER=(
   "MESSENGER_ACCESS"
   "THREADS_ACCESS"
   "SIGNAL_ACCESS"
+  "DOUYIN_CN"
+  "VK"
+  "OK_RU"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -317,6 +323,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MESSENGER_ACCESS]="lookup_messenger_access"
   [THREADS_ACCESS]="lookup_threads_access"
   [SIGNAL_ACCESS]="lookup_signal_access"
+  [DOUYIN_CN]="lookup_douyin_cn"
+  [VK]="lookup_vk"
+  [OK_RU]="lookup_ok_ru"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4373,6 +4382,47 @@ lookup_threads_access() {
 
 lookup_signal_access() {
   lookup_site_access "https://signal.org/" "signal" "$1"
+}
+
+lookup_douyin_cn() {
+  local ip_version="$1"
+  local response error_type
+
+  response=$(curl_wrapper GET "https://www.douyin.com/" \
+    --user-agent "$USER_AGENT" \
+    --header "Accept-Language: en-US,en;q=0.9" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    error_type=$(read_curl_metric_field "$CURL_META_FILE" "error_type")
+    if [[ "$error_type" == "curl_error" ]]; then
+      print_value_or_colored "No" "HEART"
+      return
+    fi
+    echo ""
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  # CN egress gets the SSR page with douyin content; any other egress gets an
+  # obfuscated bot-shell without a single douyin marker (region gate).
+  if grep_wrapper -qiE "抖音|douyin" <<<"$response"; then
+    print_value_or_colored "Yes" "SERVICE"
+  else
+    print_value_or_colored "No" "HEART"
+  fi
+}
+
+lookup_vk() {
+  lookup_site_access "https://vk.com/" "vk.com" "$1"
+}
+
+lookup_ok_ru() {
+  lookup_site_access "https://ok.ru/" "ok.ru" "$1"
 }
 
 lookup_claude() {
