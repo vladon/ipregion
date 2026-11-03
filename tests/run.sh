@@ -144,6 +144,7 @@ ASN_NAME="Google LLC"
 add_result "primary" "MAXMIND" "US" "DE" "http_code=200;latency_ms=120;transport_ip_version=4;error_type=none" "http_code=200;latency_ms=140;transport_ip_version=6;error_type=none"
 add_result "primary" "RIPE" "US" "FR" "http_code=200;latency_ms=100;transport_ip_version=4;error_type=none" "http_code=429;latency_ms=90;transport_ip_version=6;error_type=http_429"
 add_result "custom" "Google" "US" "DE" "http_code=200;latency_ms=80;transport_ip_version=4;error_type=none" "http_code=200;latency_ms=95;transport_ip_version=6;error_type=none"
+add_result "cdn" "YouTube CDN" "US" "" "" ""
 
 finalize_json
 
@@ -155,6 +156,7 @@ assert_eq "15169" "$(process_json "$RESULT_JSON" ".asn.number")" "finalize_json 
 assert_eq "US" "$(process_json "$RESULT_JSON" ".consensus.ipv4.country")" "finalize_json computes ipv4 consensus"
 assert_eq "200" "$(process_json "$RESULT_JSON" ".results.primary[0].metrics.ipv4.http_code")" "finalize_json parses metrics"
 assert_eq "http_429" "$(process_json "$RESULT_JSON" ".results.primary[1].metrics.ipv6.error_type")" "finalize_json keeps error_type"
+assert_eq "YouTube CDN" "$(process_json "$RESULT_JSON" ".results.cdn[0].service")" "finalize_json includes cdn results"
 
 # Regression: literal "null" jq output must not void the whole result JSON
 ASN_NUMBER="null"
@@ -210,10 +212,15 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
+for service_key in YOUTUBE_CDN CLOUDFLARE_CDN NETFLIX_CDN; do
+  assert_true "cdn registry defines $service_key" test -n "${CDN_SERVICES[$service_key]:-}"
+  assert_true "cdn handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
+done
+assert_true "cdn group lists cdn services" test "${SERVICE_GROUPS[cdn]}" == "${CDN_SERVICES_ORDER[*]}"
 assert_true "primary registry defines IPREGISTRY" test -n "${PRIMARY_SERVICES[IPREGISTRY]:-}"
 assert_contains "${PRIMARY_SERVICES[IPREGISTRY]:-}" "hostname=true" "ipregistry url template kept"
 assert_true "primary registry defines GEOAPIFY_COM" test -n "${PRIMARY_SERVICES[GEOAPIFY_COM]:-}"

@@ -24,6 +24,7 @@
     }
   },
   "results": {
+    "cdn": [],
     "custom": [
       {
         "ipv4": "\u001b[1;31mNo\u001b[0m",
