@@ -198,6 +198,23 @@ interrupt_rc=0
 (cleanup_on_interrupt) >/dev/null 2>&1 || interrupt_rc=$?
 assert_eq "130" "$interrupt_rc" "interrupt handler exits 130"
 
+# Ported upstream services: YouTube CDN node parsing
+assert_eq "FRA" "$(parse_youtube_cdn_iata 'fra05s09')" "parse_youtube_cdn_iata parses google node"
+assert_eq "FRA" "$(parse_youtube_cdn_iata 'video-fra04s08')" "parse_youtube_cdn_iata parses isp node"
+assert_eq "SIN" "$(parse_youtube_cdn_iata 'khsinb-dvbc')" "parse_youtube_cdn_iata parses ggc node"
+assert_empty "$(parse_youtube_cdn_iata 'unparsable')" "parse_youtube_cdn_iata rejects unknown node"
+
+# Ported upstream services: ChatGPT derived_fields extraction
+CHATGPT_TEST_BODY='prelude {"other":{"a":1},"derived_fields":{"country":"US","region":"us-east"}}'
+CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATGPT_TEST_BODY" | head -n 1)
+assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
+
+# Ported upstream services: registry completeness
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN; do
+  assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
+  assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
+done
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
