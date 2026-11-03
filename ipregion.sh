@@ -9,6 +9,7 @@ SCRIPT_URL="https://github.com/vladon/ipregion"
 #   commit|1a2b3c4d|2025-01-15T10:30:00Z|
 SCRIPT_VERSION_METADATA="unknown|unknown|unknown|"
 USER_AGENT="Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0"
+YOUTUBE_LANG="ru"
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -167,6 +168,13 @@ declare -A CUSTOM_SERVICES=(
   [JETBRAINS]="JetBrains"
   [PLAYSTATION]="PlayStation"
   [MICROSOFT]="Microsoft"
+  [CLAUDE]="Claude"
+  [REDDIT]="Reddit"
+  [QWEN_CN]="Qwen CN API"
+  [KIMI_CN]="Kimi CN API"
+  [GLM_CN]="GLM CN API"
+  [MINIMAX_CN]="MiniMax CN API"
+  [YOUTUBE_NO_ADS]="YouTube No Ads"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -182,6 +190,13 @@ CUSTOM_SERVICES_ORDER=(
   "JETBRAINS"
   "PLAYSTATION"
   "MICROSOFT"
+  "CLAUDE"
+  "REDDIT"
+  "QWEN_CN"
+  "KIMI_CN"
+  "GLM_CN"
+  "MINIMAX_CN"
+  "YOUTUBE_NO_ADS"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -197,6 +212,13 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [JETBRAINS]="lookup_jetbrains"
   [PLAYSTATION]="lookup_playstation"
   [MICROSOFT]="lookup_microsoft"
+  [CLAUDE]="lookup_claude"
+  [REDDIT]="lookup_reddit"
+  [QWEN_CN]="lookup_qwen_cn"
+  [KIMI_CN]="lookup_kimi_cn"
+  [GLM_CN]="lookup_glm_cn"
+  [MINIMAX_CN]="lookup_minimax_cn"
+  [YOUTUBE_NO_ADS]="lookup_youtube_no_ads"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -329,6 +351,7 @@ Options:
   --include-service S  Run only selected services (repeatable; case-insensitive)
   --exclude-service S  Skip selected services (repeatable; case-insensitive)
   --metrics            Show per-service HTTP/latency metrics in table output
+  --youtube-lang LANG  Viewer language for the YouTube No Ads check (default: ru)
   -o, --output FILE    Save results to file (.json or .csv)
 
 Examples:
@@ -1340,6 +1363,13 @@ parse_arguments() {
       SHOW_METRICS=true
       shift
       ;;
+    --youtube-lang)
+      if [[ -z "$2" ]]; then
+        error_exit "Missing value for --youtube-lang"
+      fi
+      YOUTUBE_LANG="$2"
+      shift 2
+      ;;
     -o | --output)
       if [[ -z "$2" ]]; then
         error_exit "Missing value for --output"
@@ -1352,6 +1382,10 @@ parse_arguments() {
       ;;
     esac
   done
+
+  if [[ ! "$YOUTUBE_LANG" =~ ^[a-z]{2,3}(-[A-Za-z0-9]{2,4})?$ ]]; then
+    error_exit "Invalid YouTube language: $YOUTUBE_LANG"
+  fi
 }
 
 is_status_string() {
@@ -2085,7 +2119,7 @@ curl_wrapper() {
   local method="$1"
   local url="$2"
   shift 2
-  local ip_version user_agent json data data_urlencode file forms headers
+  local ip_version user_agent json data data_urlencode file forms headers cookie cookie_jar
   local response_with_meta response http_code latency_seconds latency_ms curl_exit
   local error_type=""
   local curl_args=(
@@ -2137,6 +2171,14 @@ curl_wrapper() {
       file="$2"
       shift 2
       ;;
+    --cookie-jar)
+      cookie_jar="$2"
+      shift 2
+      ;;
+    --cookie)
+      cookie="$2"
+      shift 2
+      ;;
     --form)
       forms+=("$2")
       shift 2
@@ -2160,6 +2202,14 @@ curl_wrapper() {
 
   if [[ -n "$json" ]]; then
     curl_args+=(--json "$json")
+  fi
+
+  if [[ -n "$cookie_jar" ]]; then
+    curl_args+=(--cookie-jar "$cookie_jar")
+  fi
+
+  if [[ -n "$cookie" ]]; then
+    curl_args+=(--cookie "$cookie")
   fi
 
   if [[ -n "$data" ]]; then
@@ -3664,6 +3714,123 @@ lookup_microsoft() {
 
   response=$(curl_wrapper GET "https://login.live.com" --ip-version "$ip_version")
   grep_wrapper --perl '"sRequestCountry":"\K[^"]*' <<<"$response"
+}
+
+lookup_claude() {
+  local ip_version="$1"
+  local response
+
+  response=$(curl_wrapper GET "https://claude.ai/api/bootstrap" \
+    --user-agent "Claude com.anthropic.claude/1.261023.20 (Android 30) Claude/1.261023.20" \
+    --header "Anthropic-Client-Platform: android" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return
+  fi
+
+  process_json "$response" ".statsig.user.country"
+}
+
+lookup_reddit() {
+  local ip_version="$1"
+  local response
+
+  response=$(curl_wrapper GET "https://www.reddit.com/api/v1/not-found" \
+    --user-agent "$USER_AGENT" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  grep_wrapper --perl 'country code: \K[A-Z]{2}' <<<"$response"
+}
+
+lookup_ai_cn_reachable() {
+  local url="$1"
+  local ip_version="$2"
+  local response http_code
+
+  response=$(curl_wrapper GET "$url" --ip-version "$ip_version")
+  http_code=$(read_curl_metric_field "$CURL_META_FILE" "http_code")
+
+  if [[ "$http_code" == "401" ]]; then
+    print_value_or_colored "Yes" "SERVICE"
+  elif [[ -n "$response" ]]; then
+    echo "$response"
+  else
+    echo ""
+  fi
+}
+
+lookup_qwen_cn() {
+  lookup_ai_cn_reachable "https://dashscope.aliyuncs.com/compatible-mode/v1/models" "$1"
+}
+
+lookup_kimi_cn() {
+  lookup_ai_cn_reachable "https://api.moonshot.cn/v1/models" "$1"
+}
+
+lookup_glm_cn() {
+  lookup_ai_cn_reachable "https://open.bigmodel.cn/api/paas/v4/models" "$1"
+}
+
+lookup_minimax_cn() {
+  lookup_ai_cn_reachable "https://api.minimaxi.com/v1/models" "$1"
+}
+
+lookup_youtube_no_ads() {
+  local ip_version="$1"
+  local cookie_jar response
+
+  cookie_jar=$(mktemp "${TMPDIR:-/tmp}/ipregion_youtube_cookies_XXXXXX")
+
+  response=$(curl_wrapper GET "https://www.youtube.com/watch?v=dQw4w9WgXcQ" \
+    --user-agent "$USER_AGENT" \
+    --header "Cookie: SOCS=CAI; PREF=hl=$YOUTUBE_LANG" \
+    --header "Accept-Language: $YOUTUBE_LANG" \
+    --cookie-jar "$cookie_jar" \
+    --ip-version "$ip_version")
+
+  if [[ -n "$response" ]]; then
+    response=$(curl_wrapper GET "https://www.youtube.com/watch?v=dQw4w9WgXcQ" \
+      --user-agent "$USER_AGENT" \
+      --header "Cookie: SOCS=CAI; PREF=hl=$YOUTUBE_LANG" \
+      --header "Accept-Language: $YOUTUBE_LANG" \
+      --cookie "$cookie_jar" \
+      --ip-version "$ip_version")
+  fi
+
+  rm -f "$cookie_jar"
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  if ! grep_wrapper -q "ytInitialPlayerResponse" <<<"$response"; then
+    echo ""
+    return
+  fi
+
+  if grep_wrapper -q "SLOT_TYPE_PLAYER_BYTES" <<<"$response"; then
+    print_value_or_colored "No" "HEART"
+  else
+    print_value_or_colored "Yes" "SERVICE"
+  fi
 }
 
 main() {
