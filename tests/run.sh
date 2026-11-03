@@ -159,6 +159,24 @@ assert_eq "http_429" "$(process_json "$RESULT_JSON" ".results.primary[1].metrics
 assert_eq "json" "$(detect_output_format "out.json")" "detect_output_format json"
 assert_eq "csv" "$(detect_output_format "out.csv")" "detect_output_format csv"
 
+# Regression: a missing ASN surfaces as the literal string "null", which used to
+# make every tonumber? in finalize_json evaluate to empty and void the whole JSON
+ARR_PRIMARY=()
+ARR_CUSTOM=()
+ASN_NUMBER="null"
+ASN_NAME="null"
+
+add_result "primary" "RIPE" "US" "DE" "http_code=null;latency_ms=100;transport_ip_version=4;error_type=none" "http_code=200;latency_ms=90;transport_ip_version=6;error_type=none"
+
+finalize_json
+
+assert_true "finalize_json emits valid JSON with null ASN" is_valid_json "$RESULT_JSON"
+assert_eq "null" "$(process_json "$RESULT_JSON" ".asn.number")" "finalize_json maps null ASN number to null"
+assert_eq "1" "$(process_json "$RESULT_JSON" ".results.primary | length")" "finalize_json keeps primary rows with null ASN"
+assert_eq "RIPE" "$(process_json "$RESULT_JSON" ".results.primary[0].service")" "finalize_json keeps service name with null ASN"
+assert_eq "null" "$(process_json "$RESULT_JSON" ".results.primary[0].metrics.ipv4.http_code")" "finalize_json maps non-numeric metric to null"
+assert_eq "US" "$(process_json "$RESULT_JSON" ".consensus.ipv4.country")" "finalize_json computes consensus with null ASN"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1

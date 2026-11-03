@@ -1885,6 +1885,14 @@ get_asn() {
   ASN_NUMBER=$(process_json "$traits" ".autonomous_system_number")
   ASN_NAME=$(process_json "$traits" ".autonomous_system_organization")
 
+  # jq -r emits the literal string "null" for missing fields
+  if [[ "$ASN_NUMBER" == "null" ]]; then
+    ASN_NUMBER=""
+  fi
+  if [[ "$ASN_NAME" == "null" ]]; then
+    ASN_NAME=""
+  fi
+
   log "$LOG_INFO" "ASN info: AS$ASN_NUMBER $ASN_NAME"
 }
 
@@ -2570,7 +2578,8 @@ run_all_services() {
 }
 
 finalize_json() {
-  local t_primary t_custom
+  local t_primary=""
+  local t_custom=""
   local IFS=$'\n'
 
   if ((${#ARR_PRIMARY[@]} > 0)); then
@@ -2604,9 +2613,9 @@ finalize_json() {
             ($raw | split(";") | map(select(length > 0) | split("="))) as $pairs
             | ($pairs | map({key: .[0], value: (.[1] // "")}) | from_entries) as $m
             | {
-                http_code: ($m.http_code | if . == null or . == "" then null else (tonumber?) end),
-                latency_ms: ($m.latency_ms | if . == null or . == "" then null else (tonumber?) end),
-                transport_ip_version: ($m.transport_ip_version | if . == null or . == "" then null else (tonumber?) end),
+                http_code: ($m.http_code | if . == null or . == "" or . == "null" then null else (tonumber? // null) end),
+                latency_ms: ($m.latency_ms | if . == null or . == "" or . == "null" then null else (tonumber? // null) end),
+                transport_ip_version: ($m.transport_ip_version | if . == null or . == "" or . == "null" then null else (tonumber? // null) end),
                 error_type: ($m.error_type | if . == null or . == "" or . == "none" then null else . end)
               }
           end;
@@ -2655,19 +2664,19 @@ finalize_json() {
               address: ($ipv4 | select(length > 0) // null),
               source: ($ipv4_source | select(length > 0) // null),
               cache_hit: ($ipv4_cache_hit == "true"),
-              timestamp: ($ipv4_ts | if length > 0 then (tonumber?) else null end),
+              timestamp: ($ipv4_ts | if length == 0 or . == "null" then null else (tonumber? // null) end),
               registered_country: ($registered_country_ipv4 | select(length > 0) // null)
             },
             ipv6: {
               address: ($ipv6 | select(length > 0) // null),
               source: ($ipv6_source | select(length > 0) // null),
               cache_hit: ($ipv6_cache_hit == "true"),
-              timestamp: ($ipv6_ts | if length > 0 then (tonumber?) else null end),
+              timestamp: ($ipv6_ts | if length == 0 or . == "null" then null else (tonumber? // null) end),
               registered_country: ($registered_country_ipv6 | select(length > 0) // null)
             }
           },
           asn: {
-            number: ($asn_number | if length > 0 then (tonumber?) else null end),
+            number: ($asn_number | if length == 0 or . == "null" then null else (tonumber? // null) end),
             name: ($asn_name | select(length > 0) // null)
           },
           consensus: {
