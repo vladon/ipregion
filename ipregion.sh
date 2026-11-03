@@ -37,6 +37,10 @@ VK_PROBE_TARGETS=("87.240.137.208:443" "87.240.190.70:443")
 # Facebook Graph API and the Messenger MQTT transport edge
 FACEBOOK_PROBE_TARGETS=("graph.facebook.com:443")
 MESSENGER_PROBE_TARGETS=("edge-mqtt.facebook.com:443")
+# TikTok and Google main service hosts (verified stable across repeated
+# probes from both networks)
+TIKTOK_PROBE_TARGETS=("www.tiktok.com:443")
+GOOGLE_PROBE_TARGETS=("www.google.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -207,6 +211,7 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE_PREMIUM]="YouTube Premium"
   [YOUTUBE_PREMIUM_WEB]="YouTube Premium (Web)"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
+  [GOOGLE_TRANSPORT]="Google Transport"
   [GEMINI]="Google Gemini"
   [APPLE]="Apple"
   [STEAM]="Steam"
@@ -236,6 +241,7 @@ declare -A CUSTOM_SERVICES=(
   [INSTAGRAM]="Instagram"
   [INSTAGRAM_API]="Instagram API"
   [TIKTOK_ACCESS]="TikTok Access"
+  [TIKTOK_TRANSPORT]="TikTok Transport"
   [WHATSAPP]="WhatsApp"
   [WHATSAPP_DC]="WhatsApp DC"
   [TELEGRAM_ACCESS]="Telegram Access"
@@ -271,6 +277,7 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE_PREMIUM"
   "YOUTUBE_PREMIUM_WEB"
   "GOOGLE_SEARCH_CAPTCHA"
+  "GOOGLE_TRANSPORT"
   "GEMINI"
   "APPLE"
   "STEAM"
@@ -300,6 +307,7 @@ CUSTOM_SERVICES_ORDER=(
   "INSTAGRAM"
   "INSTAGRAM_API"
   "TIKTOK_ACCESS"
+  "TIKTOK_TRANSPORT"
   "WHATSAPP"
   "WHATSAPP_DC"
   "TELEGRAM_ACCESS"
@@ -335,6 +343,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE_PREMIUM]="lookup_youtube_premium"
   [YOUTUBE_PREMIUM_WEB]="lookup_youtube_premium_web"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
+  [GOOGLE_TRANSPORT]="lookup_google_transport"
   [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
   [STEAM]="lookup_steam"
@@ -364,6 +373,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [INSTAGRAM]="lookup_instagram"
   [INSTAGRAM_API]="lookup_instagram_api"
   [TIKTOK_ACCESS]="lookup_tiktok_access"
+  [TIKTOK_TRANSPORT]="lookup_tiktok_transport"
   [WHATSAPP]="lookup_whatsapp"
   [WHATSAPP_DC]="lookup_whatsapp_dc"
   [TELEGRAM_ACCESS]="lookup_telegram_access"
@@ -4636,6 +4646,14 @@ lookup_facebook_api() {
 
 lookup_messenger_mqtt() {
   lookup_tcp_targets MESSENGER_PROBE_TARGETS
+}
+
+lookup_tiktok_transport() {
+  lookup_tcp_targets TIKTOK_PROBE_TARGETS
+}
+
+lookup_google_transport() {
+  lookup_tcp_targets GOOGLE_PROBE_TARGETS
 }
 
 lookup_claude() {
