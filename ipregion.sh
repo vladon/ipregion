@@ -213,6 +213,7 @@ declare -A CUSTOM_SERVICES=(
   [NETFLIX_CDN]="Netflix CDN"
   [SPOTIFY]="Spotify"
   [SPOTIFY_SIGNUP]="Spotify Signup"
+  [INSTAGRAM]="Instagram"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -246,6 +247,7 @@ CUSTOM_SERVICES_ORDER=(
   "NETFLIX_CDN"
   "SPOTIFY"
   "SPOTIFY_SIGNUP"
+  "INSTAGRAM"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -279,6 +281,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [NETFLIX_CDN]="lookup_netflix_cdn"
   [SPOTIFY]="lookup_spotify"
   [SPOTIFY_SIGNUP]="lookup_spotify_signup"
+  [INSTAGRAM]="lookup_instagram"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4209,6 +4212,38 @@ lookup_spotify_signup() {
   fi
 
   print_value_or_colored "$available" "$color_name"
+}
+
+lookup_instagram() {
+  local ip_version="$1"
+  local response error_type
+
+  response=$(curl_wrapper GET "https://www.instagram.com/" \
+    --user-agent "$USER_AGENT" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    # A transport-level failure (connection reset or timeout) is the typical
+    # blocking signature for Instagram in restricted networks.
+    error_type=$(read_curl_metric_field "$CURL_META_FILE" "error_type")
+    if [[ "$error_type" == "curl_error" ]]; then
+      print_value_or_colored "No" "HEART"
+      return
+    fi
+    echo ""
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  if grep_wrapper -qi "instagram" <<<"$response"; then
+    print_value_or_colored "Yes" "SERVICE"
+  else
+    print_value_or_colored "No" "HEART"
+  fi
 }
 
 lookup_claude() {
