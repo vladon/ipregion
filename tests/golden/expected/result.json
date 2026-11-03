@@ -1,0 +1,488 @@
+{
+  "asn": {
+    "name": "Golden Example AS",
+    "number": 64496
+  },
+  "consensus": {
+    "ipv4": null,
+    "ipv6": null
+  },
+  "ip": {
+    "ipv4": {
+      "address": "203.0.113.10",
+      "cache_hit": false,
+      "registered_country": "US",
+      "source": "golden",
+      "timestamp": 1700000000
+    },
+    "ipv6": {
+      "address": "2001:db8::10",
+      "cache_hit": false,
+      "registered_country": "DE",
+      "source": "golden",
+      "timestamp": 1700000010
+    }
+  },
+  "results": {
+    "custom": [
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Instagram"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "TikTok Access"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "WhatsApp"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "WhatsApp DC"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Telegram Access"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Telegram DC"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Discord Access"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Discord Gateway"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Twitter (X)"
+      },
+      {
+        "ipv4": "Denied",
+        "ipv6": "Denied",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "LinkedIn Access"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Facebook Access"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Messenger Access"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Threads Access"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Signal Access"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Douyin (CN)"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "VK"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "OK"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Grok"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DeepSeek"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Perplexity"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Copilot"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Mistral"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Qwen Web"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Peacock Access"
+      }
+    ],
+    "primary": []
+  },
+  "version": 1
+}

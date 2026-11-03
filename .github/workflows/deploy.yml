@@ -34,7 +34,7 @@ jobs:
             -v "$PWD":/work \
             -w /work \
             "${{ matrix.bash_image }}" \
-            sh -lc 'apk add --no-cache jq >/dev/null && bash tests/run.sh'
+            sh -lc 'apk add --no-cache jq util-linux-misc >/dev/null && bash tests/run.sh && bash tests/golden.sh'
 
   lint:
     runs-on: ubuntu-latest
@@ -46,10 +46,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck shfmt
 
       - name: Run shellcheck
-        run: shellcheck -S error ipregion.sh tests/run.sh
+        run: shellcheck -S error ipregion.sh tests/run.sh tests/golden.sh
 
       - name: Check formatting
-        run: shfmt -i 2 -d ipregion.sh tests/run.sh
+        run: shfmt -i 2 -d ipregion.sh tests/run.sh tests/golden.sh
 
   deploy:
     runs-on: ubuntu-latest

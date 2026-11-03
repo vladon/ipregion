@@ -39,14 +39,16 @@ Flat repository, no source tree:
 
 ```bash
 bash tests/run.sh                            # unit tests (needs jq, bash ≥ 4.3)
-shellcheck -S error ipregion.sh tests/run.sh # lint gate
-shfmt -i 2 -d ipregion.sh tests/run.sh       # format gate (2-space indent)
+bash tests/golden.sh                         # golden tests for the availability family (needs jq, column)
+shellcheck -S error ipregion.sh tests/run.sh tests/golden.sh # lint gate
+shfmt -i 2 -d ipregion.sh tests/run.sh tests/golden.sh       # format gate (2-space indent)
 ./ipregion.sh -g primary                     # manual check: GeoIP group
 ./ipregion.sh -g custom                      # manual check: website group
 ```
 
 - Runtime deps: `bash`, `curl`, `jq`, `column` (util-linux/bsdmainutils); optional `nslookup`. The script detects distro/package manager and offers to install missing commands.
-- **macOS caveat**: system `/bin/bash` is 3.2 (no associative arrays) — install Homebrew bash or run tests in Docker `bash:4.4`/`bash:5.2` exactly as CI does. There is no local Docker fallback configured by default.
+- **macOS caveat**: system `/bin/bash` is 3.2 (no associative arrays) — install Homebrew bash. On macOS the script runs fully with Homebrew bash (BSD grep/sed/date are supported; `curl --json` is emulated for older system curl).
+- Golden tests (`tests/golden.sh`) render the availability family against stubbed `curl_wrapper`/`tcp_probe` responses and diff the full table plus a sorted `RESULT_JSON` against `tests/golden/expected/`. Regenerate after intentional output changes with `GOLDEN_UPDATE=1 bash tests/golden.sh`; the suite self-skips when `column` is absent (CI installs `util-linux-misc`).
 
 ## Code Conventions & Common Patterns
 
