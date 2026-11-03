@@ -137,6 +137,63 @@
             "transport_ip_version": 6
           }
         },
+        "service": "OpenAI API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Reddit API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Anthropic API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
         "service": "Netflix Transport"
       },
       {
@@ -368,6 +425,25 @@
         "service": "Twitter (X)"
       },
       {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "X API"
+      },
+      {
         "ipv4": "Denied",
         "ipv6": "Denied",
         "metrics": {
@@ -385,6 +461,25 @@
           }
         },
         "service": "LinkedIn Access"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "LinkedIn API"
       },
       {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
@@ -650,6 +745,25 @@
             "transport_ip_version": 6
           }
         },
+        "service": "OK API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
         "service": "RUTUBE Transport"
       },
       {
@@ -691,6 +805,25 @@
         "service": "Grok"
       },
       {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "xAI API"
+      },
+      {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
         "ipv6": "\u001b[1;32mYes\u001b[0m",
         "metrics": {
@@ -710,6 +843,25 @@
         "service": "DeepSeek"
       },
       {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DeepSeek API"
+      },
+      {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
         "ipv6": "\u001b[1;32mYes\u001b[0m",
         "metrics": {
@@ -727,6 +879,25 @@
           }
         },
         "service": "Perplexity"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Perplexity API"
       },
       {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
@@ -765,6 +936,25 @@
           }
         },
         "service": "Mistral"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Mistral API"
       },
       {
         "ipv4": "\u001b[1;32mYes\u001b[0m",

@@ -52,6 +52,17 @@ MICROSOFT_PROBE_TARGETS=("www.microsoft.com:443")
 # Russian platforms (verified stable from a RU network)
 RUTUBE_PROBE_TARGETS=("rutube.ru:443")
 OZON_PROBE_TARGETS=("ozon.ru:443")
+# AI and platform API transports (verified stable ×2 from a RU network)
+OPENAI_API_PROBE_TARGETS=("api.openai.com:443")
+ANTHROPIC_API_PROBE_TARGETS=("api.anthropic.com:443")
+XAI_API_PROBE_TARGETS=("api.x.ai:443")
+DEEPSEEK_API_PROBE_TARGETS=("api.deepseek.com:443")
+PERPLEXITY_API_PROBE_TARGETS=("api.perplexity.ai:443")
+MISTRAL_API_PROBE_TARGETS=("api.mistral.ai:443")
+REDDIT_API_PROBE_TARGETS=("oauth.reddit.com:443")
+OK_API_PROBE_TARGETS=("api.ok.ru:443")
+LINKEDIN_API_PROBE_TARGETS=("api.linkedin.com:443")
+X_API_PROBE_TARGETS=("api.x.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -237,12 +248,15 @@ declare -A CUSTOM_SERVICES=(
   [MICROSOFT_TRANSPORT]="Microsoft Transport"
   [TWITCH]="Twitch"
   [CHATGPT]="ChatGPT"
+  [OPENAI_API]="OpenAI API"
   [DISNEY_PLUS]="Disney+"
   [DISNEY_PLUS_ACCESS]="Disney+ Access"
   [YOUTUBE_CDN]="YouTube CDN"
   [CLOUDFLARE_CDN]="Cloudflare CDN"
   [REDDIT_GUEST_ACCESS]="Reddit Guest Access"
+  [REDDIT_API]="Reddit API"
   [CLAUDE]="Claude"
+  [ANTHROPIC_API]="Anthropic API"
   [REDDIT]="Reddit"
   [QWEN_CN]="Qwen CN API"
   [KIMI_CN]="Kimi CN API"
@@ -266,7 +280,9 @@ declare -A CUSTOM_SERVICES=(
   [DISCORD_ACCESS]="Discord Access"
   [DISCORD_GATEWAY]="Discord Gateway"
   [TWITTER]="Twitter (X)"
+  [X_API]="X API"
   [LINKEDIN_ACCESS]="LinkedIn Access"
+  [LINKEDIN_API]="LinkedIn API"
   [FACEBOOK_ACCESS]="Facebook Access"
   [FACEBOOK_API]="Facebook API"
   [MESSENGER_ACCESS]="Messenger Access"
@@ -280,13 +296,18 @@ declare -A CUSTOM_SERVICES=(
   [VK]="VK"
   [VK_API]="VK API"
   [OK_RU]="OK"
+  [OK_API]="OK API"
   [RUTUBE_TRANSPORT]="RUTUBE Transport"
   [OZON_TRANSPORT]="Ozon Transport"
   [GROK]="Grok"
+  [XAI_API]="xAI API"
   [DEEPSEEK]="DeepSeek"
+  [DEEPSEEK_API]="DeepSeek API"
   [PERPLEXITY]="Perplexity"
+  [PERPLEXITY_API]="Perplexity API"
   [COPILOT]="Copilot"
   [MISTRAL]="Mistral"
+  [MISTRAL_API]="Mistral API"
   [QWEN_WEB]="Qwen Web"
   [PEACOCK_ACCESS]="Peacock Access"
 )
@@ -312,12 +333,15 @@ CUSTOM_SERVICES_ORDER=(
   "MICROSOFT_TRANSPORT"
   "TWITCH"
   "CHATGPT"
+  "OPENAI_API"
   "DISNEY_PLUS"
   "DISNEY_PLUS_ACCESS"
   "YOUTUBE_CDN"
   "CLOUDFLARE_CDN"
   "REDDIT_GUEST_ACCESS"
+  "REDDIT_API"
   "CLAUDE"
+  "ANTHROPIC_API"
   "REDDIT"
   "QWEN_CN"
   "KIMI_CN"
@@ -341,7 +365,9 @@ CUSTOM_SERVICES_ORDER=(
   "DISCORD_ACCESS"
   "DISCORD_GATEWAY"
   "TWITTER"
+  "X_API"
   "LINKEDIN_ACCESS"
+  "LINKEDIN_API"
   "FACEBOOK_ACCESS"
   "FACEBOOK_API"
   "MESSENGER_ACCESS"
@@ -355,13 +381,18 @@ CUSTOM_SERVICES_ORDER=(
   "VK"
   "VK_API"
   "OK_RU"
+  "OK_API"
   "RUTUBE_TRANSPORT"
   "OZON_TRANSPORT"
   "GROK"
+  "XAI_API"
   "DEEPSEEK"
+  "DEEPSEEK_API"
   "PERPLEXITY"
+  "PERPLEXITY_API"
   "COPILOT"
   "MISTRAL"
+  "MISTRAL_API"
   "QWEN_WEB"
   "PEACOCK_ACCESS"
 )
@@ -387,12 +418,15 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MICROSOFT_TRANSPORT]="lookup_microsoft_transport"
   [TWITCH]="lookup_twitch"
   [CHATGPT]="lookup_chatgpt"
+  [OPENAI_API]="lookup_openai_api"
   [DISNEY_PLUS]="lookup_disney_plus"
   [DISNEY_PLUS_ACCESS]="lookup_disney_plus_access"
   [YOUTUBE_CDN]="lookup_youtube_cdn"
   [CLOUDFLARE_CDN]="lookup_cloudflare_cdn"
   [REDDIT_GUEST_ACCESS]="lookup_reddit_guest_access"
+  [REDDIT_API]="lookup_reddit_api"
   [CLAUDE]="lookup_claude"
+  [ANTHROPIC_API]="lookup_anthropic_api"
   [REDDIT]="lookup_reddit"
   [QWEN_CN]="lookup_qwen_cn"
   [KIMI_CN]="lookup_kimi_cn"
@@ -416,7 +450,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DISCORD_ACCESS]="lookup_discord_access"
   [DISCORD_GATEWAY]="lookup_discord_gateway"
   [TWITTER]="lookup_twitter"
+  [X_API]="lookup_x_api"
   [LINKEDIN_ACCESS]="lookup_linkedin_access"
+  [LINKEDIN_API]="lookup_linkedin_api"
   [FACEBOOK_ACCESS]="lookup_facebook_access"
   [FACEBOOK_API]="lookup_facebook_api"
   [MESSENGER_ACCESS]="lookup_messenger_access"
@@ -430,13 +466,18 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [VK]="lookup_vk"
   [VK_API]="lookup_vk_api"
   [OK_RU]="lookup_ok_ru"
+  [OK_API]="lookup_ok_api"
   [RUTUBE_TRANSPORT]="lookup_rutube_transport"
   [OZON_TRANSPORT]="lookup_ozon_transport"
   [GROK]="lookup_grok"
+  [XAI_API]="lookup_xai_api"
   [DEEPSEEK]="lookup_deepseek"
+  [DEEPSEEK_API]="lookup_deepseek_api"
   [PERPLEXITY]="lookup_perplexity"
+  [PERPLEXITY_API]="lookup_perplexity_api"
   [COPILOT]="lookup_copilot"
   [MISTRAL]="lookup_mistral"
+  [MISTRAL_API]="lookup_mistral_api"
   [QWEN_WEB]="lookup_qwen_web"
   [PEACOCK_ACCESS]="lookup_peacock_access"
 )
@@ -4705,6 +4746,46 @@ lookup_signal_service() {
 
 lookup_vk_api() {
   lookup_tcp_targets VK_PROBE_TARGETS
+}
+
+lookup_openai_api() {
+  lookup_tcp_targets OPENAI_API_PROBE_TARGETS
+}
+
+lookup_anthropic_api() {
+  lookup_tcp_targets ANTHROPIC_API_PROBE_TARGETS
+}
+
+lookup_xai_api() {
+  lookup_tcp_targets XAI_API_PROBE_TARGETS
+}
+
+lookup_deepseek_api() {
+  lookup_tcp_targets DEEPSEEK_API_PROBE_TARGETS
+}
+
+lookup_perplexity_api() {
+  lookup_tcp_targets PERPLEXITY_API_PROBE_TARGETS
+}
+
+lookup_mistral_api() {
+  lookup_tcp_targets MISTRAL_API_PROBE_TARGETS
+}
+
+lookup_reddit_api() {
+  lookup_tcp_targets REDDIT_API_PROBE_TARGETS
+}
+
+lookup_ok_api() {
+  lookup_tcp_targets OK_API_PROBE_TARGETS
+}
+
+lookup_linkedin_api() {
+  lookup_tcp_targets LINKEDIN_API_PROBE_TARGETS
+}
+
+lookup_x_api() {
+  lookup_tcp_targets X_API_PROBE_TARGETS
 }
 
 lookup_facebook_api() {
