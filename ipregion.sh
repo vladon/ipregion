@@ -18,10 +18,22 @@ JSON_OUTPUT=false
 GROUPS_TO_SHOW="all"
 CURL_TIMEOUT=5
 CURL_RETRIES=1
+
+# Kernel route tables (Linux only; absence is not an error)
+PROC_NET_DIR="${IPREGION_PROC_NET_DIR:-/proc/net}"
+IPV4_ROUTE_TABLE="$PROC_NET_DIR/route"
+IPV6_ROUTE_TABLE="$PROC_NET_DIR/ipv6_route"
+IPV4_DEFAULT_ROUTE="00000000"
+IPV6_DEFAULT_ROUTE="00000000000000000000000000000000"
+IPV6_DEFAULT_PREFIX_LENGTH="00"
+ROUTE_FLAG_UP=1
+ROUTE_FLAG_GATEWAY=2
+
 IPV4_ONLY=false
 IPV6_ONLY=false
 PROXY_ADDR=""
 INTERFACE_NAME=""
+MAIN_INTERFACE=""
 DEBUG=false
 IPV4_SUPPORTED=0
 IPV6_SUPPORTED=0
@@ -425,12 +437,22 @@ print_startup_message() {
       printf "%s %s\n" \
         "$(color INFO '[INFO]')" \
         "Interface: $INTERFACE_NAME (--interface)" >&2
+    elif [[ -n "$MAIN_INTERFACE" ]]; then
+      printf "%s %s\n" \
+        "$(color INFO '[INFO]')" \
+        "Interface: $MAIN_INTERFACE (main, carries the default route)" >&2
     fi
     if [[ -n "$PROXY_ADDR" ]]; then
       printf "%s %s\n" \
         "$(color INFO '[INFO]')" \
         "Proxy: socks5h://$PROXY_ADDR" >&2
     fi
+  fi
+
+  if [[ -n "$PROXY_ADDR" ]]; then
+    printf "%s %s\n" \
+      "$(color INFO '[INFO]')" \
+      "Through a proxy each service is checked once: the proxy picks IPv4 or IPv6" >&2
   fi
 }
 
@@ -1553,6 +1575,129 @@ check_ip_dns() {
   return 1
 }
 
+print_ipv4_default_routes() {
+  local iface destination flags mask
+
+  if [[ ! -r "$IPV4_ROUTE_TABLE" ]]; then
+    return
+  fi
+
+  while read -r iface destination _ flags _ _ _ mask _; do
+    if [[ "$destination" == "$IPV4_DEFAULT_ROUTE" && "$mask" == "$IPV4_DEFAULT_ROUTE" ]]; then
+      printf '%s %s\n' "$iface" "$flags"
+    fi
+  done <"$IPV4_ROUTE_TABLE"
+}
+
+print_ipv6_default_routes() {
+  local destination prefix_length flags iface
+
+  if [[ ! -r "$IPV6_ROUTE_TABLE" ]]; then
+    return
+  fi
+
+  while read -r destination prefix_length _ _ _ _ _ _ flags iface; do
+    if [[ "$destination" == "$IPV6_DEFAULT_ROUTE" && "$prefix_length" == "$IPV6_DEFAULT_PREFIX_LENGTH" ]]; then
+      printf '%s %s\n' "$iface" "$flags"
+    fi
+  done <"$IPV6_ROUTE_TABLE"
+}
+
+print_default_routes() {
+  local ip_version="$1"
+
+  case "$ip_version" in
+  4) print_ipv4_default_routes ;;
+  6) print_ipv6_default_routes ;;
+  esac
+}
+
+has_route_flag() {
+  local flags="$1"
+  local flag="$2"
+
+  ((16#$flags & flag))
+}
+
+print_gateway_interface() {
+  local ip_version="$1"
+  local iface flags
+
+  while read -r iface flags; do
+    if has_route_flag "$flags" "$ROUTE_FLAG_UP" && has_route_flag "$flags" "$ROUTE_FLAG_GATEWAY"; then
+      printf '%s' "$iface"
+      return
+    fi
+  done < <(print_default_routes "$ip_version")
+}
+
+has_default_route_through() {
+  local ip_version="$1"
+  local interface="$2"
+  local iface flags
+
+  while read -r iface flags; do
+    if [[ "$iface" == "$interface" ]] && has_route_flag "$flags" "$ROUTE_FLAG_UP"; then
+      return 0
+    fi
+  done < <(print_default_routes "$ip_version")
+
+  return 1
+}
+
+has_default_route() {
+  local ip_version="$1"
+  local iface flags
+
+  while read -r iface flags; do
+    if has_route_flag "$flags" "$ROUTE_FLAG_UP"; then
+      return 0
+    fi
+  done < <(print_default_routes "$ip_version")
+
+  return 1
+}
+
+ignore_ip_version_with_proxy() {
+  if [[ -z "$PROXY_ADDR" ]] || [[ "$IPV4_ONLY" == false && "$IPV6_ONLY" == false ]]; then
+    return
+  fi
+
+  printf "%s %s\n" \
+    "$(color WARN '[WARN]')" \
+    "--ipv4 and --ipv6 are ignored with --proxy, the proxy picks the protocol" >&2
+  IPV4_ONLY=false
+  IPV6_ONLY=false
+}
+
+detect_main_interface() {
+  if [[ -n "$INTERFACE_NAME" || -n "$PROXY_ADDR" || "$IPV4_ONLY" == true || "$IPV6_ONLY" == true ]]; then
+    return
+  fi
+
+  MAIN_INTERFACE=$(print_gateway_interface 4)
+  if [[ -z "$MAIN_INTERFACE" ]]; then
+    MAIN_INTERFACE=$(print_gateway_interface 6)
+  fi
+}
+
+check_ip_default_route() {
+  local version="$1"
+
+  # Route tables are Linux-only; without them the remaining checks stay authoritative.
+  if [[ ! -r "$IPV4_ROUTE_TABLE" && ! -r "$IPV6_ROUTE_TABLE" ]]; then
+    return 0
+  fi
+
+  if has_default_route "$version"; then
+    log "$LOG_INFO" "IPv${version} has a default route"
+    return 0
+  fi
+
+  log "$LOG_ERROR" "No IPv${version} default route found"
+  return 1
+}
+
 check_ip_support() {
   local version="$1"
   local -a checks=("interfaces" "connectivity" "dns")
@@ -1560,6 +1705,11 @@ check_ip_support() {
 
   spinner_update "IPv$version support"
   log "$LOG_INFO" "Starting comprehensive IPv${version} support check"
+
+  if ! check_ip_default_route "$version"; then
+    log "$LOG_ERROR" "IPv${version} is not fully supported. Failed checks: no-default-route"
+    return 1
+  fi
 
   for check in "${checks[@]}"; do
     if ! "check_ip_${check}" "$version"; then
@@ -2182,11 +2332,17 @@ curl_wrapper() {
     esac
   done
 
-  if [[ "$ip_version" == "4" ]]; then
+  case "$ip_version" in
+  4)
     curl_args+=(-4)
-  else
+    ;;
+  6)
     curl_args+=(-6)
-  fi
+    ;;
+  proxy)
+    : # let the proxy pick the protocol
+    ;;
+  esac
 
   for h in "${headers[@]}"; do
     curl_args+=(-H "$h")
@@ -2457,6 +2613,20 @@ process_with_custom_handler() {
   local ipv6_metric=""
   local metric_file
 
+  if [[ -n "$PROXY_ADDR" ]]; then
+    log "$LOG_INFO" "Checking $display_name through proxy (custom handler)"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
+    ipv4_result=$("$handler_func" proxy proxy)
+    ipv6_result="$ipv4_result"
+    ipv4_metric=$(build_service_metric "$metric_file" proxy)
+    ipv6_metric="$ipv4_metric"
+    rm -f "$metric_file"
+    CURL_META_FILE=""
+    add_result "primary" "$display_name" "$ipv4_result" "$ipv6_result" "$ipv4_metric" "$ipv6_metric"
+    return
+  fi
+
   if can_use_ipv4; then
     log "$LOG_INFO" "Checking $display_name via IPv4 (custom handler)"
     metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
@@ -2497,6 +2667,20 @@ process_with_probe() {
   local ipv6_metric=""
   local metric_file
   local transport
+
+  if [[ -n "$PROXY_ADDR" ]]; then
+    log "$LOG_INFO" "Checking $display_name through proxy"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
+    ipv4_result=$(probe_service "$service" proxy "$(preferred_ip)")
+    ipv6_result="$ipv4_result"
+    ipv4_metric=$(build_service_metric "$metric_file" proxy)
+    ipv6_metric="$ipv4_metric"
+    rm -f "$metric_file"
+    CURL_META_FILE=""
+    add_result "primary" "$display_name" "$ipv4_result" "$ipv6_result" "$ipv4_metric" "$ipv6_metric"
+    return
+  fi
 
   if can_use_ipv4; then
     log "$LOG_INFO" "Checking $display_name via IPv4"
@@ -2576,6 +2760,20 @@ process_custom_service() {
 
   if [[ -z "$handler_func" ]]; then
     log "$LOG_WARN" "Unknown service handler: $service"
+    return
+  fi
+
+  if [[ -n "$PROXY_ADDR" ]]; then
+    log "$LOG_INFO" "Checking $display_name through proxy"
+    metric_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_metric_XXXXXX")
+    CURL_META_FILE="$metric_file"
+    ipv4_result=$("$handler_func" proxy)
+    ipv6_result="$ipv4_result"
+    ipv4_metric=$(build_service_metric "$metric_file" proxy)
+    ipv6_metric="$ipv4_metric"
+    rm -f "$metric_file"
+    CURL_META_FILE=""
+    add_result "$group" "$display_name" "$ipv4_result" "$ipv6_result" "$ipv4_metric" "$ipv6_metric"
     return
   fi
 
@@ -3831,6 +4029,9 @@ lookup_youtube_no_ads() {
 
 main() {
   parse_arguments "$@"
+
+  ignore_ip_version_with_proxy
+  detect_main_interface
 
   # Handle cache management flags early
   if [[ "$CACHE_SHOWN" == true ]]; then
