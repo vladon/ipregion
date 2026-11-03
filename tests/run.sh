@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE STEAM STEAM_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -626,6 +626,12 @@ assert_eq "Yes" "$(lookup_instagram_transport 4)" "instagram transport maps reac
 assert_eq "Yes" "$(lookup_threads_transport 4)" "threads transport maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_steam_transport 4)" "steam transport maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_netflix_transport 4)" "netflix transport maps reachable endpoint to Yes"
+DC_PROBE_MODE="up"
+assert_eq "Yes" "$(lookup_apple_transport 4)" "apple transport maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_microsoft_transport 4)" "microsoft transport maps reachable endpoint to Yes"
+DC_PROBE_MODE="down"
+assert_eq "No" "$(lookup_apple_transport 4)" "apple transport maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_microsoft_transport 4)" "microsoft transport maps unreachable endpoint to No"
 DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_facebook_api 4)" "facebook api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_messenger_mqtt 4)" "messenger mqtt maps unreachable endpoint to No"
