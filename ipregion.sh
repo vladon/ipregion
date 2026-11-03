@@ -1973,11 +1973,15 @@ spinner_update() {
   fi
 }
 
-spinner_cleanup() {
+cleanup_on_exit() {
   spinner_stop
   if [[ "$DEBUG" == true ]]; then
     cleanup_debug
   fi
+}
+
+cleanup_on_interrupt() {
+  cleanup_on_exit
   exit 130
 }
 
@@ -3583,7 +3587,8 @@ main() {
 
   setup_debug
 
-  trap spinner_cleanup EXIT INT TERM
+  trap cleanup_on_exit EXIT
+  trap cleanup_on_interrupt INT TERM
 
   if ((PARALLEL_JOBS <= 0)); then
     PARALLEL_JOBS=$(detect_parallel_jobs)
