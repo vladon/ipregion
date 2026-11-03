@@ -141,6 +141,7 @@ declare -A PRIMARY_SERVICES=(
   [IPWHOIS_IO]="ipwhois.io|ipwho.is|/{ip}"
   [IPWHO_IS]="ipwho.is|ipwho.is|/{ip}"
   [IPAPI_COM]="ip-api.com|ip-api.com|/json/{ip}?fields=countryCode"
+  [IPREGISTRY]="ipregistry.co|api.ipregistry.co|/{ip}?hostname=true&key=sb69ksjcajfs4c"
   [DETECTOR404]="Detector404|geoip.detector404.ru|/api/v1/ip/{ip}"
 )
 
@@ -162,6 +163,7 @@ PRIMARY_SERVICES_ORDER=(
   "IPWHO_IS"
   "IPAPI_COM"
   "DETECTOR404"
+  "IPREGISTRY"
 )
 
 declare -A PRIMARY_SERVICES_CUSTOM_HANDLERS=(
@@ -172,6 +174,7 @@ declare -A SERVICE_HEADERS=(
   [MAXMIND]="Referer: https://www.maxmind.com"
   [IPAPI_COM]="Origin: https://ip-api.com"
   [CLOUDFLARE]="Referer: https://speed.cloudflare.com"
+  [IPREGISTRY]="Origin: https://ipregistry.co"
 )
 
 declare -A CUSTOM_SERVICES=(
@@ -192,6 +195,8 @@ declare -A CUSTOM_SERVICES=(
   [DISNEY_PLUS]="Disney+"
   [DISNEY_PLUS_ACCESS]="Disney+ Access"
   [YOUTUBE_CDN]="YouTube CDN"
+  [CLOUDFLARE_CDN]="Cloudflare CDN"
+  [REDDIT_GUEST_ACCESS]="Reddit Guest Access"
   [CLAUDE]="Claude"
   [REDDIT]="Reddit"
   [QWEN_CN]="Qwen CN API"
@@ -219,6 +224,8 @@ CUSTOM_SERVICES_ORDER=(
   "DISNEY_PLUS"
   "DISNEY_PLUS_ACCESS"
   "YOUTUBE_CDN"
+  "CLOUDFLARE_CDN"
+  "REDDIT_GUEST_ACCESS"
   "CLAUDE"
   "REDDIT"
   "QWEN_CN"
@@ -246,6 +253,8 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DISNEY_PLUS]="lookup_disney_plus"
   [DISNEY_PLUS_ACCESS]="lookup_disney_plus_access"
   [YOUTUBE_CDN]="lookup_youtube_cdn"
+  [CLOUDFLARE_CDN]="lookup_cloudflare_cdn"
+  [REDDIT_GUEST_ACCESS]="lookup_reddit_guest_access"
   [CLAUDE]="lookup_claude"
   [REDDIT]="lookup_reddit"
   [QWEN_CN]="lookup_qwen_cn"
@@ -2559,6 +2568,9 @@ process_response() {
   IPINFO_IO)
     jq_filter='.data.country'
     ;;
+  IPREGISTRY)
+    jq_filter='.location.country.code'
+    ;;
   IPAPI_CO)
     jq_filter='.country'
     ;;
@@ -4041,8 +4053,61 @@ lookup_youtube_cdn() {
     return
   fi
 
+  if is_status_string "$iata"; then
+    echo "$iata"
+    return
+  fi
+
   location=$(get_iata_location "$iata")
   echo "$location ($iata)"
+}
+
+lookup_cloudflare_cdn() {
+  local ip_version="$1"
+  local response iata location
+
+  response=$(curl_wrapper GET "https://speed.cloudflare.com/meta" \
+    --header "Referer: https://speed.cloudflare.com" \
+    --ip-version "$ip_version")
+
+  iata=$(process_json "$response" ".colo.iata")
+
+  if [[ -z "$iata" || "$iata" == "null" ]]; then
+    echo ""
+    return
+  fi
+
+  if is_status_string "$iata"; then
+    echo "$iata"
+    return
+  fi
+
+  location=$(get_iata_location "$iata")
+  echo "$location ($iata)"
+}
+
+lookup_reddit_guest_access() {
+  local ip_version="$1"
+  local response is_available color_name
+
+  response=$(curl_wrapper GET "https://www.reddit.com" --ip-version "$ip_version" --user-agent "$USER_AGENT")
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return
+  fi
+
+  if [[ "$response" == "$STATUS_DENIED" ]]; then
+    print_value_or_colored "No" "HEART"
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  print_value_or_colored "Yes" "SERVICE"
 }
 
 lookup_claude() {
