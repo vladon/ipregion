@@ -10,6 +10,13 @@ SCRIPT_URL="https://github.com/vladon/ipregion"
 SCRIPT_VERSION_METADATA="unknown|unknown|unknown|"
 USER_AGENT="Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0"
 YOUTUBE_LANG="ru"
+
+# Upstream (vernette/ipregion) service credentials
+DISNEY_PLUS_API_KEY="ZGlzbmV5JmFuZHJvaWQmMS4wLjA.bkeb0m230uUhv8qrAXuNu39tbE_mD5EEhM_NAcohjyA"
+DISNEY_PLUS_JSON_BODY='{"query":"\n     mutation registerDevice($registerDevice: RegisterDeviceInput!) {\n       registerDevice(registerDevice: $registerDevice) {\n         __typename\n       }\n     }\n     ","variables":{"registerDevice":{"applicationRuntime":"android","attributes":{"operatingSystem":"Android","operatingSystemVersion":"13"},"deviceFamily":"android","deviceLanguage":"en","deviceProfile":"phone","devicePlatformId":"android"}},"operationName":"registerDevice"}'
+TWITCH_CLIENT_ID="kimne78kx3ncx6brgo4mv6wki5h1ko"
+CHATGPT_STATSIG_API_KEY="client-zUdXdSTygXJdzoE0sWTkP8GKTVsUMF2IRM7ShVO2JAG"
+CHATGPT_DERIVED_FIELDS_PREFIX='"derived_fields":'
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -180,6 +187,11 @@ declare -A CUSTOM_SERVICES=(
   [JETBRAINS]="JetBrains"
   [PLAYSTATION]="PlayStation"
   [MICROSOFT]="Microsoft"
+  [TWITCH]="Twitch"
+  [CHATGPT]="ChatGPT"
+  [DISNEY_PLUS]="Disney+"
+  [DISNEY_PLUS_ACCESS]="Disney+ Access"
+  [YOUTUBE_CDN]="YouTube CDN"
   [CLAUDE]="Claude"
   [REDDIT]="Reddit"
   [QWEN_CN]="Qwen CN API"
@@ -202,6 +214,11 @@ CUSTOM_SERVICES_ORDER=(
   "JETBRAINS"
   "PLAYSTATION"
   "MICROSOFT"
+  "TWITCH"
+  "CHATGPT"
+  "DISNEY_PLUS"
+  "DISNEY_PLUS_ACCESS"
+  "YOUTUBE_CDN"
   "CLAUDE"
   "REDDIT"
   "QWEN_CN"
@@ -224,6 +241,11 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [JETBRAINS]="lookup_jetbrains"
   [PLAYSTATION]="lookup_playstation"
   [MICROSOFT]="lookup_microsoft"
+  [TWITCH]="lookup_twitch"
+  [CHATGPT]="lookup_chatgpt"
+  [DISNEY_PLUS]="lookup_disney_plus"
+  [DISNEY_PLUS_ACCESS]="lookup_disney_plus_access"
+  [YOUTUBE_CDN]="lookup_youtube_cdn"
   [CLAUDE]="lookup_claude"
   [REDDIT]="lookup_reddit"
   [QWEN_CN]="lookup_qwen_cn"
@@ -3912,6 +3934,115 @@ lookup_microsoft() {
 
   response=$(curl_wrapper GET "https://login.live.com" --ip-version "$ip_version")
   grep_wrapper --perl '"sRequestCountry":"\K[^"]*' <<<"$response"
+}
+
+lookup_twitch() {
+  local ip_version="$1"
+  local response
+
+  response=$(curl_wrapper POST "https://gql.twitch.tv/gql" \
+    --header "Client-Id: $TWITCH_CLIENT_ID" \
+    --json '[{"operationName":"VerifyEmail_CurrentUser","variables":{},"extensions":{"persistedQuery":{"version":1,"sha256Hash":"f9e7dcdf7e99c314c82d8f7f725fab5f99d1df3d7359b53c9ae122deec590198"}}}]' \
+    --ip-version "$ip_version")
+
+  process_json "$response" ".[0].data.requestInfo.countryCode"
+}
+
+lookup_chatgpt() {
+  local ip_version="$1"
+  local response fragment
+
+  response=$(curl_wrapper POST "https://ab.chatgpt.com/v1/initialize" \
+    --header "Statsig-Api-Key: $CHATGPT_STATSIG_API_KEY" \
+    --ip-version "$ip_version")
+
+  fragment=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$response" | head -n 1)
+
+  process_json "${fragment#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" ".country"
+}
+
+lookup_disney_plus() {
+  local ip_version="$1"
+  local response
+
+  response=$(curl_wrapper POST "https://disney.api.edge.bamgrid.com/graph/v1/device/graphql" \
+    --header "Authorization: Bearer $DISNEY_PLUS_API_KEY" \
+    --json "$DISNEY_PLUS_JSON_BODY" \
+    --ip-version "$ip_version")
+
+  local country
+  country=$(process_json "$response" ".extensions.sdk.session.location.countryCode")
+  if [[ -z "$country" || "$country" == "null" ]]; then
+    echo ""
+    return
+  fi
+
+  printf "%s" "$country"
+}
+
+lookup_disney_plus_access() {
+  local ip_version="$1"
+  local response errors_count in_supported_location is_available color_name
+
+  response=$(curl_wrapper POST "https://disney.api.edge.bamgrid.com/graph/v1/device/graphql" \
+    --header "Authorization: Bearer $DISNEY_PLUS_API_KEY" \
+    --json "$DISNEY_PLUS_JSON_BODY" \
+    --ip-version "$ip_version")
+
+  {
+    read -r errors_count
+    read -r in_supported_location
+  } < <(process_json "$response" "(.errors | length), .extensions.sdk.session.inSupportedLocation")
+
+  if [[ "$errors_count" == "0" && "$in_supported_location" == "true" ]]; then
+    is_available="Yes"
+    color_name="SERVICE"
+  else
+    is_available="No"
+    color_name="HEART"
+  fi
+
+  print_value_or_colored "$is_available" "$color_name"
+}
+
+get_iata_location() {
+  local iata_code="$1"
+  local response
+
+  response=$(curl_wrapper POST "https://www.air-port-codes.com/api/v1/single" \
+    --header "APC-Auth: 96dc04b3fb" \
+    --header "Referer: https://www.air-port-codes.com/" \
+    --data "iata=$iata_code" \
+    --ip-version 4)
+
+  process_json "$response" ".airport.country.iso // empty"
+}
+
+parse_youtube_cdn_iata() {
+  local node="$1"
+  local google_node_regex='^([a-z]{3})[0-9]'
+  local isp_iata_regex='^[a-z]+-([a-z]{3})[0-9]'
+  local ggc_node_regex='^[a-z]{2}([a-z]{3})[a-z]-[a-z0-9]+$'
+
+  if [[ "$node" =~ $google_node_regex || "$node" =~ $isp_iata_regex || "$node" =~ $ggc_node_regex ]]; then
+    echo "${BASH_REMATCH[1]^^}"
+  fi
+}
+
+lookup_youtube_cdn() {
+  local ip_version="$1"
+  local response iata location
+
+  response=$(curl_wrapper GET "https://redirector.googlevideo.com/report_mapping?di=no" --ip-version "$ip_version")
+  iata=$(parse_youtube_cdn_iata "$(awk '{print $3}' <<<"$response")")
+
+  if [[ -z "$iata" ]]; then
+    echo ""
+    return
+  fi
+
+  location=$(get_iata_location "$iata")
+  echo "$location ($iata)"
 }
 
 lookup_claude() {
