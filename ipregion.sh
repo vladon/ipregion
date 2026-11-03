@@ -23,6 +23,9 @@ SPOTIFY_CLIENT_ID="9a8d2f0ce77a4e248bb71fefcb557637"
 
 # Telegram production MTProto data centers (official app endpoints)
 TELEGRAM_DC_PROBE_TARGETS=("149.154.167.51:443" "91.108.56.130:443")
+# WhatsApp media/gateway edges and the Discord websocket gateway
+WHATSAPP_PROBE_TARGETS=("g.whatsapp.net:443")
+DISCORD_PROBE_TARGETS=("gateway.discord.gg:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -222,9 +225,11 @@ declare -A CUSTOM_SERVICES=(
   [INSTAGRAM]="Instagram"
   [TIKTOK_ACCESS]="TikTok Access"
   [WHATSAPP]="WhatsApp"
+  [WHATSAPP_DC]="WhatsApp DC"
   [TELEGRAM_ACCESS]="Telegram Access"
   [TELEGRAM_DC]="Telegram DC"
   [DISCORD_ACCESS]="Discord Access"
+  [DISCORD_GATEWAY]="Discord Gateway"
   [TWITTER]="Twitter (X)"
   [LINKEDIN_ACCESS]="LinkedIn Access"
   [FACEBOOK_ACCESS]="Facebook Access"
@@ -278,9 +283,11 @@ CUSTOM_SERVICES_ORDER=(
   "INSTAGRAM"
   "TIKTOK_ACCESS"
   "WHATSAPP"
+  "WHATSAPP_DC"
   "TELEGRAM_ACCESS"
   "TELEGRAM_DC"
   "DISCORD_ACCESS"
+  "DISCORD_GATEWAY"
   "TWITTER"
   "LINKEDIN_ACCESS"
   "FACEBOOK_ACCESS"
@@ -334,9 +341,11 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [INSTAGRAM]="lookup_instagram"
   [TIKTOK_ACCESS]="lookup_tiktok_access"
   [WHATSAPP]="lookup_whatsapp"
+  [WHATSAPP_DC]="lookup_whatsapp_dc"
   [TELEGRAM_ACCESS]="lookup_telegram_access"
   [TELEGRAM_DC]="lookup_telegram_dc"
   [DISCORD_ACCESS]="lookup_discord_access"
+  [DISCORD_GATEWAY]="lookup_discord_gateway"
   [TWITTER]="lookup_twitter"
   [LINKEDIN_ACCESS]="lookup_linkedin_access"
   [FACEBOOK_ACCESS]="lookup_facebook_access"
@@ -4452,10 +4461,12 @@ lookup_telegram_access() {
   lookup_site_access "https://web.telegram.org/k/" "telegram" "$1"
 }
 
-lookup_telegram_dc() {
+# Yes when any target in the named array accepts a TCP connection.
+lookup_tcp_targets() {
+  local -n probe_targets="$1"
   local target
 
-  for target in "${TELEGRAM_DC_PROBE_TARGETS[@]}"; do
+  for target in "${probe_targets[@]}"; do
     if tcp_probe "${target%%:*}" "${target##*:}" 3; then
       print_value_or_colored "Yes" "SERVICE"
       return
@@ -4463,6 +4474,18 @@ lookup_telegram_dc() {
   done
 
   print_value_or_colored "No" "HEART"
+}
+
+lookup_telegram_dc() {
+  lookup_tcp_targets TELEGRAM_DC_PROBE_TARGETS
+}
+
+lookup_whatsapp_dc() {
+  lookup_tcp_targets WHATSAPP_PROBE_TARGETS
+}
+
+lookup_discord_gateway() {
+  lookup_tcp_targets DISCORD_PROBE_TARGETS
 }
 
 lookup_discord_access() {
