@@ -120,6 +120,7 @@ CACHE_SHOWN=false
 RESULT_JSON=""
 ARR_PRIMARY=()
 ARR_CUSTOM=()
+ARR_CDN=()
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
 ASN_NUMBER=""
@@ -251,8 +252,6 @@ declare -A CUSTOM_SERVICES=(
   [OPENAI_API]="OpenAI API"
   [DISNEY_PLUS]="Disney+"
   [DISNEY_PLUS_ACCESS]="Disney+ Access"
-  [YOUTUBE_CDN]="YouTube CDN"
-  [CLOUDFLARE_CDN]="Cloudflare CDN"
   [REDDIT_GUEST_ACCESS]="Reddit Guest Access"
   [REDDIT_API]="Reddit API"
   [CLAUDE]="Claude"
@@ -264,7 +263,6 @@ declare -A CUSTOM_SERVICES=(
   [MINIMAX_CN]="MiniMax CN API"
   [YOUTUBE_NO_ADS]="YouTube No Ads"
   [NETFLIX]="Netflix"
-  [NETFLIX_CDN]="Netflix CDN"
   [NETFLIX_TRANSPORT]="Netflix Transport"
   [SPOTIFY]="Spotify"
   [SPOTIFY_SIGNUP]="Spotify Signup"
@@ -346,8 +344,6 @@ CUSTOM_SERVICES_ORDER=(
   "OPENAI_API"
   "DISNEY_PLUS"
   "DISNEY_PLUS_ACCESS"
-  "YOUTUBE_CDN"
-  "CLOUDFLARE_CDN"
   "REDDIT_GUEST_ACCESS"
   "REDDIT_API"
   "CLAUDE"
@@ -359,7 +355,6 @@ CUSTOM_SERVICES_ORDER=(
   "MINIMAX_CN"
   "YOUTUBE_NO_ADS"
   "NETFLIX"
-  "NETFLIX_CDN"
   "NETFLIX_TRANSPORT"
   "SPOTIFY"
   "SPOTIFY_SIGNUP"
@@ -415,6 +410,21 @@ CUSTOM_SERVICES_ORDER=(
   "TWITCH_SITE"
   "YANDEX"
   "MAIL_RU"
+)
+
+# CDN node lookups form their own -g cdn group; handlers stay in
+# CUSTOM_SERVICES_HANDLERS because they are discovered through the same
+# process_custom_service path.
+declare -A CDN_SERVICES=(
+  [YOUTUBE_CDN]="YouTube CDN"
+  [CLOUDFLARE_CDN]="Cloudflare CDN"
+  [NETFLIX_CDN]="Netflix CDN"
+)
+
+CDN_SERVICES_ORDER=(
+  "YOUTUBE_CDN"
+  "CLOUDFLARE_CDN"
+  "NETFLIX_CDN"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -515,6 +525,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
 declare -A SERVICE_GROUPS=(
   [primary]="${PRIMARY_SERVICES_ORDER[*]}"
   [custom]="${CUSTOM_SERVICES_ORDER[*]}"
+  [cdn]="${CDN_SERVICES_ORDER[*]}"
 )
 
 EXCLUDED_SERVICES=(
@@ -625,7 +636,7 @@ Options:
   -v, --verbose        Enable verbose logging
   -d, --debug          Enable debug trace; log may contain sensitive data (uploads use redacted copy)
   -j, --json           Output results in JSON format
-  -g, --group GROUP    Run only one group: 'primary', 'custom', or 'all' (default: all)
+  -g, --group GROUP    Run only one group: 'primary', 'custom', 'cdn', or 'all' (default: all)
   -t, --timeout SEC    Set curl request timeout in seconds (default: $CURL_TIMEOUT)
   -P, --parallel N     Run up to N services in parallel (default: auto)
   -S, --force-spinner  Always show spinner (even in parallel mode)
@@ -649,6 +660,7 @@ Examples:
   $SCRIPT_NAME                       # Check all services with default settings
   $SCRIPT_NAME -g primary            # Check only GeoIP services
   $SCRIPT_NAME -g custom             # Check only popular websites
+  $SCRIPT_NAME -g cdn                # Check only CDN nodes
   $SCRIPT_NAME -4                    # Test only IPv4
   $SCRIPT_NAME -6                    # Test only IPv6
   $SCRIPT_NAME -p 127.0.0.1:1080     # Use SOCKS5 proxy
@@ -1562,14 +1574,14 @@ parse_arguments() {
       ;;
     -g | --group)
       case "$2" in
-      primary | custom | all)
+      primary | custom | cdn | all)
         GROUPS_TO_SHOW="$2"
         ;;
       "")
-        error_exit "Missing value for --group. Expected: primary, custom, or all"
+        error_exit "Missing value for --group. Expected: primary, custom, cdn, or all"
         ;;
       *)
-        error_exit "Invalid group: $2. Expected: primary, custom, or all"
+        error_exit "Invalid group: $2. Expected: primary, custom, cdn, or all"
         ;;
       esac
       shift 2
@@ -3046,7 +3058,11 @@ process_custom_service() {
   local display_name handler_func group
   local metric_file
 
-  if [[ -n "${CUSTOM_SERVICES[$service]}" ]]; then
+  if [[ -n "${CDN_SERVICES[$service]}" ]]; then
+    display_name="${CDN_SERVICES[$service]}"
+    handler_func="${CUSTOM_SERVICES_HANDLERS[$service]}"
+    group="cdn"
+  elif [[ -n "${CUSTOM_SERVICES[$service]}" ]]; then
     display_name="${CUSTOM_SERVICES[$service]}"
     handler_func="${CUSTOM_SERVICES_HANDLERS[$service]}"
     group="custom"
@@ -3117,7 +3133,7 @@ run_service_group() {
     fi
 
     case "$group" in
-    custom)
+    custom | cdn)
       is_custom=true
       ;;
     esac
@@ -3138,7 +3154,7 @@ run_service_group_parallel() {
 
   read -ra services_array <<<"$services_string"
 
-  if [[ "$group" == "custom" ]]; then
+  if [[ "$group" == "custom" || "$group" == "cdn" ]]; then
     is_custom=true
   fi
 
@@ -3215,7 +3231,7 @@ run_all_services() {
 }
 
 finalize_json() {
-  local t_primary t_custom
+  local t_primary t_custom t_cdn
   local IFS=$'\n'
 
   if ((${#ARR_PRIMARY[@]} > 0)); then
@@ -3226,10 +3242,15 @@ finalize_json() {
     t_custom=$(printf '%s\n' "${ARR_CUSTOM[@]//|||/$'\t'}")
   fi
 
+  if ((${#ARR_CDN[@]} > 0)); then
+    t_cdn=$(printf '%s\n' "${ARR_CDN[@]//|||/$'\t'}")
+  fi
+
   RESULT_JSON=$(
     jq -n \
       --rawfile p <(printf "%s" "$t_primary") \
       --rawfile c <(printf "%s" "$t_custom") \
+      --rawfile d <(printf "%s" "$t_cdn") \
       --arg ipv4 "$EXTERNAL_IPV4" \
       --arg ipv6 "$EXTERNAL_IPV6" \
       --arg ipv4_source "$EXTERNAL_IPV4_SOURCE" \
@@ -3293,6 +3314,7 @@ finalize_json() {
 
         (lines_to_array($p)) as $primary
         | (lines_to_array($c)) as $custom
+        | (lines_to_array($d)) as $cdn
         | {
           version: ($version|tonumber),
           ip: {
@@ -3321,7 +3343,8 @@ finalize_json() {
           },
           results: {
             primary: $primary,
-            custom:  $custom
+            custom:  $custom,
+            cdn:     $cdn
           }
         }
       '
@@ -3359,6 +3382,7 @@ add_result() {
   case "$group" in
   primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  cdn) ARR_CDN+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
@@ -3380,6 +3404,7 @@ add_result_line() {
   case "$group" in
   primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  cdn) ARR_CDN+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
@@ -3759,9 +3784,16 @@ print_results() {
     print_table_group "custom" "Popular services"
     print_metrics_group "custom" "Popular service metrics"
     ;;
+  cdn)
+    print_table_group "cdn" "CDN"
+    print_metrics_group "cdn" "CDN metrics"
+    ;;
   *)
     print_table_group "custom" "Popular services"
     print_metrics_group "custom" "Popular service metrics"
+    printf "\n"
+    print_table_group "cdn" "CDN"
+    print_metrics_group "cdn" "CDN metrics"
     printf "\n"
     print_table_group "primary" "GeoIP services"
     print_metrics_group "primary" "GeoIP service metrics"
@@ -5117,13 +5149,22 @@ main() {
       run_service_group "custom"
     fi
     ;;
+  cdn)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "cdn"
+    else
+      run_service_group "cdn"
+    fi
+    ;;
   *)
     if ((PARALLEL_JOBS > 1)); then
       run_service_group_parallel "primary"
       run_service_group_parallel "custom"
+      run_service_group_parallel "cdn"
     else
       run_service_group "primary"
       run_service_group "custom"
+      run_service_group "cdn"
     fi
     ;;
   esac

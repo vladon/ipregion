@@ -19,7 +19,7 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 
 ## Features
 
-- 74 checks in two groups: GeoIP sources (19) and popular services (55)
+- 94 checks in three groups: GeoIP sources (19), popular services (72) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -46,6 +46,7 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --help # Show all options
 ./ipregion.sh --group primary # GeoIP services only
 ./ipregion.sh --group custom # Popular websites only
+./ipregion.sh --group cdn # CDN node checks only
 ./ipregion.sh --ipv4 # IPv4 only
 ./ipregion.sh --ipv6 # IPv6 only
 ./ipregion.sh --proxy 127.0.0.1:1080 # Use SOCKS5 proxy
@@ -76,10 +77,14 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 ### Availability (Yes/No per network)
 
 - **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway probe), Signal, Messenger
-- **Social**: Instagram, Facebook, Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access)
-- **AI**: ChatGPT, Claude, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web
-- **Streaming**: YouTube (region, Premium via API, Premium via web page, No Ads), Netflix (region + CDN), Spotify (region + signup), Disney+ (region + access), Peacock, YouTube CDN, Cloudflare CDN
+- **Social**: Instagram, Facebook, Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch Site, Yandex, Mail.ru
+- **AI**: ChatGPT, Claude, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X)
+- **Streaming**: YouTube (region, Premium via API, Premium via web page, No Ads), Netflix (region), Spotify (region + signup), Disney+ (region + access), Peacock
 - **Region gates**: Douyin (CN egress detector), Peacock
+
+### CDN nodes (group cdn)
+
+YouTube CDN, Cloudflare CDN, Netflix CDN — Google/Cloudflare/Netflix edge node detection (`--group cdn`).
 
 A green Yes means the service answers from your network; a red No usually means a transport-level block (connection reset or timeout) or a region-gate stub; Denied / Rate-limit / N/A are HTTP-level outcomes.
 
