@@ -45,6 +45,8 @@ GOOGLE_PROBE_TARGETS=("www.google.com:443")
 YOUTUBE_PROBE_TARGETS=("www.youtube.com:443")
 INSTAGRAM_PROBE_TARGETS=("www.instagram.com:443")
 THREADS_PROBE_TARGETS=("www.threads.com:443")
+STEAM_PROBE_TARGETS=("store.steampowered.com:443")
+NETFLIX_PROBE_TARGETS=("www.netflix.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -220,6 +222,7 @@ declare -A CUSTOM_SERVICES=(
   [GEMINI]="Google Gemini"
   [APPLE]="Apple"
   [STEAM]="Steam"
+  [STEAM_TRANSPORT]="Steam Transport"
   [TIKTOK]="Tiktok"
   [OOKLA_SPEEDTEST]="Ookla Speedtest"
   [JETBRAINS]="JetBrains"
@@ -241,6 +244,7 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE_NO_ADS]="YouTube No Ads"
   [NETFLIX]="Netflix"
   [NETFLIX_CDN]="Netflix CDN"
+  [NETFLIX_TRANSPORT]="Netflix Transport"
   [SPOTIFY]="Spotify"
   [SPOTIFY_SIGNUP]="Spotify Signup"
   [INSTAGRAM]="Instagram"
@@ -289,6 +293,7 @@ CUSTOM_SERVICES_ORDER=(
   "GEMINI"
   "APPLE"
   "STEAM"
+  "STEAM_TRANSPORT"
   "TIKTOK"
   "OOKLA_SPEEDTEST"
   "JETBRAINS"
@@ -310,6 +315,7 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE_NO_ADS"
   "NETFLIX"
   "NETFLIX_CDN"
+  "NETFLIX_TRANSPORT"
   "SPOTIFY"
   "SPOTIFY_SIGNUP"
   "INSTAGRAM"
@@ -358,6 +364,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
   [STEAM]="lookup_steam"
+  [STEAM_TRANSPORT]="lookup_steam_transport"
   [TIKTOK]="lookup_tiktok"
   [OOKLA_SPEEDTEST]="lookup_ookla_speedtest"
   [JETBRAINS]="lookup_jetbrains"
@@ -379,6 +386,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE_NO_ADS]="lookup_youtube_no_ads"
   [NETFLIX]="lookup_netflix"
   [NETFLIX_CDN]="lookup_netflix_cdn"
+  [NETFLIX_TRANSPORT]="lookup_netflix_transport"
   [SPOTIFY]="lookup_spotify"
   [SPOTIFY_SIGNUP]="lookup_spotify_signup"
   [INSTAGRAM]="lookup_instagram"
@@ -4679,6 +4687,14 @@ lookup_instagram_transport() {
 
 lookup_threads_transport() {
   lookup_tcp_targets THREADS_PROBE_TARGETS
+}
+
+lookup_steam_transport() {
+  lookup_tcp_targets STEAM_PROBE_TARGETS
+}
+
+lookup_netflix_transport() {
+  lookup_tcp_targets NETFLIX_PROBE_TARGETS
 }
 
 lookup_claude() {
