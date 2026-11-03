@@ -26,6 +26,14 @@ TELEGRAM_DC_PROBE_TARGETS=("149.154.167.51:443" "91.108.56.130:443")
 # WhatsApp media/gateway edges and the Discord websocket gateway
 WHATSAPP_PROBE_TARGETS=("g.whatsapp.net:443")
 DISCORD_PROBE_TARGETS=("gateway.discord.gg:443")
+# Instagram/Threads Meta API edges (verified reachable via hostname probes);
+# VK API as IP literals - bash /dev/tcp proved unreliable with its multi-A
+# hostname. Signal's hostname DNS-poisons to nothing on restricted networks,
+# which the probe honestly reports as No.
+INSTAGRAM_PROBE_TARGETS=("i.instagram.com:443")
+THREADS_PROBE_TARGETS=("graph.threads.net:443")
+SIGNAL_PROBE_TARGETS=("textsecure-service.whispersystems.org:443")
+VK_PROBE_TARGETS=("87.240.137.208:443" "87.240.190.70:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -223,6 +231,7 @@ declare -A CUSTOM_SERVICES=(
   [SPOTIFY]="Spotify"
   [SPOTIFY_SIGNUP]="Spotify Signup"
   [INSTAGRAM]="Instagram"
+  [INSTAGRAM_API]="Instagram API"
   [TIKTOK_ACCESS]="TikTok Access"
   [WHATSAPP]="WhatsApp"
   [WHATSAPP_DC]="WhatsApp DC"
@@ -235,9 +244,12 @@ declare -A CUSTOM_SERVICES=(
   [FACEBOOK_ACCESS]="Facebook Access"
   [MESSENGER_ACCESS]="Messenger Access"
   [THREADS_ACCESS]="Threads Access"
+  [THREADS_API]="Threads API"
   [SIGNAL_ACCESS]="Signal Access"
+  [SIGNAL_SERVICE]="Signal Service"
   [DOUYIN_CN]="Douyin (CN)"
   [VK]="VK"
+  [VK_API]="VK API"
   [OK_RU]="OK"
   [GROK]="Grok"
   [DEEPSEEK]="DeepSeek"
@@ -281,6 +293,7 @@ CUSTOM_SERVICES_ORDER=(
   "SPOTIFY"
   "SPOTIFY_SIGNUP"
   "INSTAGRAM"
+  "INSTAGRAM_API"
   "TIKTOK_ACCESS"
   "WHATSAPP"
   "WHATSAPP_DC"
@@ -293,9 +306,12 @@ CUSTOM_SERVICES_ORDER=(
   "FACEBOOK_ACCESS"
   "MESSENGER_ACCESS"
   "THREADS_ACCESS"
+  "THREADS_API"
   "SIGNAL_ACCESS"
+  "SIGNAL_SERVICE"
   "DOUYIN_CN"
   "VK"
+  "VK_API"
   "OK_RU"
   "GROK"
   "DEEPSEEK"
@@ -339,6 +355,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SPOTIFY]="lookup_spotify"
   [SPOTIFY_SIGNUP]="lookup_spotify_signup"
   [INSTAGRAM]="lookup_instagram"
+  [INSTAGRAM_API]="lookup_instagram_api"
   [TIKTOK_ACCESS]="lookup_tiktok_access"
   [WHATSAPP]="lookup_whatsapp"
   [WHATSAPP_DC]="lookup_whatsapp_dc"
@@ -351,9 +368,12 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [FACEBOOK_ACCESS]="lookup_facebook_access"
   [MESSENGER_ACCESS]="lookup_messenger_access"
   [THREADS_ACCESS]="lookup_threads_access"
+  [THREADS_API]="lookup_threads_api"
   [SIGNAL_ACCESS]="lookup_signal_access"
+  [SIGNAL_SERVICE]="lookup_signal_service"
   [DOUYIN_CN]="lookup_douyin_cn"
   [VK]="lookup_vk"
+  [VK_API]="lookup_vk_api"
   [OK_RU]="lookup_ok_ru"
   [GROK]="lookup_grok"
   [DEEPSEEK]="lookup_deepseek"
@@ -4583,6 +4603,22 @@ lookup_qwen_web() {
 
 lookup_peacock_access() {
   lookup_region_gate_access "https://www.peacocktv.com/" "Unavailable In Your Region" "peacock" "$1"
+}
+
+lookup_instagram_api() {
+  lookup_tcp_targets INSTAGRAM_PROBE_TARGETS
+}
+
+lookup_threads_api() {
+  lookup_tcp_targets THREADS_PROBE_TARGETS
+}
+
+lookup_signal_service() {
+  lookup_tcp_targets SIGNAL_PROBE_TARGETS
+}
+
+lookup_vk_api() {
+  lookup_tcp_targets VK_PROBE_TARGETS
 }
 
 lookup_claude() {

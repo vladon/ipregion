@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB FACEBOOK_ACCESS MESSENGER_ACCESS THREADS_ACCESS SIGNAL_ACCESS DOUYIN_CN VK OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API TIKTOK_ACCESS WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB FACEBOOK_ACCESS MESSENGER_ACCESS THREADS_ACCESS THREADS_API SIGNAL_ACCESS SIGNAL_SERVICE DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -605,9 +605,17 @@ DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_telegram_dc 4)" "telegram dc maps unreachable dc to No"
 assert_eq "No" "$(lookup_whatsapp_dc 4)" "whatsapp dc maps unreachable dc to No"
 assert_eq "No" "$(lookup_discord_gateway 4)" "discord gateway maps unreachable dc to No"
+assert_eq "No" "$(lookup_instagram_api 4)" "instagram api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_threads_api 4)" "threads api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_signal_service 4)" "signal service maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_vk_api 4)" "vk api maps unreachable endpoint to No"
 DC_PROBE_MODE="up"
 assert_eq "Yes" "$(lookup_whatsapp_dc 4)" "whatsapp dc maps reachable dc to Yes"
 assert_eq "Yes" "$(lookup_discord_gateway 4)" "discord gateway maps reachable dc to Yes"
+assert_eq "Yes" "$(lookup_instagram_api 4)" "instagram api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_threads_api 4)" "threads api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_signal_service 4)" "signal service maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_vk_api 4)" "vk api maps reachable endpoint to Yes"
 unset -f tcp_probe dc_probe_stub
 unset DC_PROBE_MODE
 JSON_OUTPUT=false

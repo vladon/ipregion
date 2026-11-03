@@ -50,6 +50,25 @@
         "metrics": {
           "ipv4": {
             "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Instagram API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
             "http_code": 200,
             "latency_ms": 100,
             "transport_ip_version": 4
@@ -273,6 +292,25 @@
         "service": "Threads Access"
       },
       {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Threads API"
+      },
+      {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
         "ipv6": "\u001b[1;32mYes\u001b[0m",
         "metrics": {
@@ -290,6 +328,25 @@
           }
         },
         "service": "Signal Access"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Signal Service"
       },
       {
         "ipv4": "\u001b[1;31mNo\u001b[0m",
@@ -328,6 +385,25 @@
           }
         },
         "service": "VK"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "VK API"
       },
       {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
