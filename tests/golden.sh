@@ -133,6 +133,11 @@ tcp_probe() {
   [[ "$1" == "149.154.167.51" ]]
 }
 
+# Golden verdicts must not depend on the real DNS resolver.
+host_resolves() {
+  true
+}
+
 # Fixed state ----------------------------------------------------------------
 
 INCLUDED_SERVICES=(

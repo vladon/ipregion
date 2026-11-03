@@ -1193,7 +1193,7 @@ format_value() {
   "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "IP block")
     color ERROR "$value"
     ;;
-  "$STATUS_RATE_LIMIT")
+  "$STATUS_RATE_LIMIT" | "DNS block")
     color WARN "$value"
     ;;
   *)
@@ -4412,6 +4412,25 @@ lookup_spotify_signup() {
   print_value_or_colored "$available" "$color_name"
 }
 
+# Portable single-record resolver: 0 when the host resolves to any address.
+# With no resolver tool available there is no data, which is not a DNS block.
+host_resolves() {
+  local host="$1"
+  local addr=""
+
+  if command -v getent >/dev/null 2>&1; then
+    addr=$(getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1; exit}')
+  elif command -v nslookup >/dev/null 2>&1; then
+    addr=$(nslookup "$host" 2>/dev/null | awk '/^Address/ {print $NF}' | grep -v '#' | tail -n 1)
+  elif command -v host >/dev/null 2>&1; then
+    addr=$(host "$host" 2>/dev/null | awk '/has address/{print $NF; exit}')
+  else
+    return 1
+  fi
+
+  [[ -n "$addr" ]]
+}
+
 # TCP connect probe via the bash /dev/tcp builtin; no external tools needed.
 # Returns 0 when the connection succeeds within timeout seconds, 1 otherwise.
 tcp_probe() {
@@ -4538,19 +4557,29 @@ lookup_telegram_access() {
   lookup_site_access "https://web.telegram.org/k/" "telegram" "$1"
 }
 
-# Yes when any target in the named array accepts a TCP connection.
+# Yes when any target in the named array accepts a TCP connection; "DNS block"
+# when every failing target also failed to resolve.
 lookup_tcp_targets() {
   local -n probe_targets="$1"
   local target
+  local dns_blocked=false
 
   for target in "${probe_targets[@]}"; do
+    if ! host_resolves "${target%%:*}"; then
+      dns_blocked=true
+      continue
+    fi
     if tcp_probe "${target%%:*}" "${target##*:}" 3; then
       print_value_or_colored "Yes" "SERVICE"
       return
     fi
   done
 
-  print_value_or_colored "No" "HEART"
+  if [[ "$dns_blocked" == true ]]; then
+    print_value_or_colored "DNS block" "WARN"
+  else
+    print_value_or_colored "No" "HEART"
+  fi
 }
 
 lookup_telegram_dc() {
