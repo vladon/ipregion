@@ -240,6 +240,7 @@ declare -A CUSTOM_SERVICES=(
   [COPILOT]="Copilot"
   [MISTRAL]="Mistral"
   [QWEN_WEB]="Qwen Web"
+  [PEACOCK_ACCESS]="Peacock Access"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -295,6 +296,7 @@ CUSTOM_SERVICES_ORDER=(
   "COPILOT"
   "MISTRAL"
   "QWEN_WEB"
+  "PEACOCK_ACCESS"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -350,6 +352,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [COPILOT]="lookup_copilot"
   [MISTRAL]="lookup_mistral"
   [QWEN_WEB]="lookup_qwen_web"
+  [PEACOCK_ACCESS]="lookup_peacock_access"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4389,6 +4392,50 @@ lookup_site_access() {
   fi
 }
 
+# Availability via a region-gated landing page: the gate marker (e.g.
+# "Unavailable In Your Region") means No; the brand marker means Yes.
+lookup_region_gate_access() {
+  local url="$1"
+  local gate_marker="$2"
+  local brand_marker="$3"
+  local ip_version="$4"
+  local response error_type
+
+  response=$(curl_wrapper GET "$url" \
+    --user-agent "$USER_AGENT" \
+    --header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" \
+    --header "Accept-Language: en-US,en;q=0.9" \
+    --header "Sec-Fetch-Dest: document" \
+    --header "Sec-Fetch-Mode: navigate" \
+    --header "Sec-Fetch-Site: none" \
+    --header "Sec-Fetch-User: ?1" \
+    --header "Upgrade-Insecure-Requests: 1" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    error_type=$(read_curl_metric_field "$CURL_META_FILE" "error_type")
+    if [[ "$error_type" == "curl_error" ]]; then
+      print_value_or_colored "No" "HEART"
+      return
+    fi
+    echo ""
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  if grep_wrapper -qi "$gate_marker" <<<"$response"; then
+    print_value_or_colored "No" "HEART"
+  elif grep_wrapper -qi "$brand_marker" <<<"$response"; then
+    print_value_or_colored "Yes" "SERVICE"
+  else
+    print_value_or_colored "No" "HEART"
+  fi
+}
+
 lookup_instagram() {
   lookup_site_access "https://www.instagram.com/" "instagram" "$1"
 }
@@ -4509,6 +4556,10 @@ lookup_mistral() {
 
 lookup_qwen_web() {
   lookup_site_access "https://chat.qwen.ai/" "qwen" "$1"
+}
+
+lookup_peacock_access() {
+  lookup_region_gate_access "https://www.peacocktv.com/" "Unavailable In Your Region" "peacock" "$1"
 }
 
 lookup_claude() {

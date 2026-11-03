@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB FACEBOOK_ACCESS MESSENGER_ACCESS THREADS_ACCESS SIGNAL_ACCESS DOUYIN_CN VK OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB FACEBOOK_ACCESS MESSENGER_ACCESS THREADS_ACCESS SIGNAL_ACCESS DOUYIN_CN VK OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -560,6 +560,31 @@ rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper ai_stub_wrapper
 unset AI_STUB_NAME GROK_PAGE_STUB DEEPSEEK_PAGE_STUB PERPLEXITY_PAGE_STUB COPILOT_PAGE_STUB MISTRAL_PAGE_STUB QWEN_PAGE_STUB AI_UNMARKED_STUB
+JSON_OUTPUT=false
+
+# Peacock region gate (curl_wrapper stubbed)
+peacock_stub_wrapper() {
+  if [[ -n "${PEACOCK_STUB_RESPONSE:-}" ]]; then
+    printf "%s" "$PEACOCK_STUB_RESPONSE"
+  fi
+}
+curl_wrapper() { peacock_stub_wrapper "$@"; }
+JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
+printf "http_code=200;latency_ms=100;error_type=none\n" >"$CURL_META_FILE"
+PEACOCK_STUB_RESPONSE='<html><title>Unavailable In Your Region</title></html>'
+assert_eq "No" "$(lookup_peacock_access 4)" "peacock maps region gate to No"
+PEACOCK_STUB_RESPONSE='<html>stream peacock originals</html>'
+assert_eq "Yes" "$(lookup_peacock_access 4)" "peacock maps brand page to Yes"
+PEACOCK_STUB_RESPONSE='<html>captive portal</html>'
+assert_eq "No" "$(lookup_peacock_access 4)" "peacock maps unmarked body to No"
+printf "http_code=;latency_ms=;error_type=curl_error\n" >"$CURL_META_FILE"
+PEACOCK_STUB_RESPONSE=""
+assert_eq "No" "$(lookup_peacock_access 4)" "peacock maps transport failure to No"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
+unset -f curl_wrapper peacock_stub_wrapper
+unset PEACOCK_STUB_RESPONSE
 JSON_OUTPUT=false
 
 # Telegram DC probe: tcp_probe against a closed local port (deterministic)
