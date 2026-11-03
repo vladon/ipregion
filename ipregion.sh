@@ -47,6 +47,8 @@ INSTAGRAM_PROBE_TARGETS=("www.instagram.com:443")
 THREADS_PROBE_TARGETS=("www.threads.com:443")
 STEAM_PROBE_TARGETS=("store.steampowered.com:443")
 NETFLIX_PROBE_TARGETS=("www.netflix.com:443")
+APPLE_PROBE_TARGETS=("www.apple.com:443")
+MICROSOFT_PROBE_TARGETS=("www.microsoft.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -221,6 +223,7 @@ declare -A CUSTOM_SERVICES=(
   [GOOGLE_TRANSPORT]="Google Transport"
   [GEMINI]="Google Gemini"
   [APPLE]="Apple"
+  [APPLE_TRANSPORT]="Apple Transport"
   [STEAM]="Steam"
   [STEAM_TRANSPORT]="Steam Transport"
   [TIKTOK]="Tiktok"
@@ -228,6 +231,7 @@ declare -A CUSTOM_SERVICES=(
   [JETBRAINS]="JetBrains"
   [PLAYSTATION]="PlayStation"
   [MICROSOFT]="Microsoft"
+  [MICROSOFT_TRANSPORT]="Microsoft Transport"
   [TWITCH]="Twitch"
   [CHATGPT]="ChatGPT"
   [DISNEY_PLUS]="Disney+"
@@ -292,6 +296,7 @@ CUSTOM_SERVICES_ORDER=(
   "GOOGLE_TRANSPORT"
   "GEMINI"
   "APPLE"
+  "APPLE_TRANSPORT"
   "STEAM"
   "STEAM_TRANSPORT"
   "TIKTOK"
@@ -299,6 +304,7 @@ CUSTOM_SERVICES_ORDER=(
   "JETBRAINS"
   "PLAYSTATION"
   "MICROSOFT"
+  "MICROSOFT_TRANSPORT"
   "TWITCH"
   "CHATGPT"
   "DISNEY_PLUS"
@@ -363,6 +369,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [GOOGLE_TRANSPORT]="lookup_google_transport"
   [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
+  [APPLE_TRANSPORT]="lookup_apple_transport"
   [STEAM]="lookup_steam"
   [STEAM_TRANSPORT]="lookup_steam_transport"
   [TIKTOK]="lookup_tiktok"
@@ -370,6 +377,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [JETBRAINS]="lookup_jetbrains"
   [PLAYSTATION]="lookup_playstation"
   [MICROSOFT]="lookup_microsoft"
+  [MICROSOFT_TRANSPORT]="lookup_microsoft_transport"
   [TWITCH]="lookup_twitch"
   [CHATGPT]="lookup_chatgpt"
   [DISNEY_PLUS]="lookup_disney_plus"
@@ -4695,6 +4703,14 @@ lookup_steam_transport() {
 
 lookup_netflix_transport() {
   lookup_tcp_targets NETFLIX_PROBE_TARGETS
+}
+
+lookup_apple_transport() {
+  lookup_tcp_targets APPLE_PROBE_TARGETS
+}
+
+lookup_microsoft_transport() {
+  lookup_tcp_targets MICROSOFT_PROBE_TARGETS
 }
 
 lookup_claude() {
