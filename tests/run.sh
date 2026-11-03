@@ -156,6 +156,17 @@ assert_eq "US" "$(process_json "$RESULT_JSON" ".consensus.ipv4.country")" "final
 assert_eq "200" "$(process_json "$RESULT_JSON" ".results.primary[0].metrics.ipv4.http_code")" "finalize_json parses metrics"
 assert_eq "http_429" "$(process_json "$RESULT_JSON" ".results.primary[1].metrics.ipv6.error_type")" "finalize_json keeps error_type"
 
+# Regression: literal "null" jq output must not void the whole result JSON
+ASN_NUMBER="null"
+ASN_NAME="null"
+EXTERNAL_IPV4_TIMESTAMP="null"
+RESULT_JSON=""
+finalize_json
+assert_eq "1.2.3.4" "$(process_json "$RESULT_JSON" ".ip.ipv4.address")" "finalize_json survives null strings"
+assert_eq "null" "$(process_json "$RESULT_JSON" ".asn.number")" "finalize_json maps null asn number to json null"
+assert_eq "null" "$(process_json "$RESULT_JSON" ".asn.name")" "finalize_json maps null asn name to json null"
+assert_eq "null" "$(process_json "$RESULT_JSON" ".ip.ipv4.timestamp")" "finalize_json maps null timestamp to json null"
+
 assert_eq "json" "$(detect_output_format "out.json")" "detect_output_format json"
 assert_eq "csv" "$(detect_output_format "out.csv")" "detect_output_format csv"
 
