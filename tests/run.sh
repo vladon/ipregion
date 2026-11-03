@@ -262,6 +262,33 @@ unset -f curl_wrapper spotify_stub_wrapper
 unset SPOTIFY_STUB_RESPONSE
 JSON_OUTPUT=false
 
+# Instagram availability check (curl_wrapper stubbed, meta file fixture)
+instagram_stub_wrapper() {
+  if [[ -n "${INSTAGRAM_STUB_RESPONSE:-}" ]]; then
+    printf "%s" "$INSTAGRAM_STUB_RESPONSE"
+  fi
+}
+curl_wrapper() { instagram_stub_wrapper "$@"; }
+JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
+printf "http_code=;latency_ms=;error_type=curl_error\n" >"$CURL_META_FILE"
+INSTAGRAM_STUB_RESPONSE=""
+assert_eq "No" "$(lookup_instagram 4)" "instagram maps transport failure to No"
+printf "http_code=200;latency_ms=100;error_type=none\n" >"$CURL_META_FILE"
+INSTAGRAM_STUB_RESPONSE=""
+assert_empty "$(lookup_instagram 4)" "instagram maps empty response without curl error to N/A"
+INSTAGRAM_STUB_RESPONSE='<html><meta property="og:title" content="Instagram" /></html>'
+assert_eq "Yes" "$(lookup_instagram 4)" "instagram maps page marker to Yes"
+INSTAGRAM_STUB_RESPONSE='<html>captive portal</html>'
+assert_eq "No" "$(lookup_instagram 4)" "instagram maps unmarked body to No"
+INSTAGRAM_STUB_RESPONSE="Denied"
+assert_eq "Denied" "$(lookup_instagram 4)" "instagram passes status strings through"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
+unset -f curl_wrapper instagram_stub_wrapper
+unset INSTAGRAM_STUB_RESPONSE
+JSON_OUTPUT=false
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
