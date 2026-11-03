@@ -2,6 +2,9 @@
 [1;36mIPv6[0m: [1m2001:db8:0::[0m, registered in [1mDE[0m
 [1;36mASN[0m: [1mAS64496 Golden Example AS[0m
 
+[1;36mIPv4 consensus[0m: [1mUS[0m
+[1;36mIPv6 consensus[0m: [1mUS[0m
+
 [1;36mPopular services[0m
 
 [1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
@@ -74,3 +77,22 @@
 [1;36mGeoIP services[0m
 
 [1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
+[1;32mmaxmind.com[0m	[1mUS[0m	[1mUS[0m
+[1;32mrdap.db.ripe.net[0m	[1mUS[0m	[1mUS[0m
+[1;32mipinfo.io[0m	[1mUS[0m	[1mUS[0m
+[1;32mcloudflare.com[0m	[1mUS[0m	[1mUS[0m
+[1;32mipapi.co[0m	[1mUS[0m	[1mUS[0m
+[1;32mifconfig.co[0m	[1mUS[0m	[1mUS[0m
+[1;32mip2location.io[0m	[1mUS[0m	[1mUS[0m
+[1;32miplocation.com[0m	[1mCY[0m	[1mCY[0m
+[1;32mcountry.is[0m	[1mUS[0m	[1mUS[0m
+[1;32mgeojs.io[0m	[1mUS[0m	[1mUS[0m
+[1;32mipapi.is[0m	[1mUS[0m	[1mUS[0m
+[1;32mipbase.com[0m	[1mUS[0m	[1mUS[0m
+[1;32mipquery.io[0m	[1mUS[0m	[1mUS[0m
+[1;32mipwhois.io[0m	[1mUS[0m	[1mUS[0m
+[1;32mipwho.is[0m	[1mUS[0m	[1mUS[0m
+[1;32mip-api.com[0m	[1mUS[0m	[1mUS[0m
+[1;32mDetector404[0m	[1mUS[0m	[1mUS[0m
+[1;32mipregistry.co[0m	[1mUS[0m	[1mUS[0m
+[1;32mgeoapify.com[0m	[1mUS[0m	[1mUS[0m
