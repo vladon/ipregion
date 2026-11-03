@@ -41,6 +41,10 @@ MESSENGER_PROBE_TARGETS=("edge-mqtt.facebook.com:443")
 # probes from both networks)
 TIKTOK_PROBE_TARGETS=("www.tiktok.com:443")
 GOOGLE_PROBE_TARGETS=("www.google.com:443")
+# Site-host transports pairing with the site access checks
+YOUTUBE_PROBE_TARGETS=("www.youtube.com:443")
+INSTAGRAM_PROBE_TARGETS=("www.instagram.com:443")
+THREADS_PROBE_TARGETS=("www.threads.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -210,6 +214,7 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE]="YouTube"
   [YOUTUBE_PREMIUM]="YouTube Premium"
   [YOUTUBE_PREMIUM_WEB]="YouTube Premium (Web)"
+  [YOUTUBE_TRANSPORT]="YouTube Transport"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
   [GOOGLE_TRANSPORT]="Google Transport"
   [GEMINI]="Google Gemini"
@@ -240,6 +245,7 @@ declare -A CUSTOM_SERVICES=(
   [SPOTIFY_SIGNUP]="Spotify Signup"
   [INSTAGRAM]="Instagram"
   [INSTAGRAM_API]="Instagram API"
+  [INSTAGRAM_TRANSPORT]="Instagram Transport"
   [TIKTOK_ACCESS]="TikTok Access"
   [TIKTOK_TRANSPORT]="TikTok Transport"
   [WHATSAPP]="WhatsApp"
@@ -256,6 +262,7 @@ declare -A CUSTOM_SERVICES=(
   [MESSENGER_MQTT]="Messenger MQTT"
   [THREADS_ACCESS]="Threads Access"
   [THREADS_API]="Threads API"
+  [THREADS_TRANSPORT]="Threads Transport"
   [SIGNAL_ACCESS]="Signal Access"
   [SIGNAL_SERVICE]="Signal Service"
   [DOUYIN_CN]="Douyin (CN)"
@@ -276,6 +283,7 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE"
   "YOUTUBE_PREMIUM"
   "YOUTUBE_PREMIUM_WEB"
+  "YOUTUBE_TRANSPORT"
   "GOOGLE_SEARCH_CAPTCHA"
   "GOOGLE_TRANSPORT"
   "GEMINI"
@@ -306,6 +314,7 @@ CUSTOM_SERVICES_ORDER=(
   "SPOTIFY_SIGNUP"
   "INSTAGRAM"
   "INSTAGRAM_API"
+  "INSTAGRAM_TRANSPORT"
   "TIKTOK_ACCESS"
   "TIKTOK_TRANSPORT"
   "WHATSAPP"
@@ -322,6 +331,7 @@ CUSTOM_SERVICES_ORDER=(
   "MESSENGER_MQTT"
   "THREADS_ACCESS"
   "THREADS_API"
+  "THREADS_TRANSPORT"
   "SIGNAL_ACCESS"
   "SIGNAL_SERVICE"
   "DOUYIN_CN"
@@ -342,6 +352,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE]="lookup_youtube"
   [YOUTUBE_PREMIUM]="lookup_youtube_premium"
   [YOUTUBE_PREMIUM_WEB]="lookup_youtube_premium_web"
+  [YOUTUBE_TRANSPORT]="lookup_youtube_transport"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
   [GOOGLE_TRANSPORT]="lookup_google_transport"
   [GEMINI]="lookup_gemini"
@@ -372,6 +383,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SPOTIFY_SIGNUP]="lookup_spotify_signup"
   [INSTAGRAM]="lookup_instagram"
   [INSTAGRAM_API]="lookup_instagram_api"
+  [INSTAGRAM_TRANSPORT]="lookup_instagram_transport"
   [TIKTOK_ACCESS]="lookup_tiktok_access"
   [TIKTOK_TRANSPORT]="lookup_tiktok_transport"
   [WHATSAPP]="lookup_whatsapp"
@@ -388,6 +400,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MESSENGER_MQTT]="lookup_messenger_mqtt"
   [THREADS_ACCESS]="lookup_threads_access"
   [THREADS_API]="lookup_threads_api"
+  [THREADS_TRANSPORT]="lookup_threads_transport"
   [SIGNAL_ACCESS]="lookup_signal_access"
   [SIGNAL_SERVICE]="lookup_signal_service"
   [DOUYIN_CN]="lookup_douyin_cn"
@@ -4654,6 +4667,18 @@ lookup_tiktok_transport() {
 
 lookup_google_transport() {
   lookup_tcp_targets GOOGLE_PROBE_TARGETS
+}
+
+lookup_youtube_transport() {
+  lookup_tcp_targets YOUTUBE_PROBE_TARGETS
+}
+
+lookup_instagram_transport() {
+  lookup_tcp_targets INSTAGRAM_PROBE_TARGETS
+}
+
+lookup_threads_transport() {
+  lookup_tcp_targets THREADS_PROBE_TARGETS
 }
 
 lookup_claude() {
