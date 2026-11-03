@@ -223,6 +223,10 @@ declare -A CUSTOM_SERVICES=(
   [DISCORD_ACCESS]="Discord Access"
   [TWITTER]="Twitter (X)"
   [LINKEDIN_ACCESS]="LinkedIn Access"
+  [FACEBOOK_ACCESS]="Facebook Access"
+  [MESSENGER_ACCESS]="Messenger Access"
+  [THREADS_ACCESS]="Threads Access"
+  [SIGNAL_ACCESS]="Signal Access"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -264,6 +268,10 @@ CUSTOM_SERVICES_ORDER=(
   "DISCORD_ACCESS"
   "TWITTER"
   "LINKEDIN_ACCESS"
+  "FACEBOOK_ACCESS"
+  "MESSENGER_ACCESS"
+  "THREADS_ACCESS"
+  "SIGNAL_ACCESS"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -305,6 +313,10 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DISCORD_ACCESS]="lookup_discord_access"
   [TWITTER]="lookup_twitter"
   [LINKEDIN_ACCESS]="lookup_linkedin_access"
+  [FACEBOOK_ACCESS]="lookup_facebook_access"
+  [MESSENGER_ACCESS]="lookup_messenger_access"
+  [THREADS_ACCESS]="lookup_threads_access"
+  [SIGNAL_ACCESS]="lookup_signal_access"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4345,6 +4357,22 @@ lookup_twitter() {
 
 lookup_linkedin_access() {
   lookup_site_access "https://www.linkedin.com/" "linkedin" "$1"
+}
+
+lookup_facebook_access() {
+  lookup_site_access "https://www.facebook.com/" "facebook" "$1"
+}
+
+lookup_messenger_access() {
+  lookup_site_access "https://www.messenger.com/" "messenger" "$1"
+}
+
+lookup_threads_access() {
+  lookup_site_access "https://www.threads.com/" "threads" "$1"
+}
+
+lookup_signal_access() {
+  lookup_site_access "https://signal.org/" "signal" "$1"
 }
 
 lookup_claude() {
