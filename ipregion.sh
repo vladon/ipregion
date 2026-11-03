@@ -530,7 +530,7 @@ setup_debug() {
   fi
 
   umask 077
-  DEBUG_LOG_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_debug_XXXXXX.log")
+  DEBUG_LOG_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_debug_XXXXXX")
 
   exec 3>&1 4>&2
 
@@ -597,7 +597,7 @@ html_decode() {
 redact_debug_log() {
   local source_file="$1"
   local redacted_file
-  redacted_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_debug_redacted_XXXXXX.log")
+  redacted_file=$(mktemp "${TMPDIR:-/tmp}/ipregion_debug_redacted_XXXXXX")
 
   sed -E \
     -e 's/([A-Fa-f0-9]{0,4}:){2,}[A-Fa-f0-9]{0,4}/[REDACTED_IPV6]/g' \
