@@ -4,8 +4,18 @@
     "number": 64496
   },
   "consensus": {
-    "ipv4": null,
-    "ipv6": null
+    "ipv4": {
+      "confidence": 94,
+      "count": 18,
+      "country": "US",
+      "total": 19
+    },
+    "ipv6": {
+      "confidence": 94,
+      "count": 18,
+      "country": "US",
+      "total": 19
+    }
   },
   "ip": {
     "ipv4": {
@@ -1186,7 +1196,369 @@
         "service": "Mail.ru"
       }
     ],
-    "primary": []
+    "primary": [
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "maxmind.com"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "rdap.db.ripe.net"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          }
+        },
+        "service": "ipinfo.io"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "cloudflare.com"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ipapi.co"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ifconfig.co"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ip2location.io"
+      },
+      {
+        "ipv4": "CY",
+        "ipv6": "CY",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          }
+        },
+        "service": "iplocation.com"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "country.is"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "geojs.io"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          }
+        },
+        "service": "ipapi.is"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ipbase.com"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ipquery.io"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ipwhois.io"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          }
+        },
+        "service": "ipwho.is"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          }
+        },
+        "service": "ip-api.com"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Detector404"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ipregistry.co"
+      },
+      {
+        "ipv4": "US",
+        "ipv6": "US",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "geoapify.com"
+      }
+    ]
   },
   "version": 1
 }

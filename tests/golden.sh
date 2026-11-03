@@ -131,6 +131,61 @@ stub_body() {
   *mail.ru*)
     printf '%s' '<!doctype html><html><head><title>Mail.ru</title></head><body>mail.ru mail</body></html>'
     ;;
+  # Primary GeoIP fixtures (all US, iplocation.com CY to exercise its custom handler)
+  *geoip.maxmind.com*)
+    printf '%s' '{"country":{"iso_code":"US"},"traits":{"autonomous_system_number":64496}}'
+    ;;
+  *rdap.db.ripe.net*)
+    printf '%s' '{"country":"US"}'
+    ;;
+  *ipinfo.io*)
+    printf '%s' '{"data":{"country":"US"}}'
+    ;;
+  *api.ipregistry.co*)
+    printf '%s' '{"location":{"country":{"code":"US"}}}'
+    ;;
+  *ipapi.co*)
+    printf '%s' '{"country":"US"}'
+    ;;
+  *speed.cloudflare.com*)
+    printf '%s' '{"country":"US"}'
+    ;;
+  *api.country.is*)
+    printf '%s' '{"country":"US"}'
+    ;;
+  *get.geojs.io*)
+    printf '%s' '[{"country":"US"}]'
+    ;;
+  *api.geoapify.com*)
+    printf '%s' '{"country":{"iso_code":"US"}}'
+    ;;
+  *api.ipapi.is*)
+    printf '%s' '{"location":{"country_code":"US"}}'
+    ;;
+  *api.ipbase.com*)
+    printf '%s' '{"data":{"location":{"country":{"alpha2":"US"}}}}'
+    ;;
+  *api.ipquery.io*)
+    printf '%s' '{"location":{"country_code":"US"}}'
+    ;;
+  *ipwho.is*)
+    printf '%s' '{"country_code":"US"}'
+    ;;
+  *ip-api.com*)
+    printf '%s' '{"countryCode":"US"}'
+    ;;
+  *geoip.detector404.ru*)
+    printf '%s' '{"data":{"country":{"ccode":"US"}}}'
+    ;;
+  *api.ip2location.io*)
+    printf '%s' '{"country_code":"US"}'
+    ;;
+  *ifconfig.co*)
+    printf '%s' 'US'
+    ;;
+  *iplocation.com*)
+    printf '%s' '{"country_code":"CY"}'
+    ;;
   *)
     printf '%s' ''
     ;;
@@ -232,6 +287,26 @@ INCLUDED_SERVICES=(
   "TWITCH_SITE"
   "YANDEX"
   "MAIL_RU"
+  # Primary GeoIP group (also rendered by the golden run)
+  "MAXMIND"
+  "RIPE"
+  "IPINFO_IO"
+  "CLOUDFLARE"
+  "IPAPI_CO"
+  "IFCONFIG_CO"
+  "IP2LOCATION_IO"
+  "IPLOCATION_COM"
+  "COUNTRY_IS"
+  "GEOJS_IO"
+  "IPAPI_IS"
+  "IPBASE_COM"
+  "IPQUERY_IO"
+  "IPWHOIS_IO"
+  "IPWHO_IS"
+  "IPAPI_COM"
+  "DETECTOR404"
+  "IPREGISTRY"
+  "GEOAPIFY_COM"
 )
 EXCLUDED_SERVICES=()
 EXCLUDED_SERVICES_CLI=()
@@ -255,6 +330,7 @@ VERBOSE=false
 # Run ------------------------------------------------------------------------
 
 run_service_group "custom"
+run_service_group "primary"
 finalize_json
 
 table_file=$(mktemp)
