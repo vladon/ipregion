@@ -219,6 +219,18 @@ assert_contains "${PRIMARY_SERVICES[IPREGISTRY]:-}" "hostname=true" "ipregistry 
 assert_true "primary registry defines GEOAPIFY_COM" test -n "${PRIMARY_SERVICES[GEOAPIFY_COM]:-}"
 assert_eq "CY" "$(process_response "GEOAPIFY_COM" '{"country":{"iso_code":"CY"}}' "geoapify.com" "json")" "process_response geoapify country filter"
 
+# macOS portability: sed_capture replaces grep -P \K (BSD grep has no -P)
+assert_eq "DE" "$(printf '%s' '"a":1,"sRequestCountry":"DE","b":2' | sed_capture '"sRequestCountry":"([^"]*)')" "sed_capture extracts capture group"
+assert_empty "$(printf '%s' 'no match here' | sed_capture '"sRequestCountry":"([^"]*)')" "sed_capture returns empty without match"
+# macOS portability: redaction works without the sed I flag (BSD sed)
+printf 'Authorization: secret1\nset-cookie: abc=def\nurl=https://x/?api_key=zzz&ok=1\n' >"$TMPDIR/ipregion_redact_probe.log"
+redacted_probe=$(redact_debug_log "$TMPDIR/ipregion_redact_probe.log")
+assert_contains "$(cat "$redacted_probe")" "[REDACTED]" "redact masks Authorization case-insensitively without sed I flag"
+assert_contains "$(cat "$redacted_probe")" "set-cookie: [REDACTED]" "redact masks lowercase set-cookie"
+assert_contains "$(cat "$redacted_probe")" "api_key=[REDACTED]" "redact masks query parameter"
+assert_contains "$(cat "$redacted_probe")" "&ok=1" "redact keeps neighbouring query parameters"
+rm -f "$TMPDIR/ipregion_redact_probe.log" "$redacted_probe"
+
 # Ported upstream services: Reddit guest access status handling (curl_wrapper stubbed)
 reddit_stub_wrapper() {
   if [[ -n "${REDDIT_STUB_RESPONSE:-}" ]]; then

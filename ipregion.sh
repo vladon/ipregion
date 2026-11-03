@@ -125,6 +125,8 @@ declare -A PACKAGE_MAPPING=(
   ["dnf:nslookup"]="bind-utils"
   ["yum:nslookup"]="bind-utils"
   ["termux:column"]="util-linux"
+  ["brew:column"]="util-linux"
+  ["brew:nslookup"]="bind"
 )
 
 declare -A PRIMARY_SERVICES=(
@@ -540,14 +542,14 @@ setup_debug() {
 }
 
 grep_wrapper() {
-  local grep_args=()
+  grep "$@"
+}
 
-  if [[ "$1" == "--perl" ]]; then
-    grep_args+=("-oP")
-    shift
-  fi
+# Print the first capture group of an ERE across stdin (portable grep -P \K replacement)
+sed_capture() {
+  local pattern="$1"
 
-  grep "${grep_args[@]}" "$@"
+  sed -nE "s/^.*$pattern.*/\\1/p" | head -n 1
 }
 
 normalize_ascii() {
@@ -600,13 +602,13 @@ redact_debug_log() {
   sed -E \
     -e 's/([A-Fa-f0-9]{0,4}:){2,}[A-Fa-f0-9]{0,4}/[REDACTED_IPV6]/g' \
     -e 's/\b([0-9]{1,3}\.){3}[0-9]{1,3}\b/[REDACTED_IPV4]/g' \
-    -e 's/(Authorization:)[^[:cntrl:]]*/\1 [REDACTED]/I' \
-    -e 's/(Proxy-Authorization:)[^[:cntrl:]]*/\1 [REDACTED]/I' \
-    -e 's/(X-Api-Key:)[^[:cntrl:]]*/\1 [REDACTED]/I' \
-    -e 's/(X-Auth-Token:)[^[:cntrl:]]*/\1 [REDACTED]/I' \
-    -e 's/(Cookie:)[^[:cntrl:]]*/\1 [REDACTED]/I' \
-    -e 's/(Set-Cookie:)[^[:cntrl:]]*/\1 [REDACTED]/I' \
-    -e 's/([?&](token|access_token|refresh_token|api_key|apikey|password)=)[^&#[:space:]]+/\1[REDACTED]/Ig' \
+    -e 's/([Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]:)[^[:cntrl:]]*/\1 [REDACTED]/g' \
+    -e 's/([Pp]roxy-[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn]:)[^[:cntrl:]]*/\1 [REDACTED]/g' \
+    -e 's/([Xx]-[Aa][Pp][Ii]-[Kk][Ee][Yy]:)[^[:cntrl:]]*/\1 [REDACTED]/g' \
+    -e 's/([Xx]-[Aa][Uu][Tt][Hh]-[Tt][Oo][Kk][Ee][Nn]:)[^[:cntrl:]]*/\1 [REDACTED]/g' \
+    -e 's/([Cc][Oo][Oo][Kk][Ii][Ee]:)[^[:cntrl:]]*/\1 [REDACTED]/g' \
+    -e 's/([Ss][Ee][Tt]-[Cc][Oo][Oo][Kk][Ii][Ee]:)[^[:cntrl:]]*/\1 [REDACTED]/g' \
+    -e 's/([?&]([Tt][Oo][Kk][Ee][Nn]|[Aa][Cc][Cc][Ee][Ss][Ss]_[Tt][Oo][Kk][Ee][Nn]|[Rr][Ee][Ff][Rr][Ee][Ss][Hh]_[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii]_[Kk][Ee][Yy]|[Aa][Pp][Ii][Kk][Ee][Yy]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd])=)[^&[:space:]]+/\1[REDACTED]/g' \
     "$source_file" >"$redacted_file"
 
   printf "%s" "$redacted_file"
@@ -791,6 +793,8 @@ detect_distro() {
     distro="rhel"
   elif [[ -d /data/data/com.termux ]]; then
     distro="termux"
+  elif [[ "$(uname -s)" == "Darwin" ]]; then
+    distro="macos"
   fi
 }
 
@@ -819,6 +823,9 @@ detect_package_manager() {
     ;;
   alpine)
     pkg_manager="apk"
+    ;;
+  macos)
+    pkg_manager="brew"
     ;;
   *)
     error_exit "Unknown distro: $distro"
@@ -854,7 +861,7 @@ get_package_name() {
 }
 
 is_sudo_required() {
-  if [[ "${EUID:-$(id -u)}" -eq 0 || "$distro" == "termux" ]]; then
+  if [[ "${EUID:-$(id -u)}" -eq 0 || "$distro" == "termux" || "$distro" == "macos" ]]; then
     return 1
   fi
 
@@ -877,6 +884,9 @@ get_install_args() {
     ;;
   apk)
     install_args=("add" "--no-cache")
+    ;;
+  brew)
+    install_args=("install")
     ;;
   esac
 
@@ -2423,7 +2433,10 @@ curl_wrapper() {
   fi
 
   if [[ -n "$json" ]]; then
-    curl_args+=(--json "$json")
+    # curl --json needs curl >= 7.82 (missing on older macOS); emulate it
+    curl_args+=(--data "$json")
+    curl_args+=(--header "Content-Type: application/json")
+    curl_args+=(--header "Accept: application/json")
   fi
 
   if [[ -n "$cookie_jar" ]]; then
@@ -3628,7 +3641,7 @@ lookup_google() {
     --user-agent "$USER_AGENT" \
     --ip-version "$ip_version")
 
-  grep_wrapper --perl 'name="region" value="\K[^"]*' <<<"$response"
+  sed_capture 'name="region" value="([^"]*)' <<<"$response"
 }
 
 lookup_youtube() {
@@ -3866,8 +3879,8 @@ lookup_gemini() {
     return
   fi
 
-  sid=$(grep_wrapper --perl '"FdrFJe":"\K[^"]*' <<<"$response")
-  bl=$(grep_wrapper --perl '"cfb2h":"\K[^"]*' <<<"$response")
+  sid=$(sed_capture '"FdrFJe":"([^"]*)' <<<"$response")
+  bl=$(sed_capture '"cfb2h":"([^"]*)' <<<"$response")
 
   if [[ -z "$sid" || -z "$bl" ]]; then
     echo ""
@@ -3943,7 +3956,7 @@ lookup_steam() {
   local response
 
   response=$(curl_wrapper HEAD "https://store.steampowered.com" --ip-version "$ip_version")
-  grep_wrapper --perl 'steamCountry=\K[^%;]*' <<<"$response"
+  sed_capture 'steamCountry=([^%;]*)' <<<"$response"
 }
 
 lookup_tiktok() {
@@ -3975,7 +3988,7 @@ lookup_playstation() {
   local response
 
   response=$(curl_wrapper HEAD "https://www.playstation.com" --ip-version "$ip_version")
-  grep_wrapper --perl 'country=\K[^;]*' <<<"$response" | head -n1
+  sed_capture 'country=([^;]*)' <<<"$response"
 }
 
 lookup_microsoft() {
@@ -3983,7 +3996,7 @@ lookup_microsoft() {
   local response
 
   response=$(curl_wrapper GET "https://login.live.com" --ip-version "$ip_version")
-  grep_wrapper --perl '"sRequestCountry":"\K[^"]*' <<<"$response"
+  sed_capture '"sRequestCountry":"([^"]*)' <<<"$response"
 }
 
 lookup_twitch() {
@@ -4329,7 +4342,7 @@ lookup_reddit() {
     return
   fi
 
-  grep_wrapper --perl 'country code: \K[A-Z]{2}' <<<"$response"
+  sed_capture 'country code: ([A-Z]{2})' <<<"$response"
 }
 
 lookup_ai_cn_reachable() {
