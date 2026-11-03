@@ -159,6 +159,18 @@ assert_eq "http_429" "$(process_json "$RESULT_JSON" ".results.primary[1].metrics
 assert_eq "json" "$(detect_output_format "out.json")" "detect_output_format json"
 assert_eq "csv" "$(detect_output_format "out.csv")" "detect_output_format csv"
 
+# Regression: support checks must stop at the first failure
+DNS_CALLED=false
+check_ip_interfaces() { return 0; }
+check_ip_connectivity() { return 1; }
+check_ip_dns() {
+  DNS_CALLED=true
+  return 0
+}
+
+check_ip_support 4 >/dev/null 2>&1 || true
+assert_false "check_ip_support stops at first failed check" test "$DNS_CALLED" = "true"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1

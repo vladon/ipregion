@@ -9,7 +9,7 @@ SCRIPT_URL="https://github.com/vladon/ipregion"
 #   commit|1a2b3c4d|2025-01-15T10:30:00Z|
 SCRIPT_VERSION_METADATA="unknown|unknown|unknown|"
 USER_AGENT="Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0"
-SPINNER_SERVICE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_spinner_XXXXXX")
+SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
 VERBOSE=false
@@ -1456,6 +1456,7 @@ check_ip_support() {
   for check in "${checks[@]}"; do
     if ! "check_ip_${check}" "$version"; then
       failed+=("$check")
+      break
     fi
   done
 
@@ -1912,6 +1913,7 @@ spinner_start() {
   local spinstr='|/-\\'
   local current_service
 
+  SPINNER_SERVICE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_spinner_XXXXXX")
   spinner_running=true
 
   (
@@ -1991,7 +1993,6 @@ curl_wrapper() {
     --compressed
     --location
     --retry-connrefused
-    --retry-all-errors
     --retry "$CURL_RETRIES"
     --max-time "$CURL_TIMEOUT"
     -w '\n%{http_code}\n%{time_total}'
@@ -2078,7 +2079,7 @@ curl_wrapper() {
   done
 
   if [[ -n "$PROXY_ADDR" ]]; then
-    curl_args+=(--proxy "socks5://$PROXY_ADDR")
+    curl_args+=(--proxy "socks5h://$PROXY_ADDR")
   fi
 
   if [[ -n "$INTERFACE_NAME" ]]; then
@@ -3155,13 +3156,14 @@ lookup_detector404() {
 }
 
 lookup_iplocation_com() {
-  local ip_version="$1"
-  local response ip
+  local transport="$1"
+  local ip_version="$2"
+  local ip response country_code
 
-  if [[ "$ip_version" -eq 4 ]]; then
-    ip="$EXTERNAL_IPV4"
-  else
+  if [[ "$ip_version" == "6" ]]; then
     ip="$EXTERNAL_IPV6"
+  else
+    ip="$EXTERNAL_IPV4"
   fi
 
   if [[ -z "$ip" ]]; then
@@ -3170,33 +3172,37 @@ lookup_iplocation_com() {
     return
   fi
 
-  if [[ "$ip_version" -eq 4 ]]; then
-    if ! is_valid_ipv4 "$ip"; then
-      log "$LOG_WARN" "Skipping iplocation.com lookup: invalid IPv4 address"
-      echo ""
-      return
-    fi
-  else
+  if [[ "$ip_version" == "6" ]]; then
     if ! is_valid_ipv6 "$ip"; then
       log "$LOG_WARN" "Skipping iplocation.com lookup: invalid IPv6 address"
       echo ""
       return
     fi
+  elif ! is_valid_ipv4 "$ip"; then
+    log "$LOG_WARN" "Skipping iplocation.com lookup: invalid IPv4 address"
+    echo ""
+    return
   fi
 
-  response=$(curl_wrapper POST "https://iplocation.com" --ip-version "$ip_version" --user-agent "$USER_AGENT" --data-urlencode "ip=$ip")
-  process_json "$response" ".country_code"
+  response=$(curl_wrapper POST "https://iplocation.com" --ip-version "$transport" --user-agent "$USER_AGENT" --data-urlencode "ip=$ip")
+  country_code=$(process_json "$response" ".country_code")
+
+  if [[ "$country_code" == "IPV6_NOT_SUPPORTED" ]]; then
+    country_code="$STATUS_NA"
+  fi
+
+  echo "$country_code"
 }
 
 lookup_google() {
   local ip_version="$1"
   local response
 
-  response=$(curl_wrapper GET "https://www.google.com" \
+  response=$(curl_wrapper GET "https://accounts.google.com/v3/signin/identifier?flowName=GlifSetupAndroid" \
     --user-agent "$USER_AGENT" \
     --ip-version "$ip_version")
 
-  grep_wrapper --perl '"MgUcDb":"\K[^"]*' <<<"$response"
+  grep_wrapper --perl 'name="region" value="\K[^"]*' <<<"$response"
 }
 
 lookup_youtube() {
