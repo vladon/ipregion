@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS DISCORD_ACCESS TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS DISCORD_ACCESS TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB FACEBOOK_ACCESS MESSENGER_ACCESS THREADS_ACCESS SIGNAL_ACCESS; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -457,6 +457,42 @@ PREMIUM_WEB_STUB_RESPONSE="Denied"
 assert_eq "Denied" "$(lookup_youtube_premium_web 4)" "premium web passes status strings through"
 unset -f curl_wrapper premium_web_stub_wrapper
 unset PREMIUM_WEB_STUB_RESPONSE
+JSON_OUTPUT=false
+
+# Social batch (Facebook/Messenger/Threads/Signal) share lookup_site_access
+social_stub_wrapper() {
+  local -n stub_var="$1"
+  printf "%s" "${stub_var:-}"
+}
+curl_wrapper() { social_stub_wrapper "${SOCIAL_STUB_NAME}"; }
+JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
+printf "http_code=;latency_ms=;error_type=curl_error\n" >"$CURL_META_FILE"
+SOCIAL_STUB_NAME="EMPTY_SOCIAL_STUB"
+assert_eq "No" "$(lookup_facebook_access 4)" "facebook maps transport failure to No"
+assert_eq "No" "$(lookup_messenger_access 4)" "messenger maps transport failure to No"
+assert_eq "No" "$(lookup_threads_access 4)" "threads maps transport failure to No"
+assert_eq "No" "$(lookup_signal_access 4)" "signal maps transport failure to No"
+printf "http_code=200;latency_ms=100;error_type=none\n" >"$CURL_META_FILE"
+SOCIAL_STUB_NAME="PAGE_SOCIAL_STUB"
+PAGE_SOCIAL_STUB='<html><title>platform page</title></html>'
+assert_eq "No" "$(lookup_facebook_access 4)" "facebook maps unmarked body to No"
+SOCIAL_STUB_NAME="MESSENGER_PAGE_STUB"
+MESSENGER_PAGE_STUB='<html>messenger login</html>'
+assert_eq "Yes" "$(lookup_messenger_access 4)" "messenger maps page marker to Yes"
+SOCIAL_STUB_NAME="THREADS_PAGE_STUB"
+THREADS_PAGE_STUB='<html>threads by instagram</html>'
+assert_eq "Yes" "$(lookup_threads_access 4)" "threads maps page marker to Yes"
+SOCIAL_STUB_NAME="SIGNAL_PAGE_STUB"
+SIGNAL_PAGE_STUB='<html>Signal private messenger</html>'
+assert_eq "Yes" "$(lookup_signal_access 4)" "signal maps page marker to Yes"
+SOCIAL_STUB_NAME="FACEBOOK_PAGE_STUB"
+FACEBOOK_PAGE_STUB='<html>facebook login</html>'
+assert_eq "Yes" "$(lookup_facebook_access 4)" "facebook maps page marker to Yes"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
+unset -f curl_wrapper social_stub_wrapper
+unset SOCIAL_STUB_NAME PAGE_SOCIAL_STUB MESSENGER_PAGE_STUB THREADS_PAGE_STUB SIGNAL_PAGE_STUB FACEBOOK_PAGE_STUB
 JSON_OUTPUT=false
 
 if [[ "$failures" -gt 0 ]]; then
