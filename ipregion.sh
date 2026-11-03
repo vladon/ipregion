@@ -34,6 +34,9 @@ INSTAGRAM_PROBE_TARGETS=("i.instagram.com:443")
 THREADS_PROBE_TARGETS=("graph.threads.net:443")
 SIGNAL_PROBE_TARGETS=("textsecure-service.whispersystems.org:443")
 VK_PROBE_TARGETS=("87.240.137.208:443" "87.240.190.70:443")
+# Facebook Graph API and the Messenger MQTT transport edge
+FACEBOOK_PROBE_TARGETS=("graph.facebook.com:443")
+MESSENGER_PROBE_TARGETS=("edge-mqtt.facebook.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -242,7 +245,9 @@ declare -A CUSTOM_SERVICES=(
   [TWITTER]="Twitter (X)"
   [LINKEDIN_ACCESS]="LinkedIn Access"
   [FACEBOOK_ACCESS]="Facebook Access"
+  [FACEBOOK_API]="Facebook API"
   [MESSENGER_ACCESS]="Messenger Access"
+  [MESSENGER_MQTT]="Messenger MQTT"
   [THREADS_ACCESS]="Threads Access"
   [THREADS_API]="Threads API"
   [SIGNAL_ACCESS]="Signal Access"
@@ -304,7 +309,9 @@ CUSTOM_SERVICES_ORDER=(
   "TWITTER"
   "LINKEDIN_ACCESS"
   "FACEBOOK_ACCESS"
+  "FACEBOOK_API"
   "MESSENGER_ACCESS"
+  "MESSENGER_MQTT"
   "THREADS_ACCESS"
   "THREADS_API"
   "SIGNAL_ACCESS"
@@ -366,7 +373,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [TWITTER]="lookup_twitter"
   [LINKEDIN_ACCESS]="lookup_linkedin_access"
   [FACEBOOK_ACCESS]="lookup_facebook_access"
+  [FACEBOOK_API]="lookup_facebook_api"
   [MESSENGER_ACCESS]="lookup_messenger_access"
+  [MESSENGER_MQTT]="lookup_messenger_mqtt"
   [THREADS_ACCESS]="lookup_threads_access"
   [THREADS_API]="lookup_threads_api"
   [SIGNAL_ACCESS]="lookup_signal_access"
@@ -4619,6 +4628,14 @@ lookup_signal_service() {
 
 lookup_vk_api() {
   lookup_tcp_targets VK_PROBE_TARGETS
+}
+
+lookup_facebook_api() {
+  lookup_tcp_targets FACEBOOK_PROBE_TARGETS
+}
+
+lookup_messenger_mqtt() {
+  lookup_tcp_targets MESSENGER_PROBE_TARGETS
 }
 
 lookup_claude() {
