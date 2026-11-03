@@ -10,6 +10,9 @@
 [1;32mApple Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMicrosoft Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mOpenAI API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mReddit API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mAnthropic API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mNetflix Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mInstagram[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mInstagram API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -23,7 +26,9 @@
 [1;32mDiscord Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDiscord Gateway[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mTwitter (X)[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mX API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mLinkedIn Access[0m	[1;31mDenied[0m	[1;31mDenied[0m
+[1;32mLinkedIn API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mFacebook Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mFacebook API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMessenger Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
@@ -37,13 +42,18 @@
 [1;32mVK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mVK API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mOK API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mRUTUBE Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOzon Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGrok[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mxAI API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDeepSeek[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mDeepSeek API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mPerplexity[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mPerplexity API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mCopilot[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMistral[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mMistral API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mQwen Web[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mPeacock Access[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 
