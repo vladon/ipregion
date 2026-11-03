@@ -142,6 +142,7 @@ declare -A PRIMARY_SERVICES=(
   [IPWHO_IS]="ipwho.is|ipwho.is|/{ip}"
   [IPAPI_COM]="ip-api.com|ip-api.com|/json/{ip}?fields=countryCode"
   [IPREGISTRY]="ipregistry.co|api.ipregistry.co|/{ip}?hostname=true&key=sb69ksjcajfs4c"
+  [GEOAPIFY_COM]="geoapify.com|api.geoapify.com|/v1/ipinfo?&ip={ip}&apiKey=b8568cb9afc64fad861a69edbddb2658"
   [DETECTOR404]="Detector404|geoip.detector404.ru|/api/v1/ip/{ip}"
 )
 
@@ -164,6 +165,7 @@ PRIMARY_SERVICES_ORDER=(
   "IPAPI_COM"
   "DETECTOR404"
   "IPREGISTRY"
+  "GEOAPIFY_COM"
 )
 
 declare -A PRIMARY_SERVICES_CUSTOM_HANDLERS=(
@@ -2582,6 +2584,9 @@ process_response() {
     ;;
   GEOJS_IO)
     jq_filter='.[0].country'
+    ;;
+  GEOAPIFY_COM)
+    jq_filter='.country.iso_code'
     ;;
   IPAPI_IS)
     jq_filter='.location.country_code'
