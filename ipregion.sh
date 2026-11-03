@@ -230,6 +230,12 @@ declare -A CUSTOM_SERVICES=(
   [DOUYIN_CN]="Douyin (CN)"
   [VK]="VK"
   [OK_RU]="OK"
+  [GROK]="Grok"
+  [DEEPSEEK]="DeepSeek"
+  [PERPLEXITY]="Perplexity"
+  [COPILOT]="Copilot"
+  [MISTRAL]="Mistral"
+  [QWEN_WEB]="Qwen Web"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -278,6 +284,12 @@ CUSTOM_SERVICES_ORDER=(
   "DOUYIN_CN"
   "VK"
   "OK_RU"
+  "GROK"
+  "DEEPSEEK"
+  "PERPLEXITY"
+  "COPILOT"
+  "MISTRAL"
+  "QWEN_WEB"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -326,6 +338,12 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DOUYIN_CN]="lookup_douyin_cn"
   [VK]="lookup_vk"
   [OK_RU]="lookup_ok_ru"
+  [GROK]="lookup_grok"
+  [DEEPSEEK]="lookup_deepseek"
+  [PERPLEXITY]="lookup_perplexity"
+  [COPILOT]="lookup_copilot"
+  [MISTRAL]="lookup_mistral"
+  [QWEN_WEB]="lookup_qwen_web"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4423,6 +4441,30 @@ lookup_vk() {
 
 lookup_ok_ru() {
   lookup_site_access "https://ok.ru/" "ok.ru" "$1"
+}
+
+lookup_grok() {
+  lookup_site_access "https://grok.com/" "grok" "$1"
+}
+
+lookup_deepseek() {
+  lookup_site_access "https://chat.deepseek.com/" "deepseek" "$1"
+}
+
+lookup_perplexity() {
+  lookup_site_access "https://www.perplexity.ai/" "perplexity" "$1"
+}
+
+lookup_copilot() {
+  lookup_site_access "https://copilot.microsoft.com/" "copilot" "$1"
+}
+
+lookup_mistral() {
+  lookup_site_access "https://mistral.ai/" "mistral" "$1"
+}
+
+lookup_qwen_web() {
+  lookup_site_access "https://chat.qwen.ai/" "qwen" "$1"
 }
 
 lookup_claude() {
