@@ -216,6 +216,7 @@ declare -A CUSTOM_SERVICES=(
   [INSTAGRAM]="Instagram"
   [TIKTOK_ACCESS]="TikTok Access"
   [WHATSAPP]="WhatsApp"
+  [TELEGRAM_ACCESS]="Telegram Access"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -252,6 +253,7 @@ CUSTOM_SERVICES_ORDER=(
   "INSTAGRAM"
   "TIKTOK_ACCESS"
   "WHATSAPP"
+  "TELEGRAM_ACCESS"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -288,6 +290,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [INSTAGRAM]="lookup_instagram"
   [TIKTOK_ACCESS]="lookup_tiktok_access"
   [WHATSAPP]="lookup_whatsapp"
+  [TELEGRAM_ACCESS]="lookup_telegram_access"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4271,6 +4274,10 @@ lookup_tiktok_access() {
 
 lookup_whatsapp() {
   lookup_site_access "https://www.whatsapp.com/" "whatsapp" "$1"
+}
+
+lookup_telegram_access() {
+  lookup_site_access "https://web.telegram.org/k/" "telegram" "$1"
 }
 
 lookup_claude() {
