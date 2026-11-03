@@ -8,6 +8,8 @@ on:
       - ipregion.sh
       - index.php
       - tests/run.sh
+      - tests/golden.sh
+      - tests/golden/**
       - .github/workflows/deploy.yml
   release:
     types: [published]
