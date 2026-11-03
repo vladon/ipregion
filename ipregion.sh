@@ -214,6 +214,7 @@ declare -A CUSTOM_SERVICES=(
   [SPOTIFY]="Spotify"
   [SPOTIFY_SIGNUP]="Spotify Signup"
   [INSTAGRAM]="Instagram"
+  [TIKTOK_ACCESS]="TikTok Access"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -248,6 +249,7 @@ CUSTOM_SERVICES_ORDER=(
   "SPOTIFY"
   "SPOTIFY_SIGNUP"
   "INSTAGRAM"
+  "TIKTOK_ACCESS"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -282,6 +284,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SPOTIFY]="lookup_spotify"
   [SPOTIFY_SIGNUP]="lookup_spotify_signup"
   [INSTAGRAM]="lookup_instagram"
+  [TIKTOK_ACCESS]="lookup_tiktok_access"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4214,17 +4217,19 @@ lookup_spotify_signup() {
   print_value_or_colored "$available" "$color_name"
 }
 
-lookup_instagram() {
-  local ip_version="$1"
+lookup_site_access() {
+  local url="$1"
+  local marker="$2"
+  local ip_version="$3"
   local response error_type
 
-  response=$(curl_wrapper GET "https://www.instagram.com/" \
+  response=$(curl_wrapper GET "$url" \
     --user-agent "$USER_AGENT" \
     --ip-version "$ip_version")
 
   if [[ -z "$response" ]]; then
     # A transport-level failure (connection reset or timeout) is the typical
-    # blocking signature for Instagram in restricted networks.
+    # blocking signature for a site in restricted networks.
     error_type=$(read_curl_metric_field "$CURL_META_FILE" "error_type")
     if [[ "$error_type" == "curl_error" ]]; then
       print_value_or_colored "No" "HEART"
@@ -4239,11 +4244,19 @@ lookup_instagram() {
     return
   fi
 
-  if grep_wrapper -qi "instagram" <<<"$response"; then
+  if grep_wrapper -qi "$marker" <<<"$response"; then
     print_value_or_colored "Yes" "SERVICE"
   else
     print_value_or_colored "No" "HEART"
   fi
+}
+
+lookup_instagram() {
+  lookup_site_access "https://www.instagram.com/" "instagram" "$1"
+}
+
+lookup_tiktok_access() {
+  lookup_site_access "https://www.tiktok.com/" "tiktok" "$1"
 }
 
 lookup_claude() {
