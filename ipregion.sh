@@ -215,6 +215,7 @@ declare -A CUSTOM_SERVICES=(
   [SPOTIFY_SIGNUP]="Spotify Signup"
   [INSTAGRAM]="Instagram"
   [TIKTOK_ACCESS]="TikTok Access"
+  [WHATSAPP]="WhatsApp"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -250,6 +251,7 @@ CUSTOM_SERVICES_ORDER=(
   "SPOTIFY_SIGNUP"
   "INSTAGRAM"
   "TIKTOK_ACCESS"
+  "WHATSAPP"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -285,6 +287,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SPOTIFY_SIGNUP]="lookup_spotify_signup"
   [INSTAGRAM]="lookup_instagram"
   [TIKTOK_ACCESS]="lookup_tiktok_access"
+  [WHATSAPP]="lookup_whatsapp"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4225,6 +4228,13 @@ lookup_site_access() {
 
   response=$(curl_wrapper GET "$url" \
     --user-agent "$USER_AGENT" \
+    --header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" \
+    --header "Accept-Language: en-US,en;q=0.9" \
+    --header "Sec-Fetch-Dest: document" \
+    --header "Sec-Fetch-Mode: navigate" \
+    --header "Sec-Fetch-Site: none" \
+    --header "Sec-Fetch-User: ?1" \
+    --header "Upgrade-Insecure-Requests: 1" \
     --ip-version "$ip_version")
 
   if [[ -z "$response" ]]; then
@@ -4257,6 +4267,10 @@ lookup_instagram() {
 
 lookup_tiktok_access() {
   lookup_site_access "https://www.tiktok.com/" "tiktok" "$1"
+}
+
+lookup_whatsapp() {
+  lookup_site_access "https://www.whatsapp.com/" "whatsapp" "$1"
 }
 
 lookup_claude() {
