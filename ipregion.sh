@@ -221,6 +221,7 @@ declare -A CUSTOM_SERVICES=(
   [TELEGRAM_ACCESS]="Telegram Access"
   [DISCORD_ACCESS]="Discord Access"
   [TWITTER]="Twitter (X)"
+  [LINKEDIN_ACCESS]="LinkedIn Access"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -260,6 +261,7 @@ CUSTOM_SERVICES_ORDER=(
   "TELEGRAM_ACCESS"
   "DISCORD_ACCESS"
   "TWITTER"
+  "LINKEDIN_ACCESS"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -299,6 +301,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [TELEGRAM_ACCESS]="lookup_telegram_access"
   [DISCORD_ACCESS]="lookup_discord_access"
   [TWITTER]="lookup_twitter"
+  [LINKEDIN_ACCESS]="lookup_linkedin_access"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4305,6 +4308,10 @@ lookup_discord_access() {
 
 lookup_twitter() {
   lookup_site_access "https://x.com/" "x.com" "$1"
+}
+
+lookup_linkedin_access() {
+  lookup_site_access "https://www.linkedin.com/" "linkedin" "$1"
 }
 
 lookup_claude() {

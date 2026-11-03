@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS DISCORD_ACCESS TWITTER; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS DISCORD_ACCESS TWITTER LINKEDIN_ACCESS; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -414,6 +414,29 @@ rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper twitter_stub_wrapper
 unset TWITTER_STUB_RESPONSE
+JSON_OUTPUT=false
+
+# LinkedIn access check shares lookup_site_access with the other messengers
+linkedin_stub_wrapper() {
+  if [[ -n "${LINKEDIN_STUB_RESPONSE:-}" ]]; then
+    printf "%s" "$LINKEDIN_STUB_RESPONSE"
+  fi
+}
+curl_wrapper() { linkedin_stub_wrapper "$@"; }
+JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
+printf "http_code=;latency_ms=;error_type=curl_error\n" >"$CURL_META_FILE"
+LINKEDIN_STUB_RESPONSE=""
+assert_eq "No" "$(lookup_linkedin_access 4)" "linkedin access maps transport failure to No"
+printf "http_code=200;latency_ms=100;error_type=none\n" >"$CURL_META_FILE"
+LINKEDIN_STUB_RESPONSE='<html><title>LinkedIn: Log In or Sign Up</title></html>'
+assert_eq "Yes" "$(lookup_linkedin_access 4)" "linkedin access maps page marker to Yes"
+LINKEDIN_STUB_RESPONSE='<html>captive portal</html>'
+assert_eq "No" "$(lookup_linkedin_access 4)" "linkedin access maps unmarked body to No"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
+unset -f curl_wrapper linkedin_stub_wrapper
+unset LINKEDIN_STUB_RESPONSE
 JSON_OUTPUT=false
 
 if [[ "$failures" -gt 0 ]]; then
