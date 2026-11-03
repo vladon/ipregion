@@ -56,6 +56,16 @@
 [1;32mMistral API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mQwen Web[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mPeacock Access[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mBluesky[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mSnapchat[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mPinterest[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mTruth Social[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mWeibo[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mBilibili[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mNetEase Music[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mTwitch Site[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mYandex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mMail.ru[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 
 [1;36mGeoIP services[0m
 

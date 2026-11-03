@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -493,6 +493,63 @@ rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper social_stub_wrapper
 unset SOCIAL_STUB_NAME PAGE_SOCIAL_STUB MESSENGER_PAGE_STUB THREADS_PAGE_STUB SIGNAL_PAGE_STUB FACEBOOK_PAGE_STUB
+JSON_OUTPUT=false
+
+# Site availability batch (Bluesky…Mail.ru) shares lookup_site_access
+site_stub_wrapper() {
+  local -n stub_var="$1"
+  printf "%s" "${stub_var:-}"
+}
+curl_wrapper() { site_stub_wrapper "${SITE_STUB_NAME}"; }
+JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
+printf "http_code=200;latency_ms=100;error_type=none\n" >"$CURL_META_FILE"
+SITE_STUB_NAME="UNMARKED_SITE_STUB"
+UNMARKED_SITE_STUB='<html><title>portal</title></html>'
+assert_eq "No" "$(lookup_bluesky 4)" "bluesky maps unmarked body to No"
+assert_eq "No" "$(lookup_snapchat 4)" "snapchat maps unmarked body to No"
+assert_eq "No" "$(lookup_pinterest 4)" "pinterest maps unmarked body to No"
+assert_eq "No" "$(lookup_truth_social 4)" "truth social maps unmarked body to No"
+assert_eq "No" "$(lookup_weibo 4)" "weibo maps unmarked body to No"
+assert_eq "No" "$(lookup_bilibili 4)" "bilibili maps unmarked body to No"
+assert_eq "No" "$(lookup_netease_music 4)" "netease music maps unmarked body to No"
+assert_eq "No" "$(lookup_twitch_site 4)" "twitch site maps unmarked body to No"
+assert_eq "No" "$(lookup_yandex 4)" "yandex maps unmarked body to No"
+assert_eq "No" "$(lookup_mail_ru 4)" "mail ru maps unmarked body to No"
+SITE_STUB_NAME="BLUESKY_PAGE_STUB"
+BLUESKY_PAGE_STUB='<html>bluesky app</html>'
+assert_eq "Yes" "$(lookup_bluesky 4)" "bluesky maps page marker to Yes"
+SITE_STUB_NAME="SNAPCHAT_PAGE_STUB"
+SNAPCHAT_PAGE_STUB='<html>snapchat app</html>'
+assert_eq "Yes" "$(lookup_snapchat 4)" "snapchat maps page marker to Yes"
+SITE_STUB_NAME="PINTEREST_PAGE_STUB"
+PINTEREST_PAGE_STUB='<html>pinterest pins</html>'
+assert_eq "Yes" "$(lookup_pinterest 4)" "pinterest maps page marker to Yes"
+SITE_STUB_NAME="TRUTH_SOCIAL_PAGE_STUB"
+TRUTH_SOCIAL_PAGE_STUB='<html>truthsocial feed</html>'
+assert_eq "Yes" "$(lookup_truth_social 4)" "truth social maps page marker to Yes"
+SITE_STUB_NAME="WEIBO_PAGE_STUB"
+WEIBO_PAGE_STUB='<html>weibo feed</html>'
+assert_eq "Yes" "$(lookup_weibo 4)" "weibo maps page marker to Yes"
+SITE_STUB_NAME="BILIBILI_PAGE_STUB"
+BILIBILI_PAGE_STUB='<html>bilibili tv</html>'
+assert_eq "Yes" "$(lookup_bilibili 4)" "bilibili maps page marker to Yes"
+SITE_STUB_NAME="NETEASE_MUSIC_PAGE_STUB"
+NETEASE_MUSIC_PAGE_STUB='<html>netease music 163</html>'
+assert_eq "Yes" "$(lookup_netease_music 4)" "netease music maps page marker to Yes"
+SITE_STUB_NAME="TWITCH_SITE_PAGE_STUB"
+TWITCH_SITE_PAGE_STUB='<html>twitch tv</html>'
+assert_eq "Yes" "$(lookup_twitch_site 4)" "twitch site maps page marker to Yes"
+SITE_STUB_NAME="YANDEX_PAGE_STUB"
+YANDEX_PAGE_STUB='<html>yandex search</html>'
+assert_eq "Yes" "$(lookup_yandex 4)" "yandex maps page marker to Yes"
+SITE_STUB_NAME="MAIL_RU_PAGE_STUB"
+MAIL_RU_PAGE_STUB='<html>mail.ru mail</html>'
+assert_eq "Yes" "$(lookup_mail_ru 4)" "mail ru maps page marker to Yes"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
+unset -f curl_wrapper site_stub_wrapper
+unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB
 JSON_OUTPUT=false
 
 # Douyin region gate (curl_wrapper stubbed)
