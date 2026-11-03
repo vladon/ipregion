@@ -188,6 +188,7 @@ declare -A CUSTOM_SERVICES=(
   [GOOGLE]="Google"
   [YOUTUBE]="YouTube"
   [YOUTUBE_PREMIUM]="YouTube Premium"
+  [YOUTUBE_PREMIUM_WEB]="YouTube Premium (Web)"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
   [GEMINI]="Google Gemini"
   [APPLE]="Apple"
@@ -228,6 +229,7 @@ CUSTOM_SERVICES_ORDER=(
   "GOOGLE"
   "YOUTUBE"
   "YOUTUBE_PREMIUM"
+  "YOUTUBE_PREMIUM_WEB"
   "GOOGLE_SEARCH_CAPTCHA"
   "GEMINI"
   "APPLE"
@@ -268,6 +270,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [GOOGLE]="lookup_google"
   [YOUTUBE]="lookup_youtube"
   [YOUTUBE_PREMIUM]="lookup_youtube_premium"
+  [YOUTUBE_PREMIUM_WEB]="lookup_youtube_premium_web"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
   [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
@@ -3676,6 +3679,36 @@ lookup_youtube_premium() {
   else
     is_available="No"
     color_name="HEART"
+  fi
+
+  print_value_or_colored "$is_available" "$color_name"
+}
+
+lookup_youtube_premium_web() {
+  local ip_version="$1"
+  local response is_available color_name
+
+  response=$(curl_wrapper GET "https://www.youtube.com/premium" \
+    --user-agent "$USER_AGENT" \
+    --header "Accept-Language: en-US,en;q=0.9" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  if grep_wrapper -qi "youtube premium is not available in your country" <<<"$response"; then
+    is_available="No"
+    color_name="HEART"
+  else
+    is_available="Yes"
+    color_name="SERVICE"
   fi
 
   print_value_or_colored "$is_available" "$color_name"

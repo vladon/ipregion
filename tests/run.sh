@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS DISCORD_ACCESS TWITTER LINKEDIN_ACCESS; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS DISCORD_ACCESS TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -437,6 +437,26 @@ rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper linkedin_stub_wrapper
 unset LINKEDIN_STUB_RESPONSE
+JSON_OUTPUT=false
+
+# YouTube Premium web-page check (curl_wrapper stubbed)
+premium_web_stub_wrapper() {
+  if [[ -n "${PREMIUM_WEB_STUB_RESPONSE:-}" ]]; then
+    printf "%s" "$PREMIUM_WEB_STUB_RESPONSE"
+  fi
+}
+curl_wrapper() { premium_web_stub_wrapper "$@"; }
+JSON_OUTPUT=true
+PREMIUM_WEB_STUB_RESPONSE="Subscribe to YouTube Premium"
+assert_eq "Yes" "$(lookup_youtube_premium_web 4)" "premium web maps marketing page to Yes"
+PREMIUM_WEB_STUB_RESPONSE="YouTube Premium is not available in your country"
+assert_eq "No" "$(lookup_youtube_premium_web 4)" "premium web maps unavailability banner to No"
+PREMIUM_WEB_STUB_RESPONSE=""
+assert_empty "$(lookup_youtube_premium_web 4)" "premium web maps empty response to N/A"
+PREMIUM_WEB_STUB_RESPONSE="Denied"
+assert_eq "Denied" "$(lookup_youtube_premium_web 4)" "premium web passes status strings through"
+unset -f curl_wrapper premium_web_stub_wrapper
+unset PREMIUM_WEB_STUB_RESPONSE
 JSON_OUTPUT=false
 
 if [[ "$failures" -gt 0 ]]; then
