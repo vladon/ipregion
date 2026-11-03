@@ -171,6 +171,22 @@ check_ip_dns() {
 check_ip_support 4 >/dev/null 2>&1 || true
 assert_false "check_ip_support stops at first failed check" test "$DNS_CALLED" = "true"
 
+# Regression: normal EXIT trap must preserve the script's exit code
+DEBUG=false
+SPINNER_SERVICE_FILE=""
+spinner_pid=""
+trap_rc=0
+(
+  trap cleanup_on_exit EXIT
+  exit 5
+) >/dev/null 2>&1 || trap_rc=$?
+assert_eq "5" "$trap_rc" "EXIT trap preserves exit code"
+
+# cleanup_on_interrupt still terminates with 130
+interrupt_rc=0
+(cleanup_on_interrupt) >/dev/null 2>&1 || interrupt_rc=$?
+assert_eq "130" "$interrupt_rc" "interrupt handler exits 130"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
