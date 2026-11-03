@@ -49,6 +49,9 @@ STEAM_PROBE_TARGETS=("store.steampowered.com:443")
 NETFLIX_PROBE_TARGETS=("www.netflix.com:443")
 APPLE_PROBE_TARGETS=("www.apple.com:443")
 MICROSOFT_PROBE_TARGETS=("www.microsoft.com:443")
+# Russian platforms (verified stable from a RU network)
+RUTUBE_PROBE_TARGETS=("rutube.ru:443")
+OZON_PROBE_TARGETS=("ozon.ru:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -277,6 +280,8 @@ declare -A CUSTOM_SERVICES=(
   [VK]="VK"
   [VK_API]="VK API"
   [OK_RU]="OK"
+  [RUTUBE_TRANSPORT]="RUTUBE Transport"
+  [OZON_TRANSPORT]="Ozon Transport"
   [GROK]="Grok"
   [DEEPSEEK]="DeepSeek"
   [PERPLEXITY]="Perplexity"
@@ -350,6 +355,8 @@ CUSTOM_SERVICES_ORDER=(
   "VK"
   "VK_API"
   "OK_RU"
+  "RUTUBE_TRANSPORT"
+  "OZON_TRANSPORT"
   "GROK"
   "DEEPSEEK"
   "PERPLEXITY"
@@ -423,6 +430,8 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [VK]="lookup_vk"
   [VK_API]="lookup_vk_api"
   [OK_RU]="lookup_ok_ru"
+  [RUTUBE_TRANSPORT]="lookup_rutube_transport"
+  [OZON_TRANSPORT]="lookup_ozon_transport"
   [GROK]="lookup_grok"
   [DEEPSEEK]="lookup_deepseek"
   [PERPLEXITY]="lookup_perplexity"
@@ -4711,6 +4720,14 @@ lookup_apple_transport() {
 
 lookup_microsoft_transport() {
   lookup_tcp_targets MICROSOFT_PROBE_TARGETS
+}
+
+lookup_rutube_transport() {
+  lookup_tcp_targets RUTUBE_PROBE_TARGETS
+}
+
+lookup_ozon_transport() {
+  lookup_tcp_targets OZON_PROBE_TARGETS
 }
 
 lookup_claude() {
