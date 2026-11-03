@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -237,6 +237,29 @@ REDDIT_STUB_RESPONSE="Rate-limit"
 assert_eq "Rate-limit" "$(lookup_reddit_guest_access 4)" "reddit guest access passes other status strings through"
 unset -f curl_wrapper reddit_stub_wrapper
 unset REDDIT_STUB_RESPONSE
+
+# Reinstated services: Spotify signup status matrix (curl_wrapper stubbed)
+spotify_stub_wrapper() {
+  if [[ -n "${SPOTIFY_STUB_RESPONSE:-}" ]]; then
+    printf "%s" "$SPOTIFY_STUB_RESPONSE"
+  fi
+}
+curl_wrapper() { spotify_stub_wrapper "$@"; }
+JSON_OUTPUT=true
+SPOTIFY_STUB_RESPONSE='{"status":120,"is_country_launched":false,"country":"SE"}'
+assert_eq "No" "$(lookup_spotify_signup 4)" "spotify signup maps status 120 to No"
+SPOTIFY_STUB_RESPONSE='{"status":320,"is_country_launched":true,"country":"SE"}'
+assert_eq "No" "$(lookup_spotify_signup 4)" "spotify signup maps status 320 to No"
+SPOTIFY_STUB_RESPONSE='{"status":200,"is_country_launched":true,"country":"SE"}'
+assert_eq "Yes" "$(lookup_spotify_signup 4)" "spotify signup maps launched country to Yes"
+SPOTIFY_STUB_RESPONSE='{"status":200,"is_country_launched":false,"country":"SE"}'
+assert_eq "No" "$(lookup_spotify_signup 4)" "spotify signup maps unlaunched country to No"
+SPOTIFY_STUB_RESPONSE=""
+assert_empty "$(lookup_spotify_signup 4)" "spotify signup maps empty response to N/A"
+SPOTIFY_STUB_RESPONSE="Denied"
+assert_eq "Denied" "$(lookup_spotify_signup 4)" "spotify signup passes status strings through"
+unset -f curl_wrapper spotify_stub_wrapper
+unset SPOTIFY_STUB_RESPONSE
 JSON_OUTPUT=false
 
 if [[ "$failures" -gt 0 ]]; then

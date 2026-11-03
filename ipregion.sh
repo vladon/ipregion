@@ -17,6 +17,9 @@ DISNEY_PLUS_JSON_BODY='{"query":"\n     mutation registerDevice($registerDevice:
 TWITCH_CLIENT_ID="kimne78kx3ncx6brgo4mv6wki5h1ko"
 CHATGPT_STATSIG_API_KEY="client-zUdXdSTygXJdzoE0sWTkP8GKTVsUMF2IRM7ShVO2JAG"
 CHATGPT_DERIVED_FIELDS_PREFIX='"derived_fields":'
+NETFLIX_API_KEY="YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm"
+SPOTIFY_API_KEY="142b583129b2df829de3656f9eb484e6"
+SPOTIFY_CLIENT_ID="9a8d2f0ce77a4e248bb71fefcb557637"
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -206,6 +209,10 @@ declare -A CUSTOM_SERVICES=(
   [GLM_CN]="GLM CN API"
   [MINIMAX_CN]="MiniMax CN API"
   [YOUTUBE_NO_ADS]="YouTube No Ads"
+  [NETFLIX]="Netflix"
+  [NETFLIX_CDN]="Netflix CDN"
+  [SPOTIFY]="Spotify"
+  [SPOTIFY_SIGNUP]="Spotify Signup"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -235,6 +242,10 @@ CUSTOM_SERVICES_ORDER=(
   "GLM_CN"
   "MINIMAX_CN"
   "YOUTUBE_NO_ADS"
+  "NETFLIX"
+  "NETFLIX_CDN"
+  "SPOTIFY"
+  "SPOTIFY_SIGNUP"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -264,6 +275,10 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [GLM_CN]="lookup_glm_cn"
   [MINIMAX_CN]="lookup_minimax_cn"
   [YOUTUBE_NO_ADS]="lookup_youtube_no_ads"
+  [NETFLIX]="lookup_netflix"
+  [NETFLIX_CDN]="lookup_netflix_cdn"
+  [SPOTIFY]="lookup_spotify"
+  [SPOTIFY_SIGNUP]="lookup_spotify_signup"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4113,6 +4128,87 @@ lookup_reddit_guest_access() {
   fi
 
   print_value_or_colored "Yes" "SERVICE"
+}
+
+lookup_netflix() {
+  local ip_version="$1"
+  local response country
+
+  response=$(curl_wrapper GET "https://api.fast.com/netflix/speedtest/v2?https=true&token=$NETFLIX_API_KEY&urlCount=1" --ip-version "$ip_version")
+
+  country=$(process_json "$response" ".client.location.country")
+  if [[ -z "$country" || "$country" == "null" ]]; then
+    echo ""
+    return
+  fi
+
+  printf "%s" "$country"
+}
+
+lookup_netflix_cdn() {
+  local ip_version="$1"
+  local response country
+
+  response=$(curl_wrapper GET "https://api.fast.com/netflix/speedtest/v2?https=true&token=$NETFLIX_API_KEY&urlCount=1" --ip-version "$ip_version")
+
+  country=$(process_json "$response" ".targets[0].location.country")
+  if [[ -z "$country" || "$country" == "null" ]]; then
+    echo ""
+    return
+  fi
+
+  printf "%s" "$country"
+}
+
+lookup_spotify() {
+  local ip_version="$1"
+  local response country
+
+  response=$(curl_wrapper GET "https://spclient.wg.spotify.com/signup/public/v1/account/?validate=1&key=$SPOTIFY_API_KEY" \
+    --header "X-Client-Id: $SPOTIFY_CLIENT_ID" \
+    --ip-version "$ip_version")
+
+  country=$(process_json "$response" ".country")
+  if [[ -z "$country" || "$country" == "null" ]]; then
+    echo ""
+    return
+  fi
+
+  printf "%s" "$country"
+}
+
+lookup_spotify_signup() {
+  local ip_version="$1"
+  local response status is_country_launched available color_name
+
+  response=$(curl_wrapper GET "https://spclient.wg.spotify.com/signup/public/v1/account/?validate=1&key=$SPOTIFY_API_KEY" \
+    --header "X-Client-Id: $SPOTIFY_CLIENT_ID" \
+    --ip-version "$ip_version")
+
+  if [[ -z "$response" ]]; then
+    echo ""
+    return
+  fi
+
+  if is_status_string "$response"; then
+    echo "$response"
+    return
+  fi
+
+  {
+    read -r status
+    read -r is_country_launched
+  } < <(process_json "$response" ".status, .is_country_launched")
+
+  if [[ "$status" == "120" || "$status" == "320" || "$is_country_launched" == "false" ]]; then
+    available="No"
+    color_name="HEART"
+  else
+    available="Yes"
+    color_name="SERVICE"
+  fi
+
+  print_value_or_colored "$available" "$color_name"
 }
 
 lookup_claude() {
