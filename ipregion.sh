@@ -20,6 +20,9 @@ CHATGPT_DERIVED_FIELDS_PREFIX='"derived_fields":'
 NETFLIX_API_KEY="YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm"
 SPOTIFY_API_KEY="142b583129b2df829de3656f9eb484e6"
 SPOTIFY_CLIENT_ID="9a8d2f0ce77a4e248bb71fefcb557637"
+
+# Telegram production MTProto data centers (official app endpoints)
+TELEGRAM_DC_PROBE_TARGETS=("149.154.167.51:443" "91.108.56.130:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -220,6 +223,7 @@ declare -A CUSTOM_SERVICES=(
   [TIKTOK_ACCESS]="TikTok Access"
   [WHATSAPP]="WhatsApp"
   [TELEGRAM_ACCESS]="Telegram Access"
+  [TELEGRAM_DC]="Telegram DC"
   [DISCORD_ACCESS]="Discord Access"
   [TWITTER]="Twitter (X)"
   [LINKEDIN_ACCESS]="LinkedIn Access"
@@ -274,6 +278,7 @@ CUSTOM_SERVICES_ORDER=(
   "TIKTOK_ACCESS"
   "WHATSAPP"
   "TELEGRAM_ACCESS"
+  "TELEGRAM_DC"
   "DISCORD_ACCESS"
   "TWITTER"
   "LINKEDIN_ACCESS"
@@ -328,6 +333,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [TIKTOK_ACCESS]="lookup_tiktok_access"
   [WHATSAPP]="lookup_whatsapp"
   [TELEGRAM_ACCESS]="lookup_telegram_access"
+  [TELEGRAM_DC]="lookup_telegram_dc"
   [DISCORD_ACCESS]="lookup_discord_access"
   [TWITTER]="lookup_twitter"
   [LINKEDIN_ACCESS]="lookup_linkedin_access"
@@ -4317,6 +4323,31 @@ lookup_spotify_signup() {
   print_value_or_colored "$available" "$color_name"
 }
 
+# TCP connect probe via the bash /dev/tcp builtin; no external tools needed.
+# Returns 0 when the connection succeeds within timeout seconds, 1 otherwise.
+tcp_probe() {
+  local host="$1"
+  local port="$2"
+  local timeout_s="${3:-3}"
+  local probe_pid waited=0
+
+  (exec 3<>"/dev/tcp/$host/$port") 2>/dev/null &
+  probe_pid=$!
+
+  while kill -0 "$probe_pid" 2>/dev/null && ((waited < timeout_s * 10)); do
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+
+  if kill -0 "$probe_pid" 2>/dev/null; then
+    kill -TERM "$probe_pid" 2>/dev/null
+    wait "$probe_pid" 2>/dev/null
+    return 1
+  fi
+
+  wait "$probe_pid" 2>/dev/null
+}
+
 lookup_site_access() {
   local url="$1"
   local marker="$2"
@@ -4372,6 +4403,19 @@ lookup_whatsapp() {
 
 lookup_telegram_access() {
   lookup_site_access "https://web.telegram.org/k/" "telegram" "$1"
+}
+
+lookup_telegram_dc() {
+  local target
+
+  for target in "${TELEGRAM_DC_PROBE_TARGETS[@]}"; do
+    if tcp_probe "${target%%:*}" "${target##*:}" 3; then
+      print_value_or_colored "Yes" "SERVICE"
+      return
+    fi
+  done
+
+  print_value_or_colored "No" "HEART"
 }
 
 lookup_discord_access() {

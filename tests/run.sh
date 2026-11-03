@@ -210,7 +210,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS DISCORD_ACCESS TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB FACEBOOK_ACCESS MESSENGER_ACCESS THREADS_ACCESS SIGNAL_ACCESS DOUYIN_CN VK OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLOUDFLARE_CDN REDDIT_GUEST_ACCESS NETFLIX NETFLIX_CDN SPOTIFY SPOTIFY_SIGNUP INSTAGRAM TIKTOK_ACCESS WHATSAPP TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB FACEBOOK_ACCESS MESSENGER_ACCESS THREADS_ACCESS SIGNAL_ACCESS DOUYIN_CN VK OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -560,6 +560,26 @@ rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper ai_stub_wrapper
 unset AI_STUB_NAME GROK_PAGE_STUB DEEPSEEK_PAGE_STUB PERPLEXITY_PAGE_STUB COPILOT_PAGE_STUB MISTRAL_PAGE_STUB QWEN_PAGE_STUB AI_UNMARKED_STUB
+JSON_OUTPUT=false
+
+# Telegram DC probe: tcp_probe against a closed local port (deterministic)
+assert_false "tcp_probe reports closed port" tcp_probe 127.0.0.1 9
+
+# Telegram DC handler verdicts (tcp_probe stubbed)
+dc_probe_stub() {
+  if [[ "${DC_PROBE_MODE:-}" == "up" ]]; then
+    return 0
+  fi
+  return 1
+}
+tcp_probe() { dc_probe_stub "$@"; }
+JSON_OUTPUT=true
+DC_PROBE_MODE="up"
+assert_eq "Yes" "$(lookup_telegram_dc 4)" "telegram dc maps reachable dc to Yes"
+DC_PROBE_MODE="down"
+assert_eq "No" "$(lookup_telegram_dc 4)" "telegram dc maps unreachable dc to No"
+unset -f tcp_probe dc_probe_stub
+unset DC_PROBE_MODE
 JSON_OUTPUT=false
 
 if [[ "$failures" -gt 0 ]]; then
