@@ -5,9 +5,11 @@
 [1;36mPopular services[0m
 
 [1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
+[1;32mYouTube Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mInstagram[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mInstagram API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mInstagram Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mTikTok Access[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mTikTok Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mWhatsApp[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
@@ -24,6 +26,7 @@
 [1;32mMessenger MQTT[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mThreads API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mThreads Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSignal Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mSignal Service[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDouyin (CN)[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
