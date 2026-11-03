@@ -310,6 +310,16 @@ declare -A CUSTOM_SERVICES=(
   [MISTRAL_API]="Mistral API"
   [QWEN_WEB]="Qwen Web"
   [PEACOCK_ACCESS]="Peacock Access"
+  [BLUESKY]="Bluesky"
+  [SNAPCHAT]="Snapchat"
+  [PINTEREST]="Pinterest"
+  [TRUTH_SOCIAL]="Truth Social"
+  [WEIBO]="Weibo"
+  [BILIBILI]="Bilibili"
+  [NETEASE_MUSIC]="NetEase Music"
+  [TWITCH_SITE]="Twitch Site"
+  [YANDEX]="Yandex"
+  [MAIL_RU]="Mail.ru"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -395,6 +405,16 @@ CUSTOM_SERVICES_ORDER=(
   "MISTRAL_API"
   "QWEN_WEB"
   "PEACOCK_ACCESS"
+  "BLUESKY"
+  "SNAPCHAT"
+  "PINTEREST"
+  "TRUTH_SOCIAL"
+  "WEIBO"
+  "BILIBILI"
+  "NETEASE_MUSIC"
+  "TWITCH_SITE"
+  "YANDEX"
+  "MAIL_RU"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -480,6 +500,16 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MISTRAL_API]="lookup_mistral_api"
   [QWEN_WEB]="lookup_qwen_web"
   [PEACOCK_ACCESS]="lookup_peacock_access"
+  [BLUESKY]="lookup_bluesky"
+  [SNAPCHAT]="lookup_snapchat"
+  [PINTEREST]="lookup_pinterest"
+  [TRUTH_SOCIAL]="lookup_truth_social"
+  [WEIBO]="lookup_weibo"
+  [BILIBILI]="lookup_bilibili"
+  [NETEASE_MUSIC]="lookup_netease_music"
+  [TWITCH_SITE]="lookup_twitch_site"
+  [YANDEX]="lookup_yandex"
+  [MAIL_RU]="lookup_mail_ru"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4730,6 +4760,46 @@ lookup_qwen_web() {
 
 lookup_peacock_access() {
   lookup_region_gate_access "https://www.peacocktv.com/" "Unavailable In Your Region" "peacock" "$1"
+}
+
+lookup_bluesky() {
+  lookup_site_access "https://bsky.app/" "bluesky" "$1"
+}
+
+lookup_snapchat() {
+  lookup_site_access "https://snapchat.com/" "snapchat" "$1"
+}
+
+lookup_pinterest() {
+  lookup_site_access "https://pinterest.com/" "pinterest" "$1"
+}
+
+lookup_truth_social() {
+  lookup_site_access "https://truthsocial.com/" "truthsocial" "$1"
+}
+
+lookup_weibo() {
+  lookup_site_access "https://weibo.com/" "weibo" "$1"
+}
+
+lookup_bilibili() {
+  lookup_site_access "https://bilibili.com/" "bilibili" "$1"
+}
+
+lookup_netease_music() {
+  lookup_site_access "https://music.163.com/" "163" "$1"
+}
+
+lookup_twitch_site() {
+  lookup_site_access "https://twitch.tv/" "twitch" "$1"
+}
+
+lookup_yandex() {
+  lookup_site_access "https://yandex.ru/" "yandex" "$1"
+}
+
+lookup_mail_ru() {
+  lookup_site_access "https://mail.ru/" "mail.ru" "$1"
 }
 
 lookup_instagram_api() {

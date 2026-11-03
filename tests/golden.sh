@@ -101,6 +101,36 @@ stub_body() {
   *peacocktv.com*)
     printf '%s' '<!doctype html><html><head><title>Unavailable In Your Region</title></head><body>peacock gate</body></html>'
     ;;
+  *bsky.app*)
+    printf '%s' '<!doctype html><html><head><title>Bluesky</title></head><body>bluesky app</body></html>'
+    ;;
+  *snapchat.com*)
+    printf '%s' '<!doctype html><html><head><title>Snapchat</title></head><body>snapchat app</body></html>'
+    ;;
+  *pinterest.com*)
+    printf '%s' '<!doctype html><html><head><title>Pinterest</title></head><body>pinterest pins</body></html>'
+    ;;
+  *truthsocial.com*)
+    printf '%s' '<!doctype html><html><head><title>Truth Social</title></head><body>truthsocial feed</body></html>'
+    ;;
+  *weibo.com*)
+    printf '%s' '<!doctype html><html><head><title>Weibo</title></head><body>weibo feed</body></html>'
+    ;;
+  *bilibili.com*)
+    printf '%s' '<!doctype html><html><head><title>Bilibili</title></head><body>bilibili tv</body></html>'
+    ;;
+  *music.163.com*)
+    printf '%s' '<!doctype html><html><head><title>NetEase Music</title></head><body>netease music 163</body></html>'
+    ;;
+  *twitch.tv*)
+    printf '%s' '<!doctype html><html><head><title>Twitch</title></head><body>twitch tv</body></html>'
+    ;;
+  *yandex.ru*)
+    printf '%s' '<!doctype html><html><head><title>Yandex</title></head><body>yandex search</body></html>'
+    ;;
+  *mail.ru*)
+    printf '%s' '<!doctype html><html><head><title>Mail.ru</title></head><body>mail.ru mail</body></html>'
+    ;;
   *)
     printf '%s' ''
     ;;
@@ -192,6 +222,16 @@ INCLUDED_SERVICES=(
   "OK_API"
   "LINKEDIN_API"
   "X_API"
+  "BLUESKY"
+  "SNAPCHAT"
+  "PINTEREST"
+  "TRUTH_SOCIAL"
+  "WEIBO"
+  "BILIBILI"
+  "NETEASE_MUSIC"
+  "TWITCH_SITE"
+  "YANDEX"
+  "MAIL_RU"
 )
 EXCLUDED_SERVICES=()
 EXCLUDED_SERVICES_CLI=()

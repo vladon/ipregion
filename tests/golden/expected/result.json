@@ -993,6 +993,196 @@
           }
         },
         "service": "Peacock Access"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Bluesky"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Snapchat"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Pinterest"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Truth Social"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Weibo"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Bilibili"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "NetEase Music"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Twitch Site"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Yandex"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Mail.ru"
       }
     ],
     "primary": []
