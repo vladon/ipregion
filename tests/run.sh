@@ -216,6 +216,8 @@ for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS YOUTUBE_CDN CLO
 done
 assert_true "primary registry defines IPREGISTRY" test -n "${PRIMARY_SERVICES[IPREGISTRY]:-}"
 assert_contains "${PRIMARY_SERVICES[IPREGISTRY]:-}" "hostname=true" "ipregistry url template kept"
+assert_true "primary registry defines GEOAPIFY_COM" test -n "${PRIMARY_SERVICES[GEOAPIFY_COM]:-}"
+assert_eq "CY" "$(process_response "GEOAPIFY_COM" '{"country":{"iso_code":"CY"}}' "geoapify.com" "json")" "process_response geoapify country filter"
 
 # Ported upstream services: Reddit guest access status handling (curl_wrapper stubbed)
 reddit_stub_wrapper() {
