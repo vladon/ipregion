@@ -1194,6 +1194,25 @@
           }
         },
         "service": "Mail.ru"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "GitHub"
       }
     ],
     "primary": [

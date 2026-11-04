@@ -19,7 +19,7 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 
 ## Features
 
-- 94 checks in three groups: GeoIP sources (19), popular services (72) and CDN nodes (3)
+- 95 checks in three groups: GeoIP sources (19), popular services (73) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -77,7 +77,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 ### Availability (Yes/No per network)
 
 - **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway probe), Signal, Messenger
-- **Social**: Instagram, Facebook, Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch Site, Yandex, Mail.ru
+- **Social**: Instagram, Facebook, Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch Site, Yandex, Mail.ru, GitHub
 - **AI**: ChatGPT, Claude, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X)
 - **Streaming**: YouTube (region, Premium via API, Premium via web page, No Ads), Netflix (region), Spotify (region + signup), Disney+ (region + access), Peacock
 - **Region gates**: Douyin (CN egress detector), Peacock

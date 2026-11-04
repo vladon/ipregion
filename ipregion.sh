@@ -318,6 +318,7 @@ declare -A CUSTOM_SERVICES=(
   [TWITCH_SITE]="Twitch Site"
   [YANDEX]="Yandex"
   [MAIL_RU]="Mail.ru"
+  [GITHUB]="GitHub"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -410,6 +411,7 @@ CUSTOM_SERVICES_ORDER=(
   "TWITCH_SITE"
   "YANDEX"
   "MAIL_RU"
+  "GITHUB"
 )
 
 # CDN node lookups form their own -g cdn group; handlers stay in
@@ -520,6 +522,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [TWITCH_SITE]="lookup_twitch_site"
   [YANDEX]="lookup_yandex"
   [MAIL_RU]="lookup_mail_ru"
+  [GITHUB]="lookup_github"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4832,6 +4835,10 @@ lookup_yandex() {
 
 lookup_mail_ru() {
   lookup_site_access "https://mail.ru/" "mail.ru" "$1"
+}
+
+lookup_github() {
+  lookup_site_access "https://github.com/" "github" "$1"
 }
 
 lookup_instagram_api() {
