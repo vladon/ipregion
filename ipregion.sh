@@ -66,6 +66,9 @@ X_API_PROBE_TARGETS=("api.x.com:443")
 # GitHub API: raw-ISP TCP resets from some RU networks even though the
 # github.com site page stays reachable (verified ru01 OK ×2, mac reset ×2)
 GITHUB_API_PROBE_TARGETS=("api.github.com:443")
+# GitLab site and API transports (verified stable ×3 from both networks)
+GITLAB_PROBE_TARGETS=("gitlab.com:443")
+GITLAB_API_PROBE_TARGETS=("api.gitlab.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -323,6 +326,8 @@ declare -A CUSTOM_SERVICES=(
   [MAIL_RU]="Mail.ru"
   [GITHUB]="GitHub"
   [GITHUB_API]="GitHub API"
+  [GITLAB]="GitLab"
+  [GITLAB_API]="GitLab API"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -417,6 +422,8 @@ CUSTOM_SERVICES_ORDER=(
   "MAIL_RU"
   "GITHUB"
   "GITHUB_API"
+  "GITLAB"
+  "GITLAB_API"
 )
 
 # CDN node lookups form their own -g cdn group; handlers stay in
@@ -529,6 +536,8 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MAIL_RU]="lookup_mail_ru"
   [GITHUB]="lookup_github"
   [GITHUB_API]="lookup_github_api"
+  [GITLAB]="lookup_gitlab"
+  [GITLAB_API]="lookup_gitlab_api"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4905,6 +4914,14 @@ lookup_x_api() {
 
 lookup_github_api() {
   lookup_tcp_targets GITHUB_API_PROBE_TARGETS
+}
+
+lookup_gitlab() {
+  lookup_tcp_targets GITLAB_PROBE_TARGETS
+}
+
+lookup_gitlab_api() {
+  lookup_tcp_targets GITLAB_API_PROBE_TARGETS
 }
 
 lookup_facebook_api() {
