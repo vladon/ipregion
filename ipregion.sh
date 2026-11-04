@@ -209,6 +209,9 @@ ARR_PRIMARY=()
 ARR_CUSTOM=()
 ARR_CDN=()
 ARR_DEVINFRA=()
+CHECKS_TOTAL=0
+CHECKS_DONE_FILE=""
+CHECKS_TOTAL_FILE=""
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
 ASN_NUMBER=""
@@ -1902,6 +1905,18 @@ should_skip_service() {
   return 1
 }
 
+count_group_checks() {
+  local group="$1"
+  local count=0
+  local -a group_services
+  read -ra group_services <<<"${SERVICE_GROUPS[$group]:-}"
+  local service_name
+  for service_name in "${group_services[@]}"; do
+    should_skip_service "$service_name" || ((count++))
+  done
+  echo "$count"
+}
+
 parse_arguments() {
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -2841,14 +2856,27 @@ spinner_start() {
   local -a spin_frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
   local current_service frame
   local start_seconds=$SECONDS
+  local checks_done=0
 
   SPINNER_SERVICE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_spinner_XXXXXX")
+  CHECKS_DONE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_done_XXXXXX")
+  : >"$CHECKS_DONE_FILE"
+  CHECKS_TOTAL_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_total_XXXXXX")
+  SPINNER_ACTIVE=true
   spinner_running=true
 
   (
     while $spinner_running; do
       for frame in "${spin_frames[@]}"; do
         current_service=""
+        # BSD wc pads its output with spaces even for stdin reads - strip
+        # them or the numeric regex below fails and the count resets to 0
+        checks_done=$(wc -l <"$CHECKS_DONE_FILE" 2>/dev/null | tr -d ' ')
+        [[ "$checks_done" =~ ^[0-9]+ ]] || checks_done=0
+        # The total is written by main AFTER this subshell forked, so read
+        # it from the file (variable updates do not cross the boundary)
+        checks_total=$(cat "$CHECKS_TOTAL_FILE" 2>/dev/null)
+        [[ "$checks_total" =~ ^[0-9]+ ]] || checks_total=$CHECKS_TOTAL
 
         if [[ -f "$SPINNER_SERVICE_FILE" ]]; then
           current_service="$(cat "$SPINNER_SERVICE_FILE")"
@@ -2862,11 +2890,13 @@ spinner_start() {
           time_str="${elapsed}s"
         fi
 
-        printf "\r\033[K%s %s %s (%s)" \
+        printf "\r\033[K%s (%s) %s/%s %s %s" \
           "$(color HEADER "$frame")" \
+          "$(color HEADER "$time_str")" \
+          "$(color SERVICE "$checks_done")" \
+          "$(color HEADER "$checks_total")" \
           "$(color HEADER "Checking:")" \
-          "$(color SERVICE "$current_service")" \
-          "$(color HEADER "$time_str")" >&2
+          "$(color SERVICE "$current_service")" >&2
 
         sleep $delay
       done
@@ -2879,18 +2909,34 @@ spinner_start() {
 spinner_stop() {
   spinner_running=false
 
-  if [[ -n "$spinner_pid" ]]; then
-    if kill -0 "$spinner_pid" 2>/dev/null; then
-      kill "$spinner_pid" 2>/dev/null
-    fi
+  if [[ -n "${spinner_pid:-}" ]]; then
+    # The rendering subshell may already have died from an INT delivered
+    # to the whole process group; kill and reap unconditionally.
+    kill "$spinner_pid" 2>/dev/null
     wait "$spinner_pid" 2>/dev/null
     spinner_pid=""
-    printf "\\r%*s\\r" 40 " " >&2
+  fi
+
+  # Wipe the frame line completely: the old 40-column space overwrite
+  # left trailing residue on lines longer than 40 columns.
+  if [[ "${SPINNER_ACTIVE:-}" == true ]]; then
+    printf "\r\033[K" >&2
+    SPINNER_ACTIVE=false
   fi
 
   if [[ -f "$SPINNER_SERVICE_FILE" ]]; then
     rm -f "$SPINNER_SERVICE_FILE"
     unset SPINNER_SERVICE_FILE
+  fi
+
+  if [[ -f "${CHECKS_DONE_FILE:-}" ]]; then
+    rm -f "$CHECKS_DONE_FILE"
+    unset CHECKS_DONE_FILE
+  fi
+
+  if [[ -f "${CHECKS_TOTAL_FILE:-}" ]]; then
+    rm -f "$CHECKS_TOTAL_FILE"
+    unset CHECKS_TOTAL_FILE
   fi
 }
 
@@ -3760,6 +3806,47 @@ add_result() {
     printf "%s %s\n" \
       "$(color INFO '[INFO]')" \
       "Done: $service" >&2
+  fi
+
+  # Live feedback: one line per completed check below the spinner, and a
+  # done-marker for the spinner counter (both on stderr; parallel workers
+  # print here too, so results appear the moment each check finishes)
+  if [[ "${spinner_running:-}" == true ]]; then
+    local result_symbol result_color
+    # Handler results arrive ANSI-colored when color() is active; strip
+    # the escapes so the verdict case sees the bare value.
+    local ipv4_plain
+    ipv4_plain=$(printf '%s' "$ipv4" | sed "s/$(printf '\033')\\[[0-9;]*m//g")
+    case "$ipv4_plain" in
+    "Yes")
+      result_symbol="✔"
+      result_color="SERVICE"
+      ;;
+    "No" | "Denied" | "Server error")
+      result_symbol="✘"
+      result_color="HEART"
+      ;;
+    "" | "N/A")
+      result_symbol="●"
+      result_color="NULL"
+      ;;
+    "Rate-limit" | "$STATUS_REGION_BLOCKED")
+      result_symbol="▲"
+      result_color="WARN"
+      ;;
+    *)
+      # Informational values (e.g. CDN locations) - neither good nor bad
+      result_symbol="●"
+      result_color="NULL"
+      ;;
+    esac
+    printf "%s %s: %s/%s\n" \
+      "$(color "$result_color" "$result_symbol")" \
+      "$(color SERVICE "$service")" \
+      "$ipv4" \
+      "$ipv6" >&2
+    [[ -n "${CHECKS_DONE_FILE:-}" ]] && echo "x" >>"$CHECKS_DONE_FILE"
+    [[ -n "${DEBUG_SPINNER_TEST:-}" ]] && printf "DBG appended file=%s count=%s\n" "${CHECKS_DONE_FILE:-UNSET}" "$(grep -c x "${CHECKS_DONE_FILE:-/dev/null}" 2>/dev/null || echo ERR)" >&2
   fi
 
   if [[ -n "${RESULT_FILE:-}" ]]; then
@@ -5905,6 +5992,22 @@ main() {
     if [[ "$restart_spinner" == true ]]; then
       spinner_start
     fi
+  fi
+
+  if [[ "$JSON_OUTPUT" != "true" && "$PROGRESS_LOG" != true ]]; then
+    local selected_groups total_group
+    case "$GROUPS_TO_SHOW" in
+    primary) selected_groups=(primary) ;;
+    custom) selected_groups=(custom) ;;
+    cdn) selected_groups=(cdn) ;;
+    devinfra) selected_groups=(devinfra) ;;
+    *) selected_groups=(primary custom cdn devinfra) ;;
+    esac
+    CHECKS_TOTAL=0
+    for total_group in "${selected_groups[@]}"; do
+      CHECKS_TOTAL=$((CHECKS_TOTAL + $(count_group_checks "$total_group")))
+    done
+    [[ -n "${CHECKS_TOTAL_FILE:-}" ]] && printf '%s' "$CHECKS_TOTAL" >"$CHECKS_TOTAL_FILE"
   fi
 
   case "$GROUPS_TO_SHOW" in
