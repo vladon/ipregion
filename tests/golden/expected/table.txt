@@ -22,6 +22,7 @@
 [1;32mAWS[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGCP Console[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOracle Cloud[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGemini Notebook[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mApple Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mApp Store[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
