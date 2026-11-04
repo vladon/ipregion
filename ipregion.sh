@@ -2886,34 +2886,24 @@ spinner_start() {
         fi
 
         local elapsed=$((SECONDS - start_seconds))
-        local time_str=""
-        if ((elapsed > 0)); then
-          if ((elapsed >= 60)); then
-            printf -v time_str '%d:%02d' $((elapsed / 60)) $((elapsed % 60))
-          else
-            time_str="${elapsed}s"
-          fi
+        local time_str
+        if ((elapsed >= 60)); then
+          printf -v time_str '%d:%02d' $((elapsed / 60)) $((elapsed % 60))
+        else
+          time_str="${elapsed}s"
         fi
 
-        # Progressive segments joined by dim middle dots:
-        #   glyph · 12s · custom · 9/194 · service
-        local -a parts=()
-        [[ -n "$time_str" ]] && parts+=("$(color NULL "$time_str")")
-        [[ -n "$current_group" ]] && parts+=("$(color HEADER "$current_group")")
-        if [[ "$checks_total" =~ ^[0-9]+$ && "$checks_total" -gt 0 ]]; then
-          parts+=("$(color SERVICE "$checks_done")$(color NULL "/$checks_total")")
-        fi
-        [[ -n "$current_service" ]] && parts+=("$(bold "$(color SERVICE "$current_service")")")
+        local group_segment=""
+        [[ -n "$current_group" ]] && group_segment="[$(color HEADER "$current_group")] "
 
-        local part joined="" separator=""
-        for part in "${parts[@]}"; do
-          joined+="$separator$part"
-          separator=" $(color NULL "·") "
-        done
-
-        printf "\r\033[K%s %s" \
+        printf "\r\033[K%s (%s) %s%s/%s %s %s" \
           "$(color HEADER "$frame")" \
-          "$joined" >&2
+          "$(color HEADER "$time_str")" \
+          "$group_segment" \
+          "$(color SERVICE "$checks_done")" \
+          "$(color HEADER "$checks_total")" \
+          "$(color HEADER "Checking:")" \
+          "$(color SERVICE "$current_service")" >&2
 
         sleep $delay
       done
@@ -3875,17 +3865,13 @@ add_result() {
     # Wipe the spinner frame line first, then print the result in its
     # place - otherwise the frame (which does not end in a newline) and
     # the result line concatenate and the service name shows twice
-    printf "%s %s: %s\n" \
+    printf "\r\033[K%s %s: %s/%s\n" \
       "$(color "$result_color" "$result_symbol")" \
-      "$(bold "$(color SERVICE "$service")")" \
-      "$(
-        local -a verdict_parts=()
-        [[ -n "$ipv4" ]] && verdict_parts+=("$ipv4")
-        [[ -n "$ipv6" ]] && verdict_parts+=("$ipv6")
-        IFS='/'
-        printf '%s' "${verdict_parts[*]:-}"
-      )" >&2
+      "$(color SERVICE "$service")" \
+      "$ipv4" \
+      "$ipv6" >&2
     [[ -n "${CHECKS_DONE_FILE:-}" ]] && echo "x" >>"$CHECKS_DONE_FILE"
+    [[ -n "${DEBUG_SPINNER_TEST:-}" ]] && printf "DBG appended file=%s count=%s\n" "${CHECKS_DONE_FILE:-UNSET}" "$(grep -c x "${CHECKS_DONE_FILE:-/dev/null}" 2>/dev/null || echo ERR)" >&2
   fi
 
   if [[ -n "${RESULT_FILE:-}" ]]; then
