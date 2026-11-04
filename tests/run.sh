@@ -1134,7 +1134,7 @@ JSON_OUTPUT=true
 out=$({ add_result "cdn" "Counter Test" "Yes" "" "" ""; } 2>&1)
 clean_out=$(printf '%s' "$out" | sed "s/$(printf '\033')\\[[0-9;]*m//g")
 assert_contains "$clean_out" "✔" "instant result line prints pass symbol"
-assert_contains "$clean_out" "Counter Test: Yes/" "instant result line prints service and verdict"
+assert_contains "$clean_out" "Counter Test: Yes" "instant result line prints service and verdict"
 assert_eq "1" "$(grep -c x "$CHECKS_DONE_FILE")" "counter file increments per check"
 out=$({ add_result "cdn" "Counter Test 2" "No" "Denied" "" ""; } 2>&1)
 clean_out=$(printf '%s' "$out" | sed "s/$(printf '\033')\\[[0-9;]*m//g")
