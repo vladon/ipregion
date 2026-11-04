@@ -19,7 +19,7 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 
 ## Features
 
-- 178 checks in four groups: GeoIP sources (19), popular services (146), dev infra (10) and CDN nodes (3)
+- 194 checks in four groups: GeoIP sources (19), popular services (162), dev infra (10) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
