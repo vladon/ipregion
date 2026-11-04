@@ -3840,7 +3840,10 @@ add_result() {
       result_color="NULL"
       ;;
     esac
-    printf "%s %s: %s/%s\n" \
+    # Wipe the spinner frame line first, then print the result in its
+    # place - otherwise the frame (which does not end in a newline) and
+    # the result line concatenate and the service name shows twice
+    printf "\r\033[K%s %s: %s/%s\n" \
       "$(color "$result_color" "$result_symbol")" \
       "$(color SERVICE "$service")" \
       "$ipv4" \
