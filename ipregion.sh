@@ -3300,7 +3300,12 @@ process_response() {
     jq_filter='.countryCode'
     ;;
   DETECTOR404)
-    jq_filter='.data.country.ccode'
+    # Detector404 returns the country code in lowercase ("us"); every
+    # other provider reports uppercase - normalize to match.
+    local detector404_country
+    detector404_country=$(process_json "$response" '.data.country.ccode')
+    echo "${detector404_country^^}"
+    return
     ;;
   *)
     echo "$response"
