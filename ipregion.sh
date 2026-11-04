@@ -63,6 +63,9 @@ REDDIT_API_PROBE_TARGETS=("oauth.reddit.com:443")
 OK_API_PROBE_TARGETS=("api.ok.ru:443")
 LINKEDIN_API_PROBE_TARGETS=("api.linkedin.com:443")
 X_API_PROBE_TARGETS=("api.x.com:443")
+# Pre-rebrand Twitter API host, still answering: distinguishes networks
+# where api.x.com is cut but the legacy endpoint connects (ru01 OK ×3)
+TWITTER_LEGACY_API_PROBE_TARGETS=("api.twitter.com:443")
 # GitHub API: raw-ISP TCP resets from some RU networks even though the
 # github.com site page stays reachable (verified ru01 OK ×2, mac reset ×2)
 GITHUB_API_PROBE_TARGETS=("api.github.com:443")
@@ -291,6 +294,7 @@ declare -A CUSTOM_SERVICES=(
   [DISCORD_GATEWAY]="Discord Gateway"
   [TWITTER]="Twitter (X)"
   [X_API]="X API"
+  [TWITTER_LEGACY_API]="Twitter Legacy API"
   [LINKEDIN_ACCESS]="LinkedIn Access"
   [LINKEDIN_API]="LinkedIn API"
   [FACEBOOK_ACCESS]="Facebook Access"
@@ -389,6 +393,7 @@ CUSTOM_SERVICES_ORDER=(
   "DISCORD_GATEWAY"
   "TWITTER"
   "X_API"
+  "TWITTER_LEGACY_API"
   "LINKEDIN_ACCESS"
   "LINKEDIN_API"
   "FACEBOOK_ACCESS"
@@ -505,6 +510,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DISCORD_GATEWAY]="lookup_discord_gateway"
   [TWITTER]="lookup_twitter"
   [X_API]="lookup_x_api"
+  [TWITTER_LEGACY_API]="lookup_twitter_legacy_api"
   [LINKEDIN_ACCESS]="lookup_linkedin_access"
   [LINKEDIN_API]="lookup_linkedin_api"
   [FACEBOOK_ACCESS]="lookup_facebook_access"
@@ -4920,6 +4926,10 @@ lookup_linkedin_api() {
 
 lookup_x_api() {
   lookup_tcp_targets X_API_PROBE_TARGETS
+}
+
+lookup_twitter_legacy_api() {
+  lookup_tcp_targets TWITTER_LEGACY_API_PROBE_TARGETS
 }
 
 lookup_github_api() {

@@ -32,6 +32,7 @@
 [1;32mDiscord Gateway[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mTwitter (X)[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mX API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mTwitter Legacy API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mLinkedIn Access[0m	[1;31mDenied[0m	[1;31mDenied[0m
 [1;32mLinkedIn API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mFacebook Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
