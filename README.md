@@ -80,7 +80,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 - **Encrypted DNS**: dns.google, cloudflare-dns.com (DoH transport probes)
 - **Search**: Bing, DuckDuckGo, Brave Search
 - **Social**: Instagram, Facebook (Access + API + CDN), Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch (Site + API + Chat), Yandex, Mail.ru, GitHub
-- **AI**: ChatGPT, Claude, Gemini Notebook (region gate), Gemini API, AI Studio, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web, DeepL (451 region gate), Character.AI, Poe, Google Translate + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)
+- **AI**: ChatGPT, Claude, Gemini Notebook / NotebookLM (3-attempt region gate), Gemini API, AI Studio, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web, DeepL (451 region gate), Character.AI, Poe, Google Translate + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)
 - **Google services**: Meet, Photos, Calendar, Drive (transport probes — Google gates services individually)
 - **Music**: YouTube Music, Apple Music, SoundCloud, Deezer (transport probes)
 - **Productivity**: Notion, Figma, Miro, Canva, Trello, Medium

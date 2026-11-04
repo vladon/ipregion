@@ -653,51 +653,132 @@ unset -f curl_wrapper site_stub_wrapper
 unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB GITHUB_PAGE_STUB BING_PAGE_STUB DUCKDUCKGO_PAGE_STUB BRAVE_PAGE_STUB UNMARKED_SEARCH_STUB WECHAT_PAGE_STUB BAIDU_PAGE_STUB ALIPAY_PAGE_STUB UNMARKED_CN_STUB NOTION_PAGE_STUB FIGMA_PAGE_STUB MIRO_PAGE_STUB CANVA_PAGE_STUB TRELLO_PAGE_STUB MEDIUM_PAGE_STUB WIKIPEDIA_PAGE_STUB STACK_OVERFLOW_PAGE_STUB HABR_PAGE_STUB CHARACTER_AI_PAGE_STUB POE_PAGE_STUB GOOGLE_TRANSLATE_PAGE_STUB UNMARKED_KQ_STUB
 JSON_OUTPUT=false
 
-# Gemini Notebook region gate (curl_wrapper stubbed; gate lives in the
-# effective URL recorded in CURL_META_FILE). NOTEBOOKLM_STUB_MIXED_GATE=1
-# makes only the second of the three attempts hit the gate.
+# Gemini Notebook / NotebookLM region gate (curl_wrapper stubbed; gate
+# and app signs live in effective/redirect URLs recorded in
+# CURL_META_FILE). One stub step per probe attempt:
+#   http_code|body|effective_url|redirect_url   (code 0 = transport error)
+# The step index persists in a file: the stub runs inside the handler's
+# command substitution, where plain variable increments are discarded.
 notebooklm_stub_wrapper() {
-  local error_type="${NOTEBOOKLM_STUB_ERROR_TYPE:-none}"
-  local attempt=1
-  local effective_url="${NOTEBOOKLM_STUB_EFFECTIVE_URL:-}"
-
-  if [[ "${NOTEBOOKLM_STUB_MIXED_GATE:-}" == "1" && -f "${NOTEBOOKLM_STUB_COUNTS:-}" ]]; then
-    attempt=$(($(cat "$NOTEBOOKLM_STUB_COUNTS") + 1))
-    printf "%s" "$attempt" >"$NOTEBOOKLM_STUB_COUNTS"
-    [[ "$attempt" -eq 2 ]] && effective_url='https://notebook.google/?location=unsupported' || effective_url='https://notebooklm.google.com/'
+  local idx=0
+  if [[ -n "${NOTEBOOKLM_STUB_COUNTS:-}" ]]; then
+    idx=$(($(cat "$NOTEBOOKLM_STUB_COUNTS" 2>/dev/null || echo 0) + 1))
+    printf '%s' "$idx" >"$NOTEBOOKLM_STUB_COUNTS"
   fi
-
+  local step="${NOTEBOOKLM_STUB_STEPS[$((idx - 1))]:-}"
+  local code body eff red
+  IFS='|' read -r code body eff red <<<"$step"
   if [[ -n "$CURL_META_FILE" ]]; then
-    printf "http_code=%s;latency_ms=100;error_type=%s;effective_url=%s\n" \
-      "$([[ "$error_type" == "none" ]] && echo 200 || echo "")" \
-      "$error_type" \
-      "$effective_url" >"$CURL_META_FILE"
+    printf "http_code=%s;latency_ms=100;error_type=none;effective_url=%s;redirect_url=%s\n" \
+      "$code" "$eff" "$red" >"$CURL_META_FILE"
   fi
-  [[ "$error_type" == "curl_error" ]] && return
-  printf "%s" "${NOTEBOOKLM_STUB_RESPONSE:-}"
+  [[ "$code" == "0" ]] && return
+  printf "%s" "$body"
 }
 curl_wrapper() { notebooklm_stub_wrapper "$@"; }
+run_notebooklm_scenario() {
+  : >"${NOTEBOOKLM_STUB_COUNTS:-/dev/null}"
+  lookup_gemini_notebook 4
+}
 JSON_OUTPUT=true
 CURL_META_FILE=$(mktemp)
-NOTEBOOKLM_STUB_RESPONSE='<html>gemini notebook app shell</html>'
-NOTEBOOKLM_STUB_EFFECTIVE_URL='https://notebook.google/?location=unsupported'
-assert_eq "No" "$(lookup_gemini_notebook 4)" "gemini notebook maps unsupported redirects to No"
-NOTEBOOKLM_STUB_EFFECTIVE_URL='https://notebooklm.google.com/'
-assert_eq "Yes" "$(lookup_gemini_notebook 4)" "gemini notebook maps clean landings to Yes"
-NOTEBOOKLM_STUB_ERROR_TYPE="curl_error"
-NOTEBOOKLM_STUB_RESPONSE=""
-assert_eq "No" "$(lookup_gemini_notebook 4)" "gemini notebook maps transport failures to No"
-NOTEBOOKLM_STUB_ERROR_TYPE="none"
-assert_empty "$(lookup_gemini_notebook 4)" "gemini notebook maps empty responses to N/A"
-NOTEBOOKLM_STUB_RESPONSE='<html>gemini notebook app shell</html>'
-NOTEBOOKLM_STUB_MIXED_GATE="1"
 NOTEBOOKLM_STUB_COUNTS=$(mktemp)
 : >"$NOTEBOOKLM_STUB_COUNTS"
-assert_eq "No" "$(lookup_gemini_notebook 4)" "gemini notebook maps a single gated attempt to No"
+
+# Three successful application responses across both app domains
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>notebooklm app</html>|https://notebooklm.google.com/|"
+  "200|<html>Gemini Notebook app shell</html>|https://notebook.google.com/|https://notebooklm.google.com/"
+  "200|<html>gemini notebook app shell</html>|https://notebook.google.com/?authuser=0|https://notebook.google.com/"
+)
+assert_eq "Yes" "$(run_notebooklm_scenario)" "gemini notebook: three app responses on both domains is Yes"
+
+# The gate confirms No even when the remaining attempts are clean
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>notebooklm app</html>|https://notebooklm.google.com/|"
+  "200|<html>unsupported landing</html>|https://notebooklm.google?location=unsupported|"
+  "200|<html>notebooklm app</html>|https://notebooklm.google.com/|"
+)
+assert_eq "No" "$(run_notebooklm_scenario)" "gemini notebook: gate in one attempt is No"
+
+# Gate marker in an intermediate redirect Location
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>notebooklm app</html>|https://notebook.google.com/|https://notebooklm.google?location=unsupported"
+)
+assert_eq "No" "$(run_notebooklm_scenario)" "gemini notebook: intermediate gate redirect is No"
+
+# Percent-encoded gate parameter
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>unsupported landing</html>|https://notebooklm.google?location%3Dunsupported|"
+)
+assert_eq "No" "$(run_notebooklm_scenario)" "gemini notebook: percent-encoded gate is No"
+
+# A single success among transport failures is not Yes
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>notebooklm app</html>|https://notebooklm.google.com/|"
+  "0|||"
+  "0|||"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: one success among transport errors is N/A"
+
+# Redirect to Google sign-in is not the application
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>sign in</html>|https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fnotebooklm.google.com%2F|"
+  "200|<html>sign in</html>|https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fnotebooklm.google.com%2F|"
+  "200|<html>sign in</html>|https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fnotebooklm.google.com%2F|"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: sign-in redirect is N/A"
+
+# The marketing page without a region parameter is not the application
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>Gemini Notebook marketing</html>|https://notebook.google/|"
+  "200|<html>Gemini Notebook marketing</html>|https://notebook.google/|"
+  "200|<html>Gemini Notebook marketing</html>|https://notebook.google/|"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: marketing page is N/A"
+
+# CAPTCHA pages are not the application
+NOTEBOOKLM_STUB_STEPS=(
+  "200|<html>recaptcha captcha challenge</html>|https://notebooklm.google.com/|"
+  "200|<html>recaptcha captcha challenge</html>|https://notebooklm.google.com/|"
+  "200|<html>recaptcha captcha challenge</html>|https://notebooklm.google.com/|"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: captcha page is N/A"
+
+# Empty application responses are undetermined
+NOTEBOOKLM_STUB_STEPS=(
+  "200||https://notebooklm.google.com/|"
+  "200||https://notebooklm.google.com/|"
+  "200||https://notebooklm.google.com/|"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: empty app responses are N/A"
+
+# HTTP 429 and 5xx are undetermined
+NOTEBOOKLM_STUB_STEPS=(
+  "429|Rate-limit|https://notebooklm.google.com/|"
+  "429|Rate-limit|https://notebooklm.google.com/|"
+  "429|Rate-limit|https://notebooklm.google.com/|"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: 429 is N/A"
+NOTEBOOKLM_STUB_STEPS=(
+  "500|Server error|https://notebooklm.google.com/|"
+  "500|Server error|https://notebooklm.google.com/|"
+  "500|Server error|https://notebooklm.google.com/|"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: 5xx is N/A"
+
+# Transport errors and timeouts are undetermined
+NOTEBOOKLM_STUB_STEPS=(
+  "0|||"
+  "0|||"
+  "0|||"
+)
+assert_empty "$(run_notebooklm_scenario)" "gemini notebook: transport errors and timeouts are N/A"
+
 rm -f "$CURL_META_FILE" "$NOTEBOOKLM_STUB_COUNTS"
 CURL_META_FILE=""
-unset -f curl_wrapper notebooklm_stub_wrapper
-unset NOTEBOOKLM_STUB_RESPONSE NOTEBOOKLM_STUB_EFFECTIVE_URL NOTEBOOKLM_STUB_ERROR_TYPE NOTEBOOKLM_STUB_MIXED_GATE NOTEBOOKLM_STUB_COUNTS
+unset -f curl_wrapper notebooklm_stub_wrapper run_notebooklm_scenario
+unset NOTEBOOKLM_STUB_STEPS NOTEBOOKLM_STUB_INDEX NOTEBOOKLM_STUB_COUNTS
 JSON_OUTPUT=false
 
 # DeepL region gate (curl_wrapper stubbed; RU gets HTTP 451 with a

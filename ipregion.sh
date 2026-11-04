@@ -3104,7 +3104,7 @@ curl_wrapper() {
   fi
 
   if [[ "$effective_url_flag" == true ]]; then
-    curl_args+=(-w '\n%{http_code}\n%{time_total}\n%{url_effective}')
+    curl_args+=(-w '\n%{http_code}\n%{time_total}\n%{url_effective}\n%{redirect_url}')
   else
     curl_args+=(-w '\n%{http_code}\n%{time_total}')
   fi
@@ -3124,11 +3124,12 @@ curl_wrapper() {
   fi
 
   if [[ "$effective_url_flag" == true ]]; then
-    effective_url=$(printf '%s\n' "$response_with_meta" | tail -n 1)
-    latency_seconds=$(printf '%s\n' "$response_with_meta" | tail -n 2 | head -n 1)
-    http_code=$(printf '%s\n' "$response_with_meta" | tail -n 3 | head -n 1)
-    response=$(printf '%s\n' "$response_with_meta" | sed -e '$d' -e '$d' -e '$d')
-    meta_effective=";effective_url=$effective_url"
+    redirect_url=$(printf '%s\n' "$response_with_meta" | tail -n 1)
+    effective_url=$(printf '%s\n' "$response_with_meta" | tail -n 2 | head -n 1)
+    latency_seconds=$(printf '%s\n' "$response_with_meta" | tail -n 3 | head -n 1)
+    http_code=$(printf '%s\n' "$response_with_meta" | tail -n 4 | head -n 1)
+    response=$(printf '%s\n' "$response_with_meta" | sed -e '$d' -e '$d' -e '$d' -e '$d')
+    meta_effective=";effective_url=$effective_url;redirect_url=$redirect_url"
   else
     latency_seconds=$(printf '%s\n' "$response_with_meta" | tail -n 1)
     http_code=$(printf '%s\n' "$response_with_meta" | tail -n 2 | head -n 1)
@@ -4625,45 +4626,79 @@ gemini_stream_generate_has_reply() {
   echo "no"
 }
 
-# NotebookLM (rebranded "Gemini Notebook"): for non-browser clients
-# unsupported regions intermittently get a 302 whose final URL carries
-# location=unsupported (Google edges alternate between the gate and a
-# clean landing, so a single clean response proves nothing). Probe three
-# times: any gated response means the egress region is unsupported. A
-# browser UA skips the gate entirely (the verdict then only appears
-# in-app after sign-in), so no custom user agent is sent on purpose.
+# NotebookLM (rebranded "Gemini Notebook") - application availability
+# without sign-in. For non-browser clients unsupported regions are sent
+# a redirect whose URL carries location=unsupported (possibly
+# percent-encoded and possibly only as an intermediate hop), so the
+# gate is checked against both the final effective URL and the
+# recorded redirect Location. Google edges alternate between the gate
+# and a clean landing for one egress, so the check probes three times:
+# any gated response confirms No, and Yes requires ALL three attempts
+# to return HTTP 200 on an application domain (notebooklm.google.com /
+# notebook.google.com) with non-empty HTML carrying application signs.
+# Sign-in, the marketing page (notebook.google), CAPTCHA and error
+# pages are not the application. Timeouts, transport errors,
+# 429/5xx and unrecognized responses leave the verdict undetermined
+# (N/A) - they are neither a confirmed ban nor confirmed availability.
+# A browser UA skips the server-side gate (the verdict then only
+# appears in-app after sign-in), so no custom user agent is sent.
+is_notebook_gate_url() {
+  local url decoded
+  for url in "$@"; do
+    [[ -z "$url" ]] && continue
+    decoded=${url//\%3D/=}
+    decoded=${decoded//\%3d/=}
+    [[ "${decoded,,}" == *location=unsupported* ]] && return 0
+  done
+  return 1
+}
+
+is_notebook_app_page() {
+  local url="$1"
+  local body="$2"
+
+  [[ -n "$body" ]] || return 1
+  case "$url" in
+  *"://notebooklm.google.com/"* | *"://notebook.google.com/"*) ;;
+  *) return 1 ;;
+  esac
+
+  local lower=${body,,}
+  [[ "$lower" == *notebooklm* || "$lower" == *"gemini notebook"* ]]
+}
+
 lookup_gemini_notebook() {
   local ip_version="$1"
-  local effective_url response error_type attempt
-  local gate_found=false clean_found=false transport_failed=false
+  local effective_url redirect_url response error_type http_code attempt
+  local gate_found=false ok_attempts=0
 
   for attempt in 1 2 3; do
     response=$(curl_wrapper GET "https://notebooklm.google.com/" \
       --ip-version "$ip_version" \
       --effective-url)
 
-    if is_status_string "$response"; then
-      echo "$response"
-      return
+    effective_url=$(read_curl_metric_field "${CURL_META_FILE:-}" "effective_url")
+    redirect_url=$(read_curl_metric_field "${CURL_META_FILE:-}" "redirect_url")
+    http_code=$(read_curl_metric_field "${CURL_META_FILE:-}" "http_code")
+
+    if is_notebook_gate_url "$effective_url" "$redirect_url"; then
+      gate_found=true
     fi
 
-    effective_url=$(read_curl_metric_field "$CURL_META_FILE" "effective_url")
-    if [[ "$effective_url" == *location=unsupported* ]]; then
-      gate_found=true
-    elif [[ -n "$response" ]]; then
-      clean_found=true
-    else
-      error_type=$(read_curl_metric_field "$CURL_META_FILE" "error_type")
-      [[ "$error_type" == "curl_error" ]] && transport_failed=true
+    # Anything that is not a successful application response (transport
+    # errors, timeouts, 429/5xx/451, sign-in, marketing, CAPTCHA, empty
+    # or unrecognized bodies) stays undetermined for this attempt.
+    if [[ "$http_code" == "200" ]] &&
+      is_notebook_app_page "$effective_url" "$response" &&
+      ! is_status_string "$response"; then
+      ok_attempts=$((ok_attempts + 1))
     fi
   done
 
   if [[ "$gate_found" == true ]]; then
     print_value_or_colored "No" "HEART"
-  elif [[ "$clean_found" == true ]]; then
+  elif ((ok_attempts == 3)); then
     print_value_or_colored "Yes" "SERVICE"
-  elif [[ "$transport_failed" == true ]]; then
-    print_value_or_colored "No" "HEART"
   else
     echo ""
   fi
