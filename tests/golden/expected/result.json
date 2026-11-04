@@ -1326,6 +1326,25 @@
             "transport_ip_version": 6
           }
         },
+        "service": "GitHub Raw"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
         "service": "GitLab"
       },
       {
@@ -1346,6 +1365,82 @@
           }
         },
         "service": "GitLab API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "npm Registry"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "PyPI"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Docker Hub"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Hugging Face"
       }
     ],
     "primary": [

@@ -79,6 +79,14 @@ DISCORD_API_PROBE_TARGETS=("discordapp.com:443")
 # YouTube InnerTube API backend, the backend the youtubei/v1 calls hit
 # (verified stable ×2 from both networks)
 YOUTUBE_API_PROBE_TARGETS=("youtubei.googleapis.com:443")
+# Dev-workflow registries and artifact hosts (verified ru01 OK ×3;
+# Docker Hub had RF pull restrictions in 2024, raw.githubusercontent.com
+# is frequently cut separately from github.com)
+NPM_REGISTRY_PROBE_TARGETS=("registry.npmjs.org:443")
+PYPI_PROBE_TARGETS=("pypi.org:443")
+DOCKER_HUB_PROBE_TARGETS=("registry-1.docker.io:443")
+GITHUB_RAW_PROBE_TARGETS=("raw.githubusercontent.com:443")
+HUGGING_FACE_PROBE_TARGETS=("huggingface.co:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -340,8 +348,13 @@ declare -A CUSTOM_SERVICES=(
   [MAIL_RU]="Mail.ru"
   [GITHUB]="GitHub"
   [GITHUB_API]="GitHub API"
+  [GITHUB_RAW]="GitHub Raw"
   [GITLAB]="GitLab"
   [GITLAB_API]="GitLab API"
+  [NPM_REGISTRY]="npm Registry"
+  [PYPI]="PyPI"
+  [DOCKER_HUB]="Docker Hub"
+  [HUGGING_FACE]="Hugging Face"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -440,8 +453,13 @@ CUSTOM_SERVICES_ORDER=(
   "MAIL_RU"
   "GITHUB"
   "GITHUB_API"
+  "GITHUB_RAW"
   "GITLAB"
   "GITLAB_API"
+  "NPM_REGISTRY"
+  "PYPI"
+  "DOCKER_HUB"
+  "HUGGING_FACE"
 )
 
 # CDN node lookups form their own -g cdn group; handlers stay in
@@ -558,8 +576,13 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MAIL_RU]="lookup_mail_ru"
   [GITHUB]="lookup_github"
   [GITHUB_API]="lookup_github_api"
+  [GITHUB_RAW]="lookup_github_raw"
   [GITLAB]="lookup_gitlab"
   [GITLAB_API]="lookup_gitlab_api"
+  [NPM_REGISTRY]="lookup_npm_registry"
+  [PYPI]="lookup_pypi"
+  [DOCKER_HUB]="lookup_docker_hub"
+  [HUGGING_FACE]="lookup_hugging_face"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4940,6 +4963,26 @@ lookup_twitter_legacy_api() {
 
 lookup_youtube_api() {
   lookup_tcp_targets YOUTUBE_API_PROBE_TARGETS
+}
+
+lookup_github_raw() {
+  lookup_tcp_targets GITHUB_RAW_PROBE_TARGETS
+}
+
+lookup_npm_registry() {
+  lookup_tcp_targets NPM_REGISTRY_PROBE_TARGETS
+}
+
+lookup_pypi() {
+  lookup_tcp_targets PYPI_PROBE_TARGETS
+}
+
+lookup_docker_hub() {
+  lookup_tcp_targets DOCKER_HUB_PROBE_TARGETS
+}
+
+lookup_hugging_face() {
+  lookup_tcp_targets HUGGING_FACE_PROBE_TARGETS
 }
 
 lookup_github_api() {
