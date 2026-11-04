@@ -54,7 +54,6 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --json # JSON output
 ./ipregion.sh --debug # Debug mode
 ./ipregion.sh --parallel 6 # Run checks in parallel
-./ipregion.sh --force-spinner # Force spinner even in parallel mode
 ./ipregion.sh --progress-log # Progress lines instead of spinner
 ./ipregion.sh --metrics # Show per-service metrics table
 ./ipregion.sh --youtube-lang en # Viewer language for the YouTube No Ads check

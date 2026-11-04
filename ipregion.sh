@@ -168,7 +168,6 @@ EXTERNAL_IPV4_TIMESTAMP=""
 EXTERNAL_IPV6_TIMESTAMP=""
 PARALLEL_JOBS=0
 PARALLEL_PIDS=()
-FORCE_SPINNER=false
 PROGRESS_LOG=false
 LAST_PROGRESS_MSG=""
 HEADER_PRINTED=false
@@ -883,8 +882,6 @@ Options:
   -g, --group GROUP    Run only one group: 'primary', 'custom', 'cdn', 'devinfra', or 'all' (default: all)
   -t, --timeout SEC    Set curl request timeout in seconds (default: $CURL_TIMEOUT)
   -P, --parallel N     Run up to N services in parallel (default: auto)
-  -S, --force-spinner  Always show spinner (even in parallel mode)
-  --force-spinner      Always show spinner (even in parallel mode)
   --progress-log       Print progress lines instead of spinner
   -4, --ipv4           Test only IPv4
   -6, --ipv6           Test only IPv6
@@ -914,7 +911,6 @@ Examples:
   $SCRIPT_NAME -v                    # Enable verbose logging
   $SCRIPT_NAME -d                    # Enable debug and save full trace to file (upload on consent)
   $SCRIPT_NAME -P 6                  # Check services using 6 parallel jobs
-  $SCRIPT_NAME --force-spinner       # Force spinner even with parallel checks
   $SCRIPT_NAME --progress-log        # Print progress lines instead of spinner
   $SCRIPT_NAME --show-cache         # Show cached IP addresses
   $SCRIPT_NAME --clear-cache         # Clear the IP cache
@@ -1846,10 +1842,6 @@ parse_arguments() {
         error_exit "Invalid parallel value: $2. Parallel jobs must be a positive integer"
       fi
       shift 2
-      ;;
-    -S | --force-spinner)
-      FORCE_SPINNER=true
-      shift
       ;;
     --progress-log)
       PROGRESS_LOG=true
@@ -5581,7 +5573,7 @@ main() {
   detect_distro
   install_dependencies
 
-  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && ("$PARALLEL_JOBS" -le 1 || "$FORCE_SPINNER" == true) ]]; then
+  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true ]]; then
     spinner_start
   fi
 
@@ -5669,7 +5661,7 @@ main() {
       "Rendering results..." >&2
   fi
 
-  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && ("$PARALLEL_JOBS" -le 1 || "$FORCE_SPINNER" == true) ]]; then
+  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true ]]; then
     spinner_stop
   fi
 
