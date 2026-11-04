@@ -10,6 +10,7 @@
 [1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
 [1;32mYouTube API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mYouTube Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mYouTube Music[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mBing[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDuckDuckGo[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
@@ -18,13 +19,19 @@
 [1;32mDoH Cloudflare[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGmail[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Drive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGoogle Meet[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGoogle Photos[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGoogle Calendar[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mPlay Store[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mAWS[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGCP Console[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOracle Cloud[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGemini Notebook[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGemini API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mAI Studio[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mApple Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mApp Store[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mApple Music[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMicrosoft Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -48,6 +55,7 @@
 [1;32mDiscord Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDiscord API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDiscord Gateway[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mDiscord CDN[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mTwitter (X)[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mX API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mTwitter Legacy API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -62,6 +70,8 @@
 [1;32mSlack[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mZoom[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mLine[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mKakaoTalk[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mThreema[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mThreads API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -69,6 +79,7 @@
 [1;32mSignal Service[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDouyin (CN)[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mWeChat[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mWeChat API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mBaidu[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mAlipay[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mVK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
@@ -91,6 +102,10 @@
 [1;32mCohere API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mElevenLabs API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mQwen Web[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mDeepL[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mCharacter.AI[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mPoe[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mGoogle Translate[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mPeacock Access[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mBluesky[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mSnapchat[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
@@ -109,12 +124,25 @@
 [1;32mMEGA[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mEpic Games[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mBattle.net[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mMinecraft Session[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mRoblox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mRoblox API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mRiot Games[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mXbox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mStripe API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mPayPal[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mWise[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mNotion[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mFigma[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mMiro[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mCanva[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mTrello[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mMedium[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mWikipedia[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mStack Overflow[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mHabr[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mSoundCloud[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mDeezer[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 
 [1;36mCDN[0m
 

@@ -131,6 +131,26 @@ ORACLE_CLOUD_PROBE_TARGETS=("cloud.oracle.com:443")
 STRIPE_API_PROBE_TARGETS=("api.stripe.com:443")
 PAYPAL_PROBE_TARGETS=("paypal.com:443")
 WISE_PROBE_TARGETS=("wise.com:443")
+# Google per-service transports: Google gates individual services
+# independently of the network path (Gemini Notebook proved it)
+GEMINI_API_PROBE_TARGETS=("generativelanguage.googleapis.com:443")
+AI_STUDIO_PROBE_TARGETS=("aistudio.google.com:443")
+GOOGLE_MEET_PROBE_TARGETS=("meet.google.com:443")
+GOOGLE_PHOTOS_PROBE_TARGETS=("photos.google.com:443")
+GOOGLE_CALENDAR_PROBE_TARGETS=("calendar.google.com:443")
+# Music streaming transports
+YOUTUBE_MUSIC_PROBE_TARGETS=("music.youtube.com:443")
+APPLE_MUSIC_PROBE_TARGETS=("music.apple.com:443")
+SOUNDCLOUD_PROBE_TARGETS=("soundcloud.com:443")
+DEEZER_PROBE_TARGETS=("deezer.com:443")
+# Content CDN and game-session endpoints, cut separately from sites
+DISCORD_CDN_PROBE_TARGETS=("cdn.discordapp.com:443")
+MINECRAFT_SESSION_PROBE_TARGETS=("sessionserver.mojang.com:443")
+ROBLOX_API_PROBE_TARGETS=("apis.roblox.com:443")
+# Messenger additions
+WECHAT_API_PROBE_TARGETS=("weixin.qq.com:443")
+KAKAOTALK_PROBE_TARGETS=("kakao.com:443")
+THREEMA_PROBE_TARGETS=("threema.ch:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -222,6 +242,7 @@ STATUS_NA="N/A"
 STATUS_DENIED="Denied"
 STATUS_RATE_LIMIT="Rate-limit"
 STATUS_SERVER_ERROR="Server error"
+STATUS_REGION_BLOCKED="Region blocked"
 
 declare -A DEPENDENCIES=(
   [jq]="jq"
@@ -303,6 +324,7 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE_PREMIUM_WEB]="YouTube Premium (Web)"
   [YOUTUBE_API]="YouTube API"
   [YOUTUBE_TRANSPORT]="YouTube Transport"
+  [YOUTUBE_MUSIC]="YouTube Music"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
   [GOOGLE_TRANSPORT]="Google Transport"
   [BING]="Bing"
@@ -312,15 +334,21 @@ declare -A CUSTOM_SERVICES=(
   [DOH_CLOUDFLARE]="DoH Cloudflare"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
+  [GOOGLE_MEET]="Google Meet"
+  [GOOGLE_PHOTOS]="Google Photos"
+  [GOOGLE_CALENDAR]="Google Calendar"
   [PLAY_STORE]="Play Store"
   [AWS]="AWS"
   [GCP_CONSOLE]="GCP Console"
   [ORACLE_CLOUD]="Oracle Cloud"
   [GEMINI]="Google Gemini"
   [GEMINI_NOTEBOOK]="Gemini Notebook"
+  [GEMINI_API]="Gemini API"
+  [AI_STUDIO]="AI Studio"
   [APPLE]="Apple"
   [APPLE_TRANSPORT]="Apple Transport"
   [APP_STORE]="App Store"
+  [APPLE_MUSIC]="Apple Music"
   [STEAM]="Steam"
   [STEAM_API]="Steam API"
   [STEAM_TRANSPORT]="Steam Transport"
@@ -365,6 +393,7 @@ declare -A CUSTOM_SERVICES=(
   [DISCORD_ACCESS]="Discord Access"
   [DISCORD_API]="Discord API"
   [DISCORD_GATEWAY]="Discord Gateway"
+  [DISCORD_CDN]="Discord CDN"
   [TWITTER]="Twitter (X)"
   [X_API]="X API"
   [TWITTER_LEGACY_API]="Twitter Legacy API"
@@ -379,6 +408,8 @@ declare -A CUSTOM_SERVICES=(
   [SLACK]="Slack"
   [ZOOM]="Zoom"
   [LINE]="Line"
+  [KAKAOTALK]="KakaoTalk"
+  [THREEMA]="Threema"
   [THREADS_ACCESS]="Threads Access"
   [THREADS_API]="Threads API"
   [THREADS_TRANSPORT]="Threads Transport"
@@ -386,6 +417,7 @@ declare -A CUSTOM_SERVICES=(
   [SIGNAL_SERVICE]="Signal Service"
   [DOUYIN_CN]="Douyin (CN)"
   [WECHAT]="WeChat"
+  [WECHAT_API]="WeChat API"
   [BAIDU]="Baidu"
   [ALIPAY]="Alipay"
   [VK]="VK"
@@ -408,6 +440,10 @@ declare -A CUSTOM_SERVICES=(
   [COHERE_API]="Cohere API"
   [ELEVENLABS_API]="ElevenLabs API"
   [QWEN_WEB]="Qwen Web"
+  [DEEPL]="DeepL"
+  [CHARACTER_AI]="Character.AI"
+  [POE]="Poe"
+  [GOOGLE_TRANSLATE]="Google Translate"
   [PEACOCK_ACCESS]="Peacock Access"
   [BLUESKY]="Bluesky"
   [SNAPCHAT]="Snapchat"
@@ -426,12 +462,25 @@ declare -A CUSTOM_SERVICES=(
   [MEGA]="MEGA"
   [EPIC_GAMES]="Epic Games"
   [BATTLE_NET]="Battle.net"
+  [MINECRAFT_SESSION]="Minecraft Session"
   [ROBLOX]="Roblox"
+  [ROBLOX_API]="Roblox API"
   [RIOT]="Riot Games"
   [XBOX]="Xbox"
   [STRIPE_API]="Stripe API"
   [PAYPAL]="PayPal"
   [WISE]="Wise"
+  [NOTION]="Notion"
+  [FIGMA]="Figma"
+  [MIRO]="Miro"
+  [CANVA]="Canva"
+  [TRELLO]="Trello"
+  [MEDIUM]="Medium"
+  [WIKIPEDIA]="Wikipedia"
+  [STACK_OVERFLOW]="Stack Overflow"
+  [HABR]="Habr"
+  [SOUNDCLOUD]="SoundCloud"
+  [DEEZER]="Deezer"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -441,6 +490,7 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE_PREMIUM_WEB"
   "YOUTUBE_API"
   "YOUTUBE_TRANSPORT"
+  "YOUTUBE_MUSIC"
   "GOOGLE_SEARCH_CAPTCHA"
   "GOOGLE_TRANSPORT"
   "BING"
@@ -450,15 +500,21 @@ CUSTOM_SERVICES_ORDER=(
   "DOH_CLOUDFLARE"
   "GMAIL"
   "GOOGLE_DRIVE"
+  "GOOGLE_MEET"
+  "GOOGLE_PHOTOS"
+  "GOOGLE_CALENDAR"
   "PLAY_STORE"
   "AWS"
   "GCP_CONSOLE"
   "ORACLE_CLOUD"
   "GEMINI"
   "GEMINI_NOTEBOOK"
+  "GEMINI_API"
+  "AI_STUDIO"
   "APPLE"
   "APPLE_TRANSPORT"
   "APP_STORE"
+  "APPLE_MUSIC"
   "STEAM"
   "STEAM_API"
   "STEAM_TRANSPORT"
@@ -503,6 +559,7 @@ CUSTOM_SERVICES_ORDER=(
   "DISCORD_ACCESS"
   "DISCORD_API"
   "DISCORD_GATEWAY"
+  "DISCORD_CDN"
   "TWITTER"
   "X_API"
   "TWITTER_LEGACY_API"
@@ -517,6 +574,8 @@ CUSTOM_SERVICES_ORDER=(
   "SLACK"
   "ZOOM"
   "LINE"
+  "KAKAOTALK"
+  "THREEMA"
   "THREADS_ACCESS"
   "THREADS_API"
   "THREADS_TRANSPORT"
@@ -524,6 +583,7 @@ CUSTOM_SERVICES_ORDER=(
   "SIGNAL_SERVICE"
   "DOUYIN_CN"
   "WECHAT"
+  "WECHAT_API"
   "BAIDU"
   "ALIPAY"
   "VK"
@@ -546,6 +606,10 @@ CUSTOM_SERVICES_ORDER=(
   "COHERE_API"
   "ELEVENLABS_API"
   "QWEN_WEB"
+  "DEEPL"
+  "CHARACTER_AI"
+  "POE"
+  "GOOGLE_TRANSLATE"
   "PEACOCK_ACCESS"
   "BLUESKY"
   "SNAPCHAT"
@@ -564,12 +628,25 @@ CUSTOM_SERVICES_ORDER=(
   "MEGA"
   "EPIC_GAMES"
   "BATTLE_NET"
+  "MINECRAFT_SESSION"
   "ROBLOX"
+  "ROBLOX_API"
   "RIOT"
   "XBOX"
   "STRIPE_API"
   "PAYPAL"
   "WISE"
+  "NOTION"
+  "FIGMA"
+  "MIRO"
+  "CANVA"
+  "TRELLO"
+  "MEDIUM"
+  "WIKIPEDIA"
+  "STACK_OVERFLOW"
+  "HABR"
+  "SOUNDCLOUD"
+  "DEEZER"
 )
 
 # CDN node lookups form their own -g cdn group; handlers stay in
@@ -623,6 +700,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE_PREMIUM_WEB]="lookup_youtube_premium_web"
   [YOUTUBE_API]="lookup_youtube_api"
   [YOUTUBE_TRANSPORT]="lookup_youtube_transport"
+  [YOUTUBE_MUSIC]="lookup_youtube_music"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
   [GOOGLE_TRANSPORT]="lookup_google_transport"
   [BING]="lookup_bing"
@@ -632,15 +710,21 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DOH_CLOUDFLARE]="lookup_doh_cloudflare"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
+  [GOOGLE_MEET]="lookup_google_meet"
+  [GOOGLE_PHOTOS]="lookup_google_photos"
+  [GOOGLE_CALENDAR]="lookup_google_calendar"
   [PLAY_STORE]="lookup_play_store"
   [AWS]="lookup_aws"
   [GCP_CONSOLE]="lookup_gcp_console"
   [ORACLE_CLOUD]="lookup_oracle_cloud"
   [GEMINI]="lookup_gemini"
   [GEMINI_NOTEBOOK]="lookup_gemini_notebook"
+  [GEMINI_API]="lookup_gemini_api"
+  [AI_STUDIO]="lookup_ai_studio"
   [APPLE]="lookup_apple"
   [APPLE_TRANSPORT]="lookup_apple_transport"
   [APP_STORE]="lookup_app_store"
+  [APPLE_MUSIC]="lookup_apple_music"
   [STEAM]="lookup_steam"
   [STEAM_API]="lookup_steam_api"
   [STEAM_TRANSPORT]="lookup_steam_transport"
@@ -688,6 +772,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DISCORD_ACCESS]="lookup_discord_access"
   [DISCORD_API]="lookup_discord_api"
   [DISCORD_GATEWAY]="lookup_discord_gateway"
+  [DISCORD_CDN]="lookup_discord_cdn"
   [TWITTER]="lookup_twitter"
   [X_API]="lookup_x_api"
   [TWITTER_LEGACY_API]="lookup_twitter_legacy_api"
@@ -702,6 +787,8 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SLACK]="lookup_slack"
   [ZOOM]="lookup_zoom"
   [LINE]="lookup_line"
+  [KAKAOTALK]="lookup_kakaotalk"
+  [THREEMA]="lookup_threema"
   [THREADS_ACCESS]="lookup_threads_access"
   [THREADS_API]="lookup_threads_api"
   [THREADS_TRANSPORT]="lookup_threads_transport"
@@ -709,6 +796,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SIGNAL_SERVICE]="lookup_signal_service"
   [DOUYIN_CN]="lookup_douyin_cn"
   [WECHAT]="lookup_wechat"
+  [WECHAT_API]="lookup_wechat_api"
   [BAIDU]="lookup_baidu"
   [ALIPAY]="lookup_alipay"
   [VK]="lookup_vk"
@@ -731,6 +819,10 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [COHERE_API]="lookup_cohere_api"
   [ELEVENLABS_API]="lookup_elevenlabs_api"
   [QWEN_WEB]="lookup_qwen_web"
+  [DEEPL]="lookup_deepl"
+  [CHARACTER_AI]="lookup_character_ai"
+  [POE]="lookup_poe"
+  [GOOGLE_TRANSLATE]="lookup_google_translate"
   [PEACOCK_ACCESS]="lookup_peacock_access"
   [BLUESKY]="lookup_bluesky"
   [SNAPCHAT]="lookup_snapchat"
@@ -749,7 +841,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MEGA]="lookup_mega"
   [EPIC_GAMES]="lookup_epic_games"
   [BATTLE_NET]="lookup_battle_net"
+  [MINECRAFT_SESSION]="lookup_minecraft_session"
   [ROBLOX]="lookup_roblox"
+  [ROBLOX_API]="lookup_roblox_api"
   [RIOT]="lookup_riot"
   [XBOX]="lookup_xbox"
   [STRIPE_API]="lookup_stripe_api"
@@ -765,6 +859,17 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [PYPI]="lookup_pypi"
   [DOCKER_HUB]="lookup_docker_hub"
   [HUGGING_FACE]="lookup_hugging_face"
+  [NOTION]="lookup_notion"
+  [FIGMA]="lookup_figma"
+  [MIRO]="lookup_miro"
+  [CANVA]="lookup_canva"
+  [TRELLO]="lookup_trello"
+  [MEDIUM]="lookup_medium"
+  [WIKIPEDIA]="lookup_wikipedia"
+  [STACK_OVERFLOW]="lookup_stack_overflow"
+  [HABR]="lookup_habr"
+  [SOUNDCLOUD]="lookup_soundcloud"
+  [DEEZER]="lookup_deezer"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -1520,7 +1625,7 @@ format_value() {
   "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "IP block")
     color ERROR "$value"
     ;;
-  "$STATUS_RATE_LIMIT" | "DNS block")
+  "$STATUS_RATE_LIMIT" | "DNS block" | "$STATUS_REGION_BLOCKED")
     color WARN "$value"
     ;;
   *)
@@ -1953,7 +2058,7 @@ is_status_string() {
   local value="$1"
 
   case "$value" in
-  "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "$STATUS_RATE_LIMIT" | "$STATUS_NA")
+  "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "$STATUS_RATE_LIMIT" | "$STATUS_NA" | "$STATUS_REGION_BLOCKED")
     return 0
     ;;
   *)
@@ -1971,6 +2076,9 @@ status_from_http_code() {
     ;;
   429)
     echo "$STATUS_RATE_LIMIT"
+    ;;
+  451)
+    echo "$STATUS_REGION_BLOCKED"
     ;;
   5*)
     echo "$STATUS_SERVER_ERROR"
@@ -5185,6 +5293,58 @@ lookup_alipay() {
   lookup_site_access "https://www.alipay.com/" "alipay" "$1"
 }
 
+lookup_notion() {
+  lookup_site_access "https://www.notion.so/" "notion" "$1"
+}
+
+lookup_figma() {
+  lookup_site_access "https://www.figma.com/" "figma" "$1"
+}
+
+lookup_miro() {
+  lookup_site_access "https://miro.com/" "miro" "$1"
+}
+
+lookup_canva() {
+  lookup_site_access "https://www.canva.com/" "canva" "$1"
+}
+
+lookup_trello() {
+  lookup_site_access "https://trello.com/" "trello" "$1"
+}
+
+lookup_medium() {
+  lookup_site_access "https://medium.com/" "medium" "$1"
+}
+
+lookup_wikipedia() {
+  lookup_site_access "https://www.wikipedia.org/" "wikipedia" "$1"
+}
+
+lookup_stack_overflow() {
+  lookup_site_access "https://stackoverflow.com/" "stackoverflow" "$1"
+}
+
+lookup_habr() {
+  lookup_site_access "https://habr.com/" "habr" "$1"
+}
+
+lookup_deepl() {
+  lookup_region_gate_access "https://www.deepl.com/" "Unavailable in your region" "deepl" "$1"
+}
+
+lookup_character_ai() {
+  lookup_site_access "https://character.ai/" "character" "$1"
+}
+
+lookup_poe() {
+  lookup_site_access "https://poe.com/" "poe" "$1"
+}
+
+lookup_google_translate() {
+  lookup_site_access "https://translate.google.com/" "translate" "$1"
+}
+
 lookup_instagram_api() {
   lookup_tcp_targets INSTAGRAM_API_PROBE_TARGETS
 }
@@ -5411,6 +5571,66 @@ lookup_paypal() {
 
 lookup_wise() {
   lookup_tcp_targets WISE_PROBE_TARGETS
+}
+
+lookup_gemini_api() {
+  lookup_tcp_targets GEMINI_API_PROBE_TARGETS
+}
+
+lookup_ai_studio() {
+  lookup_tcp_targets AI_STUDIO_PROBE_TARGETS
+}
+
+lookup_google_meet() {
+  lookup_tcp_targets GOOGLE_MEET_PROBE_TARGETS
+}
+
+lookup_google_photos() {
+  lookup_tcp_targets GOOGLE_PHOTOS_PROBE_TARGETS
+}
+
+lookup_google_calendar() {
+  lookup_tcp_targets GOOGLE_CALENDAR_PROBE_TARGETS
+}
+
+lookup_youtube_music() {
+  lookup_tcp_targets YOUTUBE_MUSIC_PROBE_TARGETS
+}
+
+lookup_apple_music() {
+  lookup_tcp_targets APPLE_MUSIC_PROBE_TARGETS
+}
+
+lookup_soundcloud() {
+  lookup_tcp_targets SOUNDCLOUD_PROBE_TARGETS
+}
+
+lookup_deezer() {
+  lookup_tcp_targets DEEZER_PROBE_TARGETS
+}
+
+lookup_discord_cdn() {
+  lookup_tcp_targets DISCORD_CDN_PROBE_TARGETS
+}
+
+lookup_minecraft_session() {
+  lookup_tcp_targets MINECRAFT_SESSION_PROBE_TARGETS
+}
+
+lookup_roblox_api() {
+  lookup_tcp_targets ROBLOX_API_PROBE_TARGETS
+}
+
+lookup_wechat_api() {
+  lookup_tcp_targets WECHAT_API_PROBE_TARGETS
+}
+
+lookup_kakaotalk() {
+  lookup_tcp_targets KAKAOTALK_PROBE_TARGETS
+}
+
+lookup_threema() {
+  lookup_tcp_targets THREEMA_PROBE_TARGETS
 }
 
 lookup_github_api() {

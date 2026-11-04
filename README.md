@@ -19,7 +19,7 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 
 ## Features
 
-- 150 checks in four groups: GeoIP sources (19), popular services (118), dev infra (10) and CDN nodes (3)
+- 178 checks in four groups: GeoIP sources (19), popular services (146), dev infra (10) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -76,18 +76,22 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 
 ### Availability (Yes/No per network)
 
-- **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway probe), Signal, Messenger, Viber, Slack, Zoom, Line
+- **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway + CDN probe), Signal, Messenger, Viber, Slack, Zoom, Line, WeChat (+ API), KakaoTalk, Threema
 - **Encrypted DNS**: dns.google, cloudflare-dns.com (DoH transport probes)
 - **Search**: Bing, DuckDuckGo, Brave Search
 - **Social**: Instagram, Facebook (Access + API + CDN), Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch (Site + API + Chat), Yandex, Mail.ru, GitHub
-- **AI**: ChatGPT, Claude, Gemini Notebook (region gate), Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)
+- **AI**: ChatGPT, Claude, Gemini Notebook (region gate), Gemini API, AI Studio, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web, DeepL (451 region gate), Character.AI, Poe, Google Translate + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)
+- **Google services**: Meet, Photos, Calendar, Drive (transport probes — Google gates services individually)
+- **Music**: YouTube Music, Apple Music, SoundCloud, Deezer (transport probes)
+- **Productivity**: Notion, Figma, Miro, Canva, Trello, Medium
+- **Knowledge**: Wikipedia, Stack Overflow, Habr
 - **Streaming**: YouTube (region, Premium via API, Premium via web page, No Ads), Netflix (region), Spotify (region + signup), Disney+ (region + access), Peacock
 - **Region gates**: Douyin (CN egress detector), Peacock
 - **Enterprise**: Microsoft Teams, Outlook, Azure Portal, OneDrive (transport probes)
 - **Mail & storage**: Gmail, Proton, Google Drive, Dropbox, MEGA (transport probes)
-- **Gaming**: Epic Games, Battle.net, Roblox, Riot Games, Xbox (transport probes)
+- **Gaming**: Epic Games, Battle.net, Roblox (+ API), Riot Games, Xbox, Minecraft session (transport probes)
 - **Stores & clouds**: App Store, Play Store, AWS, GCP Console, Oracle Cloud (transport probes)
-- **CN platforms**: WeChat, Baidu, Alipay
+- **CN platforms**: WeChat, WeChat API, Baidu, Alipay
 - **Finance**: Stripe API, PayPal, Wise (transport probes)
 - **Dev infra** (`--group devinfra`): GitHub (site + API + Codeload + Raw), GitLab (site + API), npm Registry, PyPI, Docker Hub, Hugging Face
 

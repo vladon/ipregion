@@ -146,6 +146,45 @@ stub_body() {
   *notebooklm.google.com*)
     printf '%s' '<!doctype html><html><head><title>Gemini Notebook</title></head><body>notebook app shell</body></html>'
     ;;
+  *deepl.com*)
+    printf '%s' '<!doctype html><html><head><title>Unavailable in your region</title></head><body>This service is unavailable in your region.</body></html>'
+    ;;
+  *notion.so*)
+    printf '%s' '<!doctype html><html><head><title>Notion</title></head><body>notion workspace</body></html>'
+    ;;
+  *figma.com*)
+    printf '%s' '<!doctype html><html><head><title>Figma</title></head><body>figma design tool</body></html>'
+    ;;
+  *miro.com*)
+    printf '%s' '<!doctype html><html><head><title>Miro</title></head><body>miro whiteboard</body></html>'
+    ;;
+  *canva.com*)
+    printf '%s' '<!doctype html><html><head><title>Canva</title></head><body>canva design</body></html>'
+    ;;
+  *trello.com*)
+    printf '%s' '<!doctype html><html><head><title>Trello</title></head><body>trello boards</body></html>'
+    ;;
+  *medium.com*)
+    printf '%s' '<!doctype html><html><head><title>Medium</title></head><body>medium stories</body></html>'
+    ;;
+  *wikipedia.org*)
+    printf '%s' '<!doctype html><html><head><title>Wikipedia</title></head><body>wikipedia encyclopedia</body></html>'
+    ;;
+  *stackoverflow.com*)
+    printf '%s' '<!doctype html><html><head><title>Stack Overflow</title></head><body>stackoverflow questions</body></html>'
+    ;;
+  *habr.com*)
+    printf '%s' '<!doctype html><html><head><title>Habr</title></head><body>habr articles</body></html>'
+    ;;
+  *character.ai*)
+    printf '%s' '<!doctype html><html><head><title>Character.AI</title></head><body>character ai chat</body></html>'
+    ;;
+  *poe.com*)
+    printf '%s' '<!doctype html><html><head><title>Poe</title></head><body>poe ai chat</body></html>'
+    ;;
+  *translate.google.com*)
+    printf '%s' '<!doctype html><html><head><title>Google Translate</title></head><body>google translate service</body></html>'
+    ;;
   *weixin.qq.com*)
     printf '%s' '<!doctype html><html><head><title>微信</title></head><body>weixin wechat login qr</body></html>'
     ;;
@@ -373,6 +412,34 @@ INCLUDED_SERVICES=(
   "STRIPE_API"
   "PAYPAL"
   "WISE"
+  "DEEPL"
+  "CHARACTER_AI"
+  "POE"
+  "GOOGLE_TRANSLATE"
+  "GEMINI_API"
+  "AI_STUDIO"
+  "GOOGLE_MEET"
+  "GOOGLE_PHOTOS"
+  "GOOGLE_CALENDAR"
+  "YOUTUBE_MUSIC"
+  "APPLE_MUSIC"
+  "SOUNDCLOUD"
+  "DEEZER"
+  "DISCORD_CDN"
+  "MINECRAFT_SESSION"
+  "ROBLOX_API"
+  "WECHAT_API"
+  "KAKAOTALK"
+  "THREEMA"
+  "NOTION"
+  "FIGMA"
+  "MIRO"
+  "CANVA"
+  "TRELLO"
+  "MEDIUM"
+  "WIKIPEDIA"
+  "STACK_OVERFLOW"
+  "HABR"
   "STEAM_API"
   "DISCORD_API"
   # Primary GeoIP group (also rendered by the golden run)

@@ -214,7 +214,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB GEMINI_NOTEBOOK PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API BING DUCKDUCKGO BRAVE_SEARCH TWITCH_API TWITCH_CHAT FACEBOOK_CDN GROQ_API OPENROUTER COHERE_API ELEVENLABS_API TEAMS OUTLOOK AZURE_PORTAL VIBER SLACK ZOOM LINE DOH_GOOGLE DOH_CLOUDFLARE GMAIL GOOGLE_DRIVE PLAY_STORE APP_STORE AWS GCP_CONSOLE ORACLE_CLOUD ONEDRIVE WECHAT BAIDU ALIPAY PROTON DROPBOX MEGA EPIC_GAMES BATTLE_NET ROBLOX RIOT XBOX STRIPE_API PAYPAL WISE; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB GEMINI_NOTEBOOK PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API BING DUCKDUCKGO BRAVE_SEARCH TWITCH_API TWITCH_CHAT FACEBOOK_CDN GROQ_API OPENROUTER COHERE_API ELEVENLABS_API TEAMS OUTLOOK AZURE_PORTAL VIBER SLACK ZOOM LINE DOH_GOOGLE DOH_CLOUDFLARE GMAIL GOOGLE_DRIVE PLAY_STORE APP_STORE AWS GCP_CONSOLE ORACLE_CLOUD ONEDRIVE WECHAT BAIDU ALIPAY PROTON DROPBOX MEGA EPIC_GAMES BATTLE_NET MINECRAFT_SESSION ROBLOX ROBLOX_API RIOT XBOX STRIPE_API PAYPAL WISE GEMINI_API AI_STUDIO GOOGLE_MEET GOOGLE_PHOTOS GOOGLE_CALENDAR YOUTUBE_MUSIC APPLE_MUSIC SOUNDCLOUD DEEZER DISCORD_CDN WECHAT_API KAKAOTALK THREEMA NOTION FIGMA MIRO CANVA TRELLO MEDIUM WIKIPEDIA STACK_OVERFLOW HABR DEEPL CHARACTER_AI POE GOOGLE_TRANSLATE; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -597,10 +597,60 @@ UNMARKED_CN_STUB='<html>cn portal</html>'
 assert_eq "No" "$(lookup_wechat 4)" "wechat maps unmarked body to No"
 assert_eq "No" "$(lookup_baidu 4)" "baidu maps unmarked body to No"
 assert_eq "No" "$(lookup_alipay 4)" "alipay maps unmarked body to No"
+SITE_STUB_NAME="NOTION_PAGE_STUB"
+NOTION_PAGE_STUB='<html>notion workspace</html>'
+assert_eq "Yes" "$(lookup_notion 4)" "notion maps page marker to Yes"
+SITE_STUB_NAME="FIGMA_PAGE_STUB"
+FIGMA_PAGE_STUB='<html>figma design tool</html>'
+assert_eq "Yes" "$(lookup_figma 4)" "figma maps page marker to Yes"
+SITE_STUB_NAME="MIRO_PAGE_STUB"
+MIRO_PAGE_STUB='<html>miro whiteboard</html>'
+assert_eq "Yes" "$(lookup_miro 4)" "miro maps page marker to Yes"
+SITE_STUB_NAME="CANVA_PAGE_STUB"
+CANVA_PAGE_STUB='<html>canva design</html>'
+assert_eq "Yes" "$(lookup_canva 4)" "canva maps page marker to Yes"
+SITE_STUB_NAME="TRELLO_PAGE_STUB"
+TRELLO_PAGE_STUB='<html>trello boards</html>'
+assert_eq "Yes" "$(lookup_trello 4)" "trello maps page marker to Yes"
+SITE_STUB_NAME="MEDIUM_PAGE_STUB"
+MEDIUM_PAGE_STUB='<html>medium stories</html>'
+assert_eq "Yes" "$(lookup_medium 4)" "medium maps page marker to Yes"
+SITE_STUB_NAME="WIKIPEDIA_PAGE_STUB"
+WIKIPEDIA_PAGE_STUB='<html>wikipedia encyclopedia</html>'
+assert_eq "Yes" "$(lookup_wikipedia 4)" "wikipedia maps page marker to Yes"
+SITE_STUB_NAME="STACK_OVERFLOW_PAGE_STUB"
+STACK_OVERFLOW_PAGE_STUB='<html>stackoverflow questions</html>'
+assert_eq "Yes" "$(lookup_stack_overflow 4)" "stack overflow maps page marker to Yes"
+SITE_STUB_NAME="HABR_PAGE_STUB"
+HABR_PAGE_STUB='<html>habr articles</html>'
+assert_eq "Yes" "$(lookup_habr 4)" "habr maps page marker to Yes"
+SITE_STUB_NAME="CHARACTER_AI_PAGE_STUB"
+CHARACTER_AI_PAGE_STUB='<html>character ai chat</html>'
+assert_eq "Yes" "$(lookup_character_ai 4)" "character ai maps page marker to Yes"
+SITE_STUB_NAME="POE_PAGE_STUB"
+POE_PAGE_STUB='<html>poe ai chat</html>'
+assert_eq "Yes" "$(lookup_poe 4)" "poe maps page marker to Yes"
+SITE_STUB_NAME="GOOGLE_TRANSLATE_PAGE_STUB"
+GOOGLE_TRANSLATE_PAGE_STUB='<html>google translate service</html>'
+assert_eq "Yes" "$(lookup_google_translate 4)" "google translate maps page marker to Yes"
+SITE_STUB_NAME="UNMARKED_KQ_STUB"
+UNMARKED_KQ_STUB='<html>portal</html>'
+assert_eq "No" "$(lookup_notion 4)" "notion maps unmarked body to No"
+assert_eq "No" "$(lookup_figma 4)" "figma maps unmarked body to No"
+assert_eq "No" "$(lookup_miro 4)" "miro maps unmarked body to No"
+assert_eq "No" "$(lookup_canva 4)" "canva maps unmarked body to No"
+assert_eq "No" "$(lookup_trello 4)" "trello maps unmarked body to No"
+assert_eq "No" "$(lookup_medium 4)" "medium maps unmarked body to No"
+assert_eq "No" "$(lookup_wikipedia 4)" "wikipedia maps unmarked body to No"
+assert_eq "No" "$(lookup_stack_overflow 4)" "stack overflow maps unmarked body to No"
+assert_eq "No" "$(lookup_habr 4)" "habr maps unmarked body to No"
+assert_eq "No" "$(lookup_character_ai 4)" "character ai maps unmarked body to No"
+assert_eq "No" "$(lookup_poe 4)" "poe maps unmarked body to No"
+assert_eq "No" "$(lookup_google_translate 4)" "google translate maps unmarked body to No"
 rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper site_stub_wrapper
-unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB GITHUB_PAGE_STUB BING_PAGE_STUB DUCKDUCKGO_PAGE_STUB BRAVE_PAGE_STUB UNMARKED_SEARCH_STUB WECHAT_PAGE_STUB BAIDU_PAGE_STUB ALIPAY_PAGE_STUB UNMARKED_CN_STUB
+unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB GITHUB_PAGE_STUB BING_PAGE_STUB DUCKDUCKGO_PAGE_STUB BRAVE_PAGE_STUB UNMARKED_SEARCH_STUB WECHAT_PAGE_STUB BAIDU_PAGE_STUB ALIPAY_PAGE_STUB UNMARKED_CN_STUB NOTION_PAGE_STUB FIGMA_PAGE_STUB MIRO_PAGE_STUB CANVA_PAGE_STUB TRELLO_PAGE_STUB MEDIUM_PAGE_STUB WIKIPEDIA_PAGE_STUB STACK_OVERFLOW_PAGE_STUB HABR_PAGE_STUB CHARACTER_AI_PAGE_STUB POE_PAGE_STUB GOOGLE_TRANSLATE_PAGE_STUB UNMARKED_KQ_STUB
 JSON_OUTPUT=false
 
 # Gemini Notebook region gate (curl_wrapper stubbed; gate lives in the
@@ -649,6 +699,35 @@ CURL_META_FILE=""
 unset -f curl_wrapper notebooklm_stub_wrapper
 unset NOTEBOOKLM_STUB_RESPONSE NOTEBOOKLM_STUB_EFFECTIVE_URL NOTEBOOKLM_STUB_ERROR_TYPE NOTEBOOKLM_STUB_MIXED_GATE NOTEBOOKLM_STUB_COUNTS
 JSON_OUTPUT=false
+
+# DeepL region gate (curl_wrapper stubbed; RU gets HTTP 451 with a
+# server-rendered "Unavailable in your region" page)
+deepl_stub_wrapper() {
+  local url="$2"
+  printf "%s" "${DEEPL_STUB_RESPONSE:-}"
+}
+curl_wrapper() { deepl_stub_wrapper "$@"; }
+JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
+printf "http_code=451;latency_ms=100;error_type=http_451\n" >"$CURL_META_FILE"
+DEEPL_STUB_RESPONSE="Region blocked"
+assert_eq "Region blocked" "$(lookup_deepl 4)" "deepl passes 451 region blocked status through"
+DEEPL_STUB_RESPONSE='<html>Unavailable in your region</html>'
+assert_eq "No" "$(lookup_deepl 4)" "deepl maps region gate page to No"
+DEEPL_STUB_RESPONSE='<html>deepl translator</html>'
+assert_eq "Yes" "$(lookup_deepl 4)" "deepl maps brand page to Yes"
+DEEPL_STUB_RESPONSE='<html>portal</html>'
+assert_eq "No" "$(lookup_deepl 4)" "deepl maps unmarked body to No"
+printf "http_code=;latency_ms=;error_type=curl_error\n" >"$CURL_META_FILE"
+DEEPL_STUB_RESPONSE=""
+assert_eq "No" "$(lookup_deepl 4)" "deepl maps transport failure to No"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
+unset -f curl_wrapper deepl_stub_wrapper
+unset DEEPL_STUB_RESPONSE
+JSON_OUTPUT=false
+
+assert_eq "Region blocked" "$(status_from_http_code 451)" "status_from_http_code maps 451"
 
 # Douyin region gate (curl_wrapper stubbed)
 douyin_stub_wrapper() {
@@ -867,6 +946,22 @@ assert_eq "Yes" "$(lookup_oracle_cloud 4)" "oracle cloud maps reachable endpoint
 assert_eq "Yes" "$(lookup_stripe_api 4)" "stripe api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_paypal 4)" "paypal maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_wise 4)" "wise maps reachable endpoint to Yes"
+DC_PROBE_MODE="up"
+assert_eq "Yes" "$(lookup_gemini_api 4)" "gemini api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_ai_studio 4)" "ai studio maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_google_meet 4)" "google meet maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_google_photos 4)" "google photos maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_google_calendar 4)" "google calendar maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_youtube_music 4)" "youtube music maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_apple_music 4)" "apple music maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_soundcloud 4)" "soundcloud maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_deezer 4)" "deezer maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_discord_cdn 4)" "discord cdn maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_minecraft_session 4)" "minecraft session maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_roblox_api 4)" "roblox api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_wechat_api 4)" "wechat api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_kakaotalk 4)" "kakaotalk maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_threema 4)" "threema maps reachable endpoint to Yes"
 DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_openai_api 4)" "openai api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_anthropic_api 4)" "anthropic api maps unreachable endpoint to No"
@@ -928,6 +1023,22 @@ assert_eq "No" "$(lookup_oracle_cloud 4)" "oracle cloud maps unreachable endpoin
 assert_eq "No" "$(lookup_stripe_api 4)" "stripe api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_paypal 4)" "paypal maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_wise 4)" "wise maps unreachable endpoint to No"
+DC_PROBE_MODE="down"
+assert_eq "No" "$(lookup_gemini_api 4)" "gemini api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_ai_studio 4)" "ai studio maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_google_meet 4)" "google meet maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_google_photos 4)" "google photos maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_google_calendar 4)" "google calendar maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_youtube_music 4)" "youtube music maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_apple_music 4)" "apple music maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_soundcloud 4)" "soundcloud maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_deezer 4)" "deezer maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_discord_cdn 4)" "discord cdn maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_minecraft_session 4)" "minecraft session maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_roblox_api 4)" "roblox api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_wechat_api 4)" "wechat api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_kakaotalk 4)" "kakaotalk maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_threema 4)" "threema maps unreachable endpoint to No"
 unset -f tcp_probe dc_probe_stub host_resolves
 unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false
