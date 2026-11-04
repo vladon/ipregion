@@ -212,6 +212,7 @@ ARR_DEVINFRA=()
 CHECKS_TOTAL=0
 CHECKS_DONE_FILE=""
 CHECKS_TOTAL_FILE=""
+CHECKS_GROUP_FILE=""
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
 ASN_NUMBER=""
@@ -2862,6 +2863,7 @@ spinner_start() {
   CHECKS_DONE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_done_XXXXXX")
   : >"$CHECKS_DONE_FILE"
   CHECKS_TOTAL_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_total_XXXXXX")
+  CHECKS_GROUP_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_group_XXXXXX")
   SPINNER_ACTIVE=true
   spinner_running=true
 
@@ -2877,6 +2879,7 @@ spinner_start() {
         # it from the file (variable updates do not cross the boundary)
         checks_total=$(cat "$CHECKS_TOTAL_FILE" 2>/dev/null)
         [[ "$checks_total" =~ ^[0-9]+ ]] || checks_total=$CHECKS_TOTAL
+        current_group=$(cat "$CHECKS_GROUP_FILE" 2>/dev/null)
 
         if [[ -f "$SPINNER_SERVICE_FILE" ]]; then
           current_service="$(cat "$SPINNER_SERVICE_FILE")"
@@ -2890,9 +2893,13 @@ spinner_start() {
           time_str="${elapsed}s"
         fi
 
-        printf "\r\033[K%s (%s) %s/%s %s %s" \
+        local group_segment=""
+        [[ -n "$current_group" ]] && group_segment="[$(color HEADER "$current_group")] "
+
+        printf "\r\033[K%s (%s) %s%s/%s %s %s" \
           "$(color HEADER "$frame")" \
           "$(color HEADER "$time_str")" \
+          "$group_segment" \
           "$(color SERVICE "$checks_done")" \
           "$(color HEADER "$checks_total")" \
           "$(color HEADER "Checking:")" \
@@ -2937,6 +2944,11 @@ spinner_stop() {
   if [[ -f "${CHECKS_TOTAL_FILE:-}" ]]; then
     rm -f "$CHECKS_TOTAL_FILE"
     unset CHECKS_TOTAL_FILE
+  fi
+
+  if [[ -f "${CHECKS_GROUP_FILE:-}" ]]; then
+    rm -f "$CHECKS_GROUP_FILE"
+    unset CHECKS_GROUP_FILE
   fi
 }
 
@@ -3555,6 +3567,8 @@ run_service_group() {
   local is_custom=false
   local services_array service_name handler_func display_name result
 
+  [[ -n "${CHECKS_GROUP_FILE:-}" ]] && printf '%s' "$group" >"$CHECKS_GROUP_FILE"
+
   read -ra services_array <<<"$services_string"
 
   log "$LOG_INFO" "Running $group group services"
@@ -3584,6 +3598,8 @@ run_service_group_parallel() {
   local services_string="${SERVICE_GROUPS[$group]}"
   local is_custom=false
   local services_array service_name temp_dir result_file
+
+  [[ -n "${CHECKS_GROUP_FILE:-}" ]] && printf '%s' "$group" >"$CHECKS_GROUP_FILE"
 
   read -ra services_array <<<"$services_string"
 
