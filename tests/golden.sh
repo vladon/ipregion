@@ -292,6 +292,8 @@ INCLUDED_SERVICES=(
   "MAIL_RU"
   "GITHUB"
   "GITHUB_API"
+  "GITLAB"
+  "GITLAB_API"
   # Primary GeoIP group (also rendered by the golden run)
   "MAXMIND"
   "RIPE"
