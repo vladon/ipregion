@@ -63,6 +63,9 @@ REDDIT_API_PROBE_TARGETS=("oauth.reddit.com:443")
 OK_API_PROBE_TARGETS=("api.ok.ru:443")
 LINKEDIN_API_PROBE_TARGETS=("api.linkedin.com:443")
 X_API_PROBE_TARGETS=("api.x.com:443")
+# GitHub API: raw-ISP TCP resets from some RU networks even though the
+# github.com site page stays reachable (verified ru01 OK ×2, mac reset ×2)
+GITHUB_API_PROBE_TARGETS=("api.github.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -319,6 +322,7 @@ declare -A CUSTOM_SERVICES=(
   [YANDEX]="Yandex"
   [MAIL_RU]="Mail.ru"
   [GITHUB]="GitHub"
+  [GITHUB_API]="GitHub API"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -412,6 +416,7 @@ CUSTOM_SERVICES_ORDER=(
   "YANDEX"
   "MAIL_RU"
   "GITHUB"
+  "GITHUB_API"
 )
 
 # CDN node lookups form their own -g cdn group; handlers stay in
@@ -523,6 +528,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YANDEX]="lookup_yandex"
   [MAIL_RU]="lookup_mail_ru"
   [GITHUB]="lookup_github"
+  [GITHUB_API]="lookup_github_api"
 )
 
 declare -A SERVICE_GROUPS=(
@@ -4895,6 +4901,10 @@ lookup_linkedin_api() {
 
 lookup_x_api() {
   lookup_tcp_targets X_API_PROBE_TARGETS
+}
+
+lookup_github_api() {
+  lookup_tcp_targets GITHUB_API_PROBE_TARGETS
 }
 
 lookup_facebook_api() {
