@@ -134,6 +134,15 @@ stub_body() {
   *github.com*)
     printf '%s' '<!doctype html><html><head><title>GitHub: Where the world builds software</title></head><body>github Octocat developer platform</body></html>'
     ;;
+  *bing.com*)
+    printf '%s' '<!doctype html><html><head><title>Bing</title></head><body>bing microsoft search</body></html>'
+    ;;
+  *duckduckgo.com*)
+    printf '%s' '<!doctype html><html><head><title>DuckDuckGo</title></head><body>duckduckgo private search</body></html>'
+    ;;
+  *brave.com*)
+    printf '%s' '<!doctype html><html><head><title>Brave Search</title></head><body>brave independent search</body></html>'
+    ;;
   # Primary GeoIP fixtures (all US, iplocation.com CY to exercise its custom handler)
   *geoip.maxmind.com*)
     printf '%s' '{"country":{"iso_code":"US"},"traits":{"autonomous_system_number":64496}}'
@@ -301,6 +310,22 @@ INCLUDED_SERVICES=(
   "PYPI"
   "DOCKER_HUB"
   "HUGGING_FACE"
+  "BING"
+  "DUCKDUCKGO"
+  "BRAVE_SEARCH"
+  "TWITCH_API"
+  "TWITCH_CHAT"
+  "FACEBOOK_CDN"
+  "GROQ_API"
+  "OPENROUTER"
+  "COHERE_API"
+  "ELEVENLABS_API"
+  "TEAMS"
+  "OUTLOOK"
+  "AZURE_PORTAL"
+  "VIBER"
+  "SLACK"
+  "ZOOM"
   "STEAM_API"
   "DISCORD_API"
   # Primary GeoIP group (also rendered by the golden run)

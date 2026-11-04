@@ -87,6 +87,22 @@ PYPI_PROBE_TARGETS=("pypi.org:443")
 DOCKER_HUB_PROBE_TARGETS=("registry-1.docker.io:443")
 GITHUB_RAW_PROBE_TARGETS=("raw.githubusercontent.com:443")
 HUGGING_FACE_PROBE_TARGETS=("huggingface.co:443")
+# Twitch API + chat IRC edge, Meta static CDN, AI inference providers,
+# enterprise Microsoft endpoints and communication platforms (verified
+# ru01 OK ×2 in the coverage sweep; search pages carry brand markers)
+TWITCH_API_PROBE_TARGETS=("api.twitch.tv:443")
+TWITCH_CHAT_PROBE_TARGETS=("irc-ws.chat.twitch.tv:443")
+FACEBOOK_CDN_PROBE_TARGETS=("static.xx.fbcdn.net:443")
+GROQ_API_PROBE_TARGETS=("api.groq.com:443")
+OPENROUTER_PROBE_TARGETS=("openrouter.ai:443")
+COHERE_API_PROBE_TARGETS=("api.cohere.com:443")
+ELEVENLABS_API_PROBE_TARGETS=("api.elevenlabs.io:443")
+TEAMS_PROBE_TARGETS=("teams.microsoft.com:443")
+OUTLOOK_PROBE_TARGETS=("outlook.office365.com:443")
+AZURE_PORTAL_PROBE_TARGETS=("portal.azure.com:443")
+VIBER_PROBE_TARGETS=("viber.com:443")
+SLACK_PROBE_TARGETS=("slack.com:443")
+ZOOM_PROBE_TARGETS=("zoom.us:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -261,6 +277,9 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE_TRANSPORT]="YouTube Transport"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
   [GOOGLE_TRANSPORT]="Google Transport"
+  [BING]="Bing"
+  [DUCKDUCKGO]="DuckDuckGo"
+  [BRAVE_SEARCH]="Brave Search"
   [GEMINI]="Google Gemini"
   [APPLE]="Apple"
   [APPLE_TRANSPORT]="Apple Transport"
@@ -273,6 +292,9 @@ declare -A CUSTOM_SERVICES=(
   [PLAYSTATION]="PlayStation"
   [MICROSOFT]="Microsoft"
   [MICROSOFT_TRANSPORT]="Microsoft Transport"
+  [TEAMS]="Microsoft Teams"
+  [OUTLOOK]="Outlook"
+  [AZURE_PORTAL]="Azure Portal"
   [TWITCH]="Twitch"
   [CHATGPT]="ChatGPT"
   [OPENAI_API]="OpenAI API"
@@ -311,8 +333,12 @@ declare -A CUSTOM_SERVICES=(
   [LINKEDIN_API]="LinkedIn API"
   [FACEBOOK_ACCESS]="Facebook Access"
   [FACEBOOK_API]="Facebook API"
+  [FACEBOOK_CDN]="Facebook CDN"
   [MESSENGER_ACCESS]="Messenger Access"
   [MESSENGER_MQTT]="Messenger MQTT"
+  [VIBER]="Viber"
+  [SLACK]="Slack"
+  [ZOOM]="Zoom"
   [THREADS_ACCESS]="Threads Access"
   [THREADS_API]="Threads API"
   [THREADS_TRANSPORT]="Threads Transport"
@@ -334,6 +360,10 @@ declare -A CUSTOM_SERVICES=(
   [COPILOT]="Copilot"
   [MISTRAL]="Mistral"
   [MISTRAL_API]="Mistral API"
+  [GROQ_API]="Groq API"
+  [OPENROUTER]="OpenRouter"
+  [COHERE_API]="Cohere API"
+  [ELEVENLABS_API]="ElevenLabs API"
   [QWEN_WEB]="Qwen Web"
   [PEACOCK_ACCESS]="Peacock Access"
   [BLUESKY]="Bluesky"
@@ -344,6 +374,8 @@ declare -A CUSTOM_SERVICES=(
   [BILIBILI]="Bilibili"
   [NETEASE_MUSIC]="NetEase Music"
   [TWITCH_SITE]="Twitch Site"
+  [TWITCH_API]="Twitch API"
+  [TWITCH_CHAT]="Twitch Chat"
   [YANDEX]="Yandex"
   [MAIL_RU]="Mail.ru"
   [GITHUB]="GitHub"
@@ -366,6 +398,9 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE_TRANSPORT"
   "GOOGLE_SEARCH_CAPTCHA"
   "GOOGLE_TRANSPORT"
+  "BING"
+  "DUCKDUCKGO"
+  "BRAVE_SEARCH"
   "GEMINI"
   "APPLE"
   "APPLE_TRANSPORT"
@@ -378,6 +413,9 @@ CUSTOM_SERVICES_ORDER=(
   "PLAYSTATION"
   "MICROSOFT"
   "MICROSOFT_TRANSPORT"
+  "TEAMS"
+  "OUTLOOK"
+  "AZURE_PORTAL"
   "TWITCH"
   "CHATGPT"
   "OPENAI_API"
@@ -416,8 +454,12 @@ CUSTOM_SERVICES_ORDER=(
   "LINKEDIN_API"
   "FACEBOOK_ACCESS"
   "FACEBOOK_API"
+  "FACEBOOK_CDN"
   "MESSENGER_ACCESS"
   "MESSENGER_MQTT"
+  "VIBER"
+  "SLACK"
+  "ZOOM"
   "THREADS_ACCESS"
   "THREADS_API"
   "THREADS_TRANSPORT"
@@ -439,6 +481,10 @@ CUSTOM_SERVICES_ORDER=(
   "COPILOT"
   "MISTRAL"
   "MISTRAL_API"
+  "GROQ_API"
+  "OPENROUTER"
+  "COHERE_API"
+  "ELEVENLABS_API"
   "QWEN_WEB"
   "PEACOCK_ACCESS"
   "BLUESKY"
@@ -449,6 +495,8 @@ CUSTOM_SERVICES_ORDER=(
   "BILIBILI"
   "NETEASE_MUSIC"
   "TWITCH_SITE"
+  "TWITCH_API"
+  "TWITCH_CHAT"
   "YANDEX"
   "MAIL_RU"
   "GITHUB"
@@ -486,6 +534,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE_TRANSPORT]="lookup_youtube_transport"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
   [GOOGLE_TRANSPORT]="lookup_google_transport"
+  [BING]="lookup_bing"
+  [DUCKDUCKGO]="lookup_duckduckgo"
+  [BRAVE_SEARCH]="lookup_brave_search"
   [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
   [APPLE_TRANSPORT]="lookup_apple_transport"
@@ -498,6 +549,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [PLAYSTATION]="lookup_playstation"
   [MICROSOFT]="lookup_microsoft"
   [MICROSOFT_TRANSPORT]="lookup_microsoft_transport"
+  [TEAMS]="lookup_teams"
+  [OUTLOOK]="lookup_outlook"
+  [AZURE_PORTAL]="lookup_azure_portal"
   [TWITCH]="lookup_twitch"
   [CHATGPT]="lookup_chatgpt"
   [OPENAI_API]="lookup_openai_api"
@@ -539,8 +593,12 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [LINKEDIN_API]="lookup_linkedin_api"
   [FACEBOOK_ACCESS]="lookup_facebook_access"
   [FACEBOOK_API]="lookup_facebook_api"
+  [FACEBOOK_CDN]="lookup_facebook_cdn"
   [MESSENGER_ACCESS]="lookup_messenger_access"
   [MESSENGER_MQTT]="lookup_messenger_mqtt"
+  [VIBER]="lookup_viber"
+  [SLACK]="lookup_slack"
+  [ZOOM]="lookup_zoom"
   [THREADS_ACCESS]="lookup_threads_access"
   [THREADS_API]="lookup_threads_api"
   [THREADS_TRANSPORT]="lookup_threads_transport"
@@ -562,6 +620,10 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [COPILOT]="lookup_copilot"
   [MISTRAL]="lookup_mistral"
   [MISTRAL_API]="lookup_mistral_api"
+  [GROQ_API]="lookup_groq_api"
+  [OPENROUTER]="lookup_openrouter"
+  [COHERE_API]="lookup_cohere_api"
+  [ELEVENLABS_API]="lookup_elevenlabs_api"
   [QWEN_WEB]="lookup_qwen_web"
   [PEACOCK_ACCESS]="lookup_peacock_access"
   [BLUESKY]="lookup_bluesky"
@@ -572,6 +634,8 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [BILIBILI]="lookup_bilibili"
   [NETEASE_MUSIC]="lookup_netease_music"
   [TWITCH_SITE]="lookup_twitch_site"
+  [TWITCH_API]="lookup_twitch_api"
+  [TWITCH_CHAT]="lookup_twitch_chat"
   [YANDEX]="lookup_yandex"
   [MAIL_RU]="lookup_mail_ru"
   [GITHUB]="lookup_github"
@@ -4901,6 +4965,18 @@ lookup_github() {
   lookup_site_access "https://github.com/" "github" "$1"
 }
 
+lookup_bing() {
+  lookup_site_access "https://bing.com/" "bing" "$1"
+}
+
+lookup_duckduckgo() {
+  lookup_site_access "https://duckduckgo.com/" "duckduckgo" "$1"
+}
+
+lookup_brave_search() {
+  lookup_site_access "https://search.brave.com/" "brave" "$1"
+}
+
 lookup_instagram_api() {
   lookup_tcp_targets INSTAGRAM_API_PROBE_TARGETS
 }
@@ -4983,6 +5059,58 @@ lookup_docker_hub() {
 
 lookup_hugging_face() {
   lookup_tcp_targets HUGGING_FACE_PROBE_TARGETS
+}
+
+lookup_twitch_api() {
+  lookup_tcp_targets TWITCH_API_PROBE_TARGETS
+}
+
+lookup_twitch_chat() {
+  lookup_tcp_targets TWITCH_CHAT_PROBE_TARGETS
+}
+
+lookup_facebook_cdn() {
+  lookup_tcp_targets FACEBOOK_CDN_PROBE_TARGETS
+}
+
+lookup_groq_api() {
+  lookup_tcp_targets GROQ_API_PROBE_TARGETS
+}
+
+lookup_openrouter() {
+  lookup_tcp_targets OPENROUTER_PROBE_TARGETS
+}
+
+lookup_cohere_api() {
+  lookup_tcp_targets COHERE_API_PROBE_TARGETS
+}
+
+lookup_elevenlabs_api() {
+  lookup_tcp_targets ELEVENLABS_API_PROBE_TARGETS
+}
+
+lookup_teams() {
+  lookup_tcp_targets TEAMS_PROBE_TARGETS
+}
+
+lookup_outlook() {
+  lookup_tcp_targets OUTLOOK_PROBE_TARGETS
+}
+
+lookup_azure_portal() {
+  lookup_tcp_targets AZURE_PORTAL_PROBE_TARGETS
+}
+
+lookup_viber() {
+  lookup_tcp_targets VIBER_PROBE_TARGETS
+}
+
+lookup_slack() {
+  lookup_tcp_targets SLACK_PROBE_TARGETS
+}
+
+lookup_zoom() {
+  lookup_tcp_targets ZOOM_PROBE_TARGETS
 }
 
 lookup_github_api() {
