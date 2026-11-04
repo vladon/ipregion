@@ -30,7 +30,7 @@ DISCORD_PROBE_TARGETS=("gateway.discord.gg:443")
 # VK API as IP literals - bash /dev/tcp proved unreliable with its multi-A
 # hostname. Signal's hostname DNS-poisons to nothing on restricted networks,
 # which the probe honestly reports as No.
-INSTAGRAM_PROBE_TARGETS=("i.instagram.com:443")
+INSTAGRAM_API_PROBE_TARGETS=("i.instagram.com:443")
 THREADS_PROBE_TARGETS=("graph.threads.net:443")
 SIGNAL_PROBE_TARGETS=("textsecure-service.whispersystems.org:443")
 VK_PROBE_TARGETS=("87.240.137.208:443" "87.240.190.70:443")
@@ -76,6 +76,9 @@ GITLAB_API_PROBE_TARGETS=("api.gitlab.com:443")
 # the mac raw path was flapping during verification, DNS resolving fine)
 STEAM_API_PROBE_TARGETS=("api.steampowered.com:443")
 DISCORD_API_PROBE_TARGETS=("discordapp.com:443")
+# YouTube InnerTube API backend, the backend the youtubei/v1 calls hit
+# (verified stable ×2 from both networks)
+YOUTUBE_API_PROBE_TARGETS=("youtubei.googleapis.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -246,6 +249,7 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE]="YouTube"
   [YOUTUBE_PREMIUM]="YouTube Premium"
   [YOUTUBE_PREMIUM_WEB]="YouTube Premium (Web)"
+  [YOUTUBE_API]="YouTube API"
   [YOUTUBE_TRANSPORT]="YouTube Transport"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
   [GOOGLE_TRANSPORT]="Google Transport"
@@ -345,6 +349,7 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE"
   "YOUTUBE_PREMIUM"
   "YOUTUBE_PREMIUM_WEB"
+  "YOUTUBE_API"
   "YOUTUBE_TRANSPORT"
   "GOOGLE_SEARCH_CAPTCHA"
   "GOOGLE_TRANSPORT"
@@ -459,6 +464,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE]="lookup_youtube"
   [YOUTUBE_PREMIUM]="lookup_youtube_premium"
   [YOUTUBE_PREMIUM_WEB]="lookup_youtube_premium_web"
+  [YOUTUBE_API]="lookup_youtube_api"
   [YOUTUBE_TRANSPORT]="lookup_youtube_transport"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
   [GOOGLE_TRANSPORT]="lookup_google_transport"
@@ -4873,7 +4879,7 @@ lookup_github() {
 }
 
 lookup_instagram_api() {
-  lookup_tcp_targets INSTAGRAM_PROBE_TARGETS
+  lookup_tcp_targets INSTAGRAM_API_PROBE_TARGETS
 }
 
 lookup_threads_api() {
@@ -4930,6 +4936,10 @@ lookup_x_api() {
 
 lookup_twitter_legacy_api() {
   lookup_tcp_targets TWITTER_LEGACY_API_PROBE_TARGETS
+}
+
+lookup_youtube_api() {
+  lookup_tcp_targets YOUTUBE_API_PROBE_TARGETS
 }
 
 lookup_github_api() {
