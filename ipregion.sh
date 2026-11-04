@@ -2725,16 +2725,17 @@ is_ipv6_over_ipv4_service() {
 
 spinner_start() {
   local delay=0.1
-  # shellcheck disable=SC1003
-  local spinstr='|/-\\'
-  local current_service
+  # Braille spinner frames; an array keeps multibyte characters whole in
+  # any locale (byte-wise substring slicing would split them under LC_ALL=C)
+  local -a spin_frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  local current_service frame
 
   SPINNER_SERVICE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_spinner_XXXXXX")
   spinner_running=true
 
   (
     while $spinner_running; do
-      for ((i = 0; i < ${#spinstr}; i++)); do
+      for frame in "${spin_frames[@]}"; do
         current_service=""
 
         if [[ -f "$SPINNER_SERVICE_FILE" ]]; then
@@ -2742,7 +2743,7 @@ spinner_start() {
         fi
 
         printf "\r\033[K%s %s %s" \
-          "$(color HEADER "${spinstr:$i:1}")" \
+          "$(color HEADER "$frame")" \
           "$(color HEADER "Checking:")" \
           "$(color SERVICE "$current_service")" >&2
 
