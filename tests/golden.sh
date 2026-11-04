@@ -291,6 +291,7 @@ INCLUDED_SERVICES=(
   "YANDEX"
   "MAIL_RU"
   "GITHUB"
+  "GITHUB_API"
   # Primary GeoIP group (also rendered by the golden run)
   "MAXMIND"
   "RIPE"
