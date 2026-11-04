@@ -326,6 +326,9 @@ INCLUDED_SERVICES=(
   "VIBER"
   "SLACK"
   "ZOOM"
+  "LINE"
+  "DOH_GOOGLE"
+  "DOH_CLOUDFLARE"
   "STEAM_API"
   "DISCORD_API"
   # Primary GeoIP group (also rendered by the golden run)

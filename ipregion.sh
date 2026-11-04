@@ -103,6 +103,10 @@ AZURE_PORTAL_PROBE_TARGETS=("portal.azure.com:443")
 VIBER_PROBE_TARGETS=("viber.com:443")
 SLACK_PROBE_TARGETS=("slack.com:443")
 ZOOM_PROBE_TARGETS=("zoom.us:443")
+LINE_PROBE_TARGETS=("line.me:443")
+# Encrypted-DNS resolvers, often cut separately from general traffic
+DOH_GOOGLE_PROBE_TARGETS=("dns.google:443")
+DOH_CLOUDFLARE_PROBE_TARGETS=("cloudflare-dns.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -280,6 +284,8 @@ declare -A CUSTOM_SERVICES=(
   [BING]="Bing"
   [DUCKDUCKGO]="DuckDuckGo"
   [BRAVE_SEARCH]="Brave Search"
+  [DOH_GOOGLE]="DoH Google"
+  [DOH_CLOUDFLARE]="DoH Cloudflare"
   [GEMINI]="Google Gemini"
   [APPLE]="Apple"
   [APPLE_TRANSPORT]="Apple Transport"
@@ -339,6 +345,7 @@ declare -A CUSTOM_SERVICES=(
   [VIBER]="Viber"
   [SLACK]="Slack"
   [ZOOM]="Zoom"
+  [LINE]="Line"
   [THREADS_ACCESS]="Threads Access"
   [THREADS_API]="Threads API"
   [THREADS_TRANSPORT]="Threads Transport"
@@ -401,6 +408,8 @@ CUSTOM_SERVICES_ORDER=(
   "BING"
   "DUCKDUCKGO"
   "BRAVE_SEARCH"
+  "DOH_GOOGLE"
+  "DOH_CLOUDFLARE"
   "GEMINI"
   "APPLE"
   "APPLE_TRANSPORT"
@@ -460,6 +469,7 @@ CUSTOM_SERVICES_ORDER=(
   "VIBER"
   "SLACK"
   "ZOOM"
+  "LINE"
   "THREADS_ACCESS"
   "THREADS_API"
   "THREADS_TRANSPORT"
@@ -537,6 +547,8 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [BING]="lookup_bing"
   [DUCKDUCKGO]="lookup_duckduckgo"
   [BRAVE_SEARCH]="lookup_brave_search"
+  [DOH_GOOGLE]="lookup_doh_google"
+  [DOH_CLOUDFLARE]="lookup_doh_cloudflare"
   [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
   [APPLE_TRANSPORT]="lookup_apple_transport"
@@ -599,6 +611,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [VIBER]="lookup_viber"
   [SLACK]="lookup_slack"
   [ZOOM]="lookup_zoom"
+  [LINE]="lookup_line"
   [THREADS_ACCESS]="lookup_threads_access"
   [THREADS_API]="lookup_threads_api"
   [THREADS_TRANSPORT]="lookup_threads_transport"
@@ -5111,6 +5124,18 @@ lookup_slack() {
 
 lookup_zoom() {
   lookup_tcp_targets ZOOM_PROBE_TARGETS
+}
+
+lookup_line() {
+  lookup_tcp_targets LINE_PROBE_TARGETS
+}
+
+lookup_doh_google() {
+  lookup_tcp_targets DOH_GOOGLE_PROBE_TARGETS
+}
+
+lookup_doh_cloudflare() {
+  lookup_tcp_targets DOH_CLOUDFLARE_PROBE_TARGETS
 }
 
 lookup_github_api() {

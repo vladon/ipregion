@@ -19,7 +19,7 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 
 ## Features
 
-- 123 checks in three groups: GeoIP sources (19), popular services (101) and CDN nodes (3)
+- 126 checks in three groups: GeoIP sources (19), popular services (104) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -76,7 +76,8 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 
 ### Availability (Yes/No per network)
 
-- **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway probe), Signal, Messenger, Viber, Slack, Zoom
+- **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway probe), Signal, Messenger, Viber, Slack, Zoom, Line
+- **Encrypted DNS**: dns.google, cloudflare-dns.com (DoH transport probes)
 - **Search**: Bing, DuckDuckGo, Brave Search
 - **Social**: Instagram, Facebook (Access + API + CDN), Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch (Site + API + Chat), Yandex, Mail.ru, GitHub
 - **AI**: ChatGPT, Claude, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)

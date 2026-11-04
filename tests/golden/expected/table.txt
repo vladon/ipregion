@@ -14,6 +14,8 @@
 [1;32mBing[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDuckDuckGo[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mBrave Search[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mDoH Google[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mDoH Cloudflare[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mApple Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -50,6 +52,7 @@
 [1;32mViber[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSlack[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mZoom[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mLine[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mThreads API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
