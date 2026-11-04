@@ -19,7 +19,7 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 
 ## Features
 
-- 123 checks in three groups: GeoIP sources (19), popular services (101) and CDN nodes (3)
+- 127 checks in four groups: GeoIP sources (19), popular services (95), dev infra (10) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -47,6 +47,7 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --group primary # GeoIP services only
 ./ipregion.sh --group custom # Popular websites only
 ./ipregion.sh --group cdn # CDN node checks only
+./ipregion.sh --group devinfra # Developer infrastructure only
 ./ipregion.sh --ipv4 # IPv4 only
 ./ipregion.sh --ipv6 # IPv6 only
 ./ipregion.sh --proxy 127.0.0.1:1080 # Use SOCKS5 proxy
@@ -76,14 +77,15 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 
 ### Availability (Yes/No per network)
 
-- **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway probe), Signal, Messenger, Viber, Slack, Zoom
+- **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway probe), Signal, Messenger, Viber, Slack, Zoom, Line
+- **Encrypted DNS**: dns.google, cloudflare-dns.com (DoH transport probes)
 - **Search**: Bing, DuckDuckGo, Brave Search
 - **Social**: Instagram, Facebook (Access + API + CDN), Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch (Site + API + Chat), Yandex, Mail.ru, GitHub
 - **AI**: ChatGPT, Claude, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)
 - **Streaming**: YouTube (region, Premium via API, Premium via web page, No Ads), Netflix (region), Spotify (region + signup), Disney+ (region + access), Peacock
 - **Region gates**: Douyin (CN egress detector), Peacock
 - **Enterprise**: Microsoft Teams, Outlook, Azure Portal (transport probes)
-- **Dev infra**: GitHub Raw, npm Registry, PyPI, Docker Hub, Hugging Face (transport probes — registry pulls, not landing pages)
+- **Dev infra** (`--group devinfra`): GitHub (site + API + Codeload + Raw), GitLab (site + API), npm Registry, PyPI, Docker Hub, Hugging Face
 
 ### CDN nodes (group cdn)
 

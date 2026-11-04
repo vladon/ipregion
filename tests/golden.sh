@@ -303,6 +303,7 @@ INCLUDED_SERVICES=(
   "MAIL_RU"
   "GITHUB"
   "GITHUB_API"
+  "GITHUB_CODELOAD"
   "GITHUB_RAW"
   "GITLAB"
   "GITLAB_API"
@@ -326,6 +327,9 @@ INCLUDED_SERVICES=(
   "VIBER"
   "SLACK"
   "ZOOM"
+  "LINE"
+  "DOH_GOOGLE"
+  "DOH_CLOUDFLARE"
   "STEAM_API"
   "DISCORD_API"
   # Primary GeoIP group (also rendered by the golden run)
@@ -371,6 +375,7 @@ VERBOSE=false
 # Run ------------------------------------------------------------------------
 
 run_service_group "custom"
+run_service_group "devinfra"
 run_service_group "primary"
 finalize_json
 
