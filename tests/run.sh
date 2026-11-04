@@ -214,7 +214,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API BING DUCKDUCKGO BRAVE_SEARCH TWITCH_API TWITCH_CHAT FACEBOOK_CDN GROQ_API OPENROUTER COHERE_API ELEVENLABS_API TEAMS OUTLOOK AZURE_PORTAL VIBER SLACK ZOOM LINE DOH_GOOGLE DOH_CLOUDFLARE; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API BING DUCKDUCKGO BRAVE_SEARCH TWITCH_API TWITCH_CHAT FACEBOOK_CDN GROQ_API OPENROUTER COHERE_API ELEVENLABS_API TEAMS OUTLOOK AZURE_PORTAL VIBER SLACK ZOOM LINE DOH_GOOGLE DOH_CLOUDFLARE GMAIL GOOGLE_DRIVE PLAY_STORE APP_STORE AWS GCP_CONSOLE ORACLE_CLOUD ONEDRIVE WECHAT BAIDU ALIPAY PROTON DROPBOX MEGA EPIC_GAMES BATTLE_NET ROBLOX RIOT XBOX STRIPE_API PAYPAL WISE; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -223,6 +223,9 @@ for service_key in GITHUB GITHUB_API GITHUB_CODELOAD GITHUB_RAW GITLAB GITLAB_AP
   assert_true "devinfra handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
 assert_true "devinfra group lists devinfra services" test "${SERVICE_GROUPS[devinfra]}" == "${DEVINFRA_SERVICES_ORDER[*]}"
+assert_true "include-service validation accepts cdn service" validate_known_service YOUTUBE_CDN
+assert_true "include-service validation accepts devinfra service" validate_known_service DOCKER_HUB
+assert_false "include-service validation rejects unknown service" validate_known_service TOTALLY_UNKNOWN
 for service_key in YOUTUBE_CDN CLOUDFLARE_CDN NETFLIX_CDN; do
   assert_true "cdn registry defines $service_key" test -n "${CDN_SERVICES[$service_key]:-}"
   assert_true "cdn handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
@@ -580,10 +583,24 @@ assert_eq "Yes" "$(lookup_brave_search 4)" "brave search maps page marker to Yes
 SITE_STUB_NAME="UNMARKED_SEARCH_STUB"
 assert_eq "No" "$(lookup_duckduckgo 4)" "duckduckgo maps unmarked body to No"
 assert_eq "No" "$(lookup_brave_search 4)" "brave search maps unmarked body to No"
+SITE_STUB_NAME="WECHAT_PAGE_STUB"
+WECHAT_PAGE_STUB='<html>weixin wechat login</html>'
+assert_eq "Yes" "$(lookup_wechat 4)" "wechat maps page marker to Yes"
+SITE_STUB_NAME="BAIDU_PAGE_STUB"
+BAIDU_PAGE_STUB='<html>baidu search cn</html>'
+assert_eq "Yes" "$(lookup_baidu 4)" "baidu maps page marker to Yes"
+SITE_STUB_NAME="ALIPAY_PAGE_STUB"
+ALIPAY_PAGE_STUB='<html>alipay china</html>'
+assert_eq "Yes" "$(lookup_alipay 4)" "alipay maps page marker to Yes"
+SITE_STUB_NAME="UNMARKED_CN_STUB"
+UNMARKED_CN_STUB='<html>cn portal</html>'
+assert_eq "No" "$(lookup_wechat 4)" "wechat maps unmarked body to No"
+assert_eq "No" "$(lookup_baidu 4)" "baidu maps unmarked body to No"
+assert_eq "No" "$(lookup_alipay 4)" "alipay maps unmarked body to No"
 rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper site_stub_wrapper
-unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB GITHUB_PAGE_STUB BING_PAGE_STUB DUCKDUCKGO_PAGE_STUB BRAVE_PAGE_STUB UNMARKED_SEARCH_STUB
+unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB GITHUB_PAGE_STUB BING_PAGE_STUB DUCKDUCKGO_PAGE_STUB BRAVE_PAGE_STUB UNMARKED_SEARCH_STUB WECHAT_PAGE_STUB BAIDU_PAGE_STUB ALIPAY_PAGE_STUB UNMARKED_CN_STUB
 JSON_OUTPUT=false
 
 # Douyin region gate (curl_wrapper stubbed)
@@ -783,6 +800,26 @@ assert_eq "Yes" "$(lookup_zoom 4)" "zoom maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_doh_google 4)" "doh google maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_doh_cloudflare 4)" "doh cloudflare maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_line 4)" "line maps reachable endpoint to Yes"
+DC_PROBE_MODE="up"
+assert_eq "Yes" "$(lookup_gmail 4)" "gmail maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_proton 4)" "proton maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_google_drive 4)" "google drive maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_dropbox 4)" "dropbox maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_onedrive 4)" "onedrive maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_mega 4)" "mega maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_epic_games 4)" "epic games maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_battle_net 4)" "battle net maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_roblox 4)" "roblox maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_riot 4)" "riot maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_xbox 4)" "xbox maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_app_store 4)" "app store maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_play_store 4)" "play store maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_aws 4)" "aws maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_gcp_console 4)" "gcp console maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_oracle_cloud 4)" "oracle cloud maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_stripe_api 4)" "stripe api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_paypal 4)" "paypal maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_wise 4)" "wise maps reachable endpoint to Yes"
 DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_openai_api 4)" "openai api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_anthropic_api 4)" "anthropic api maps unreachable endpoint to No"
@@ -824,6 +861,26 @@ assert_eq "No" "$(lookup_line 4)" "line maps unreachable endpoint to No"
 DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_doh_google 4)" "doh google maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_doh_cloudflare 4)" "doh cloudflare maps unreachable endpoint to No"
+DC_PROBE_MODE="down"
+assert_eq "No" "$(lookup_gmail 4)" "gmail maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_proton 4)" "proton maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_google_drive 4)" "google drive maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_dropbox 4)" "dropbox maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_onedrive 4)" "onedrive maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_mega 4)" "mega maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_epic_games 4)" "epic games maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_battle_net 4)" "battle net maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_roblox 4)" "roblox maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_riot 4)" "riot maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_xbox 4)" "xbox maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_app_store 4)" "app store maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_play_store 4)" "play store maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_aws 4)" "aws maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_gcp_console 4)" "gcp console maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_oracle_cloud 4)" "oracle cloud maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_stripe_api 4)" "stripe api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_paypal 4)" "paypal maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_wise 4)" "wise maps unreachable endpoint to No"
 unset -f tcp_probe dc_probe_stub host_resolves
 unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false

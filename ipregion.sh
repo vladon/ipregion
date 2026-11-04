@@ -108,6 +108,29 @@ LINE_PROBE_TARGETS=("line.me:443")
 # Encrypted-DNS resolvers, often cut separately from general traffic
 DOH_GOOGLE_PROBE_TARGETS=("dns.google:443")
 DOH_CLOUDFLARE_PROBE_TARGETS=("cloudflare-dns.com:443")
+# Mail and file-storage transports
+GMAIL_PROBE_TARGETS=("mail.google.com:443")
+PROTON_PROBE_TARGETS=("proton.me:443")
+GOOGLE_DRIVE_PROBE_TARGETS=("drive.google.com:443")
+DROPBOX_PROBE_TARGETS=("dropbox.com:443")
+ONEDRIVE_PROBE_TARGETS=("onedrive.live.com:443")
+MEGA_PROBE_TARGETS=("mega.nz:443")
+# Gaming platforms (Steam lives in the custom registry site family)
+EPIC_GAMES_PROBE_TARGETS=("store.epicgames.com:443")
+BATTLE_NET_PROBE_TARGETS=("battle.net:443")
+ROBLOX_PROBE_TARGETS=("roblox.com:443")
+RIOT_PROBE_TARGETS=("riotgames.com:443")
+XBOX_PROBE_TARGETS=("xbox.com:443")
+# App stores and cloud consoles
+APP_STORE_PROBE_TARGETS=("apps.apple.com:443")
+PLAY_STORE_PROBE_TARGETS=("play.google.com:443")
+AWS_PROBE_TARGETS=("aws.amazon.com:443")
+GCP_CONSOLE_PROBE_TARGETS=("console.cloud.google.com:443")
+ORACLE_CLOUD_PROBE_TARGETS=("cloud.oracle.com:443")
+# Payment gateways
+STRIPE_API_PROBE_TARGETS=("api.stripe.com:443")
+PAYPAL_PROBE_TARGETS=("paypal.com:443")
+WISE_PROBE_TARGETS=("wise.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -288,9 +311,16 @@ declare -A CUSTOM_SERVICES=(
   [BRAVE_SEARCH]="Brave Search"
   [DOH_GOOGLE]="DoH Google"
   [DOH_CLOUDFLARE]="DoH Cloudflare"
+  [GMAIL]="Gmail"
+  [GOOGLE_DRIVE]="Google Drive"
+  [PLAY_STORE]="Play Store"
+  [AWS]="AWS"
+  [GCP_CONSOLE]="GCP Console"
+  [ORACLE_CLOUD]="Oracle Cloud"
   [GEMINI]="Google Gemini"
   [APPLE]="Apple"
   [APPLE_TRANSPORT]="Apple Transport"
+  [APP_STORE]="App Store"
   [STEAM]="Steam"
   [STEAM_API]="Steam API"
   [STEAM_TRANSPORT]="Steam Transport"
@@ -303,6 +333,7 @@ declare -A CUSTOM_SERVICES=(
   [TEAMS]="Microsoft Teams"
   [OUTLOOK]="Outlook"
   [AZURE_PORTAL]="Azure Portal"
+  [ONEDRIVE]="OneDrive"
   [TWITCH]="Twitch"
   [CHATGPT]="ChatGPT"
   [OPENAI_API]="OpenAI API"
@@ -354,6 +385,9 @@ declare -A CUSTOM_SERVICES=(
   [SIGNAL_ACCESS]="Signal Access"
   [SIGNAL_SERVICE]="Signal Service"
   [DOUYIN_CN]="Douyin (CN)"
+  [WECHAT]="WeChat"
+  [BAIDU]="Baidu"
+  [ALIPAY]="Alipay"
   [VK]="VK"
   [VK_API]="VK API"
   [OK_RU]="OK"
@@ -387,6 +421,17 @@ declare -A CUSTOM_SERVICES=(
   [TWITCH_CHAT]="Twitch Chat"
   [YANDEX]="Yandex"
   [MAIL_RU]="Mail.ru"
+  [PROTON]="Proton"
+  [DROPBOX]="Dropbox"
+  [MEGA]="MEGA"
+  [EPIC_GAMES]="Epic Games"
+  [BATTLE_NET]="Battle.net"
+  [ROBLOX]="Roblox"
+  [RIOT]="Riot Games"
+  [XBOX]="Xbox"
+  [STRIPE_API]="Stripe API"
+  [PAYPAL]="PayPal"
+  [WISE]="Wise"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -403,9 +448,16 @@ CUSTOM_SERVICES_ORDER=(
   "BRAVE_SEARCH"
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
+  "GMAIL"
+  "GOOGLE_DRIVE"
+  "PLAY_STORE"
+  "AWS"
+  "GCP_CONSOLE"
+  "ORACLE_CLOUD"
   "GEMINI"
   "APPLE"
   "APPLE_TRANSPORT"
+  "APP_STORE"
   "STEAM"
   "STEAM_API"
   "STEAM_TRANSPORT"
@@ -418,6 +470,7 @@ CUSTOM_SERVICES_ORDER=(
   "TEAMS"
   "OUTLOOK"
   "AZURE_PORTAL"
+  "ONEDRIVE"
   "TWITCH"
   "CHATGPT"
   "OPENAI_API"
@@ -469,6 +522,9 @@ CUSTOM_SERVICES_ORDER=(
   "SIGNAL_ACCESS"
   "SIGNAL_SERVICE"
   "DOUYIN_CN"
+  "WECHAT"
+  "BAIDU"
+  "ALIPAY"
   "VK"
   "VK_API"
   "OK_RU"
@@ -502,6 +558,17 @@ CUSTOM_SERVICES_ORDER=(
   "TWITCH_CHAT"
   "YANDEX"
   "MAIL_RU"
+  "PROTON"
+  "DROPBOX"
+  "MEGA"
+  "EPIC_GAMES"
+  "BATTLE_NET"
+  "ROBLOX"
+  "RIOT"
+  "XBOX"
+  "STRIPE_API"
+  "PAYPAL"
+  "WISE"
 )
 
 # CDN node lookups form their own -g cdn group; handlers stay in
@@ -562,9 +629,16 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [BRAVE_SEARCH]="lookup_brave_search"
   [DOH_GOOGLE]="lookup_doh_google"
   [DOH_CLOUDFLARE]="lookup_doh_cloudflare"
+  [GMAIL]="lookup_gmail"
+  [GOOGLE_DRIVE]="lookup_google_drive"
+  [PLAY_STORE]="lookup_play_store"
+  [AWS]="lookup_aws"
+  [GCP_CONSOLE]="lookup_gcp_console"
+  [ORACLE_CLOUD]="lookup_oracle_cloud"
   [GEMINI]="lookup_gemini"
   [APPLE]="lookup_apple"
   [APPLE_TRANSPORT]="lookup_apple_transport"
+  [APP_STORE]="lookup_app_store"
   [STEAM]="lookup_steam"
   [STEAM_API]="lookup_steam_api"
   [STEAM_TRANSPORT]="lookup_steam_transport"
@@ -577,6 +651,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [TEAMS]="lookup_teams"
   [OUTLOOK]="lookup_outlook"
   [AZURE_PORTAL]="lookup_azure_portal"
+  [ONEDRIVE]="lookup_onedrive"
   [TWITCH]="lookup_twitch"
   [CHATGPT]="lookup_chatgpt"
   [OPENAI_API]="lookup_openai_api"
@@ -631,6 +706,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SIGNAL_ACCESS]="lookup_signal_access"
   [SIGNAL_SERVICE]="lookup_signal_service"
   [DOUYIN_CN]="lookup_douyin_cn"
+  [WECHAT]="lookup_wechat"
+  [BAIDU]="lookup_baidu"
+  [ALIPAY]="lookup_alipay"
   [VK]="lookup_vk"
   [VK_API]="lookup_vk_api"
   [OK_RU]="lookup_ok_ru"
@@ -664,6 +742,17 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [TWITCH_CHAT]="lookup_twitch_chat"
   [YANDEX]="lookup_yandex"
   [MAIL_RU]="lookup_mail_ru"
+  [PROTON]="lookup_proton"
+  [DROPBOX]="lookup_dropbox"
+  [MEGA]="lookup_mega"
+  [EPIC_GAMES]="lookup_epic_games"
+  [BATTLE_NET]="lookup_battle_net"
+  [ROBLOX]="lookup_roblox"
+  [RIOT]="lookup_riot"
+  [XBOX]="lookup_xbox"
+  [STRIPE_API]="lookup_stripe_api"
+  [PAYPAL]="lookup_paypal"
+  [WISE]="lookup_wise"
   [GITHUB]="lookup_github"
   [GITHUB_API]="lookup_github_api"
   [GITHUB_RAW]="lookup_github_raw"
@@ -1688,7 +1777,7 @@ is_service_in_list() {
 validate_known_service() {
   local service_name="$1"
 
-  if [[ -n "${PRIMARY_SERVICES[$service_name]}" || -n "${CUSTOM_SERVICES[$service_name]}" ]]; then
+  if [[ -n "${PRIMARY_SERVICES[$service_name]:-}" || -n "${CUSTOM_SERVICES[$service_name]:-}" || -n "${CDN_SERVICES[$service_name]:-}" || -n "${DEVINFRA_SERVICES[$service_name]:-}" ]]; then
     return 0
   fi
 
@@ -5026,6 +5115,18 @@ lookup_brave_search() {
   lookup_site_access "https://search.brave.com/" "brave" "$1"
 }
 
+lookup_wechat() {
+  lookup_site_access "https://weixin.qq.com/" "weixin" "$1"
+}
+
+lookup_baidu() {
+  lookup_site_access "https://www.baidu.com/" "baidu" "$1"
+}
+
+lookup_alipay() {
+  lookup_site_access "https://www.alipay.com/" "alipay" "$1"
+}
+
 lookup_instagram_api() {
   lookup_tcp_targets INSTAGRAM_API_PROBE_TARGETS
 }
@@ -5176,6 +5277,82 @@ lookup_doh_google() {
 
 lookup_doh_cloudflare() {
   lookup_tcp_targets DOH_CLOUDFLARE_PROBE_TARGETS
+}
+
+lookup_gmail() {
+  lookup_tcp_targets GMAIL_PROBE_TARGETS
+}
+
+lookup_proton() {
+  lookup_tcp_targets PROTON_PROBE_TARGETS
+}
+
+lookup_google_drive() {
+  lookup_tcp_targets GOOGLE_DRIVE_PROBE_TARGETS
+}
+
+lookup_dropbox() {
+  lookup_tcp_targets DROPBOX_PROBE_TARGETS
+}
+
+lookup_onedrive() {
+  lookup_tcp_targets ONEDRIVE_PROBE_TARGETS
+}
+
+lookup_mega() {
+  lookup_tcp_targets MEGA_PROBE_TARGETS
+}
+
+lookup_epic_games() {
+  lookup_tcp_targets EPIC_GAMES_PROBE_TARGETS
+}
+
+lookup_battle_net() {
+  lookup_tcp_targets BATTLE_NET_PROBE_TARGETS
+}
+
+lookup_roblox() {
+  lookup_tcp_targets ROBLOX_PROBE_TARGETS
+}
+
+lookup_riot() {
+  lookup_tcp_targets RIOT_PROBE_TARGETS
+}
+
+lookup_xbox() {
+  lookup_tcp_targets XBOX_PROBE_TARGETS
+}
+
+lookup_app_store() {
+  lookup_tcp_targets APP_STORE_PROBE_TARGETS
+}
+
+lookup_play_store() {
+  lookup_tcp_targets PLAY_STORE_PROBE_TARGETS
+}
+
+lookup_aws() {
+  lookup_tcp_targets AWS_PROBE_TARGETS
+}
+
+lookup_gcp_console() {
+  lookup_tcp_targets GCP_CONSOLE_PROBE_TARGETS
+}
+
+lookup_oracle_cloud() {
+  lookup_tcp_targets ORACLE_CLOUD_PROBE_TARGETS
+}
+
+lookup_stripe_api() {
+  lookup_tcp_targets STRIPE_API_PROBE_TARGETS
+}
+
+lookup_paypal() {
+  lookup_tcp_targets PAYPAL_PROBE_TARGETS
+}
+
+lookup_wise() {
+  lookup_tcp_targets WISE_PROBE_TARGETS
 }
 
 lookup_github_api() {
