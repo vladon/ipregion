@@ -2840,6 +2840,7 @@ spinner_start() {
   # any locale (byte-wise substring slicing would split them under LC_ALL=C)
   local -a spin_frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
   local current_service frame
+  local start_seconds=$SECONDS
 
   SPINNER_SERVICE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_spinner_XXXXXX")
   spinner_running=true
@@ -2853,10 +2854,19 @@ spinner_start() {
           current_service="$(cat "$SPINNER_SERVICE_FILE")"
         fi
 
-        printf "\r\033[K%s %s %s" \
+        local elapsed=$((SECONDS - start_seconds))
+        local time_str
+        if ((elapsed >= 60)); then
+          printf -v time_str '%d:%02d' $((elapsed / 60)) $((elapsed % 60))
+        else
+          time_str="${elapsed}s"
+        fi
+
+        printf "\r\033[K%s %s %s (%s)" \
           "$(color HEADER "$frame")" \
           "$(color HEADER "Checking:")" \
-          "$(color SERVICE "$current_service")" >&2
+          "$(color SERVICE "$current_service")" \
+          "$(color HEADER "$time_str")" >&2
 
         sleep $delay
       done
