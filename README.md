@@ -19,7 +19,7 @@ bash <(wget -qO- https://ipregion.vladon.sh)
 
 ## Features
 
-- 127 checks in four groups: GeoIP sources (19), popular services (95), dev infra (10) and CDN nodes (3)
+- 149 checks in four groups: GeoIP sources (19), popular services (117), dev infra (10) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -84,7 +84,12 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 - **AI**: ChatGPT, Claude, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)
 - **Streaming**: YouTube (region, Premium via API, Premium via web page, No Ads), Netflix (region), Spotify (region + signup), Disney+ (region + access), Peacock
 - **Region gates**: Douyin (CN egress detector), Peacock
-- **Enterprise**: Microsoft Teams, Outlook, Azure Portal (transport probes)
+- **Enterprise**: Microsoft Teams, Outlook, Azure Portal, OneDrive (transport probes)
+- **Mail & storage**: Gmail, Proton, Google Drive, Dropbox, MEGA (transport probes)
+- **Gaming**: Epic Games, Battle.net, Roblox, Riot Games, Xbox (transport probes)
+- **Stores & clouds**: App Store, Play Store, AWS, GCP Console, Oracle Cloud (transport probes)
+- **CN platforms**: WeChat, Baidu, Alipay
+- **Finance**: Stripe API, PayPal, Wise (transport probes)
 - **Dev infra** (`--group devinfra`): GitHub (site + API + Codeload + Raw), GitLab (site + API), npm Registry, PyPI, Docker Hub, Hugging Face
 
 ### CDN nodes (group cdn)

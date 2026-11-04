@@ -16,13 +16,21 @@
 [1;32mBrave Search[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDoH Google[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDoH Cloudflare[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGmail[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGoogle Drive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mPlay Store[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mAWS[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGCP Console[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mOracle Cloud[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mApple Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mApp Store[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMicrosoft Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMicrosoft Teams[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOutlook[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mAzure Portal[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mOneDrive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOpenAI API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mReddit API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mAnthropic API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -59,6 +67,9 @@
 [1;32mSignal Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mSignal Service[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDouyin (CN)[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mWeChat[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mBaidu[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mAlipay[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mVK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mVK API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
@@ -92,6 +103,17 @@
 [1;32mTwitch Chat[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mYandex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMail.ru[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mProton[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mDropbox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mMEGA[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mEpic Games[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mBattle.net[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mRoblox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mRiot Games[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mXbox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mStripe API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mPayPal[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mWise[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 
 [1;36mCDN[0m
 

@@ -143,6 +143,15 @@ stub_body() {
   *brave.com*)
     printf '%s' '<!doctype html><html><head><title>Brave Search</title></head><body>brave independent search</body></html>'
     ;;
+  *weixin.qq.com*)
+    printf '%s' '<!doctype html><html><head><title>微信</title></head><body>weixin wechat login qr</body></html>'
+    ;;
+  *baidu.com*)
+    printf '%s' '<!doctype html><html><head><title>百度</title></head><body>baidu search china</body></html>'
+    ;;
+  *alipay.com*)
+    printf '%s' '<!doctype html><html><head><title>支付宝 Alipay</title></head><body>alipay china payments</body></html>'
+    ;;
   # Primary GeoIP fixtures (all US, iplocation.com CY to exercise its custom handler)
   *geoip.maxmind.com*)
     printf '%s' '{"country":{"iso_code":"US"},"traits":{"autonomous_system_number":64496}}'
@@ -330,6 +339,28 @@ INCLUDED_SERVICES=(
   "LINE"
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
+  "GMAIL"
+  "GOOGLE_DRIVE"
+  "PLAY_STORE"
+  "APP_STORE"
+  "AWS"
+  "GCP_CONSOLE"
+  "ORACLE_CLOUD"
+  "ONEDRIVE"
+  "WECHAT"
+  "BAIDU"
+  "ALIPAY"
+  "PROTON"
+  "DROPBOX"
+  "MEGA"
+  "EPIC_GAMES"
+  "BATTLE_NET"
+  "ROBLOX"
+  "RIOT"
+  "XBOX"
+  "STRIPE_API"
+  "PAYPAL"
+  "WISE"
   "STEAM_API"
   "DISCORD_API"
   # Primary GeoIP group (also rendered by the golden run)
