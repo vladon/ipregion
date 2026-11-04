@@ -94,6 +94,63 @@
         "service": "Google Transport"
       },
       {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Bing"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DuckDuckGo"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Brave Search"
+      },
+      {
         "ipv4": "\u001b[1;31mNo\u001b[0m",
         "ipv6": "\u001b[1;31mNo\u001b[0m",
         "metrics": {
@@ -168,6 +225,63 @@
           }
         },
         "service": "Microsoft Transport"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Microsoft Teams"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Outlook"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Azure Portal"
       },
       {
         "ipv4": "\u001b[1;31mNo\u001b[0m",
@@ -607,6 +721,25 @@
         "service": "Facebook API"
       },
       {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Facebook CDN"
+      },
+      {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
         "ipv6": "\u001b[1;32mYes\u001b[0m",
         "metrics": {
@@ -643,6 +776,63 @@
           }
         },
         "service": "Messenger MQTT"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Viber"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Slack"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Zoom"
       },
       {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
@@ -1044,6 +1234,82 @@
         "service": "Mistral API"
       },
       {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Groq API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "OpenRouter"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Cohere API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "ElevenLabs API"
+      },
+      {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
         "ipv6": "\u001b[1;32mYes\u001b[0m",
         "metrics": {
@@ -1232,6 +1498,44 @@
           }
         },
         "service": "Twitch Site"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Twitch API"
+      },
+      {
+        "ipv4": "\u001b[1;31mNo\u001b[0m",
+        "ipv6": "\u001b[1;31mNo\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Twitch Chat"
       },
       {
         "ipv4": "\u001b[1;32mYes\u001b[0m",

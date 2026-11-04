@@ -11,10 +11,16 @@
 [1;32mYouTube API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mYouTube Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mBing[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mDuckDuckGo[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mBrave Search[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mApple Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mSteam Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMicrosoft Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mMicrosoft Teams[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mOutlook[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mAzure Portal[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOpenAI API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mReddit API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mAnthropic API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -38,8 +44,12 @@
 [1;32mLinkedIn API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mFacebook Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mFacebook API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mFacebook CDN[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMessenger Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMessenger MQTT[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mViber[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mSlack[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mZoom[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mThreads API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -61,6 +71,10 @@
 [1;32mCopilot[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMistral[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMistral API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGroq API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mOpenRouter[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mCohere API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mElevenLabs API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mQwen Web[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mPeacock Access[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mBluesky[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
@@ -71,6 +85,8 @@
 [1;32mBilibili[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mNetEase Music[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mTwitch Site[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mTwitch API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mTwitch Chat[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mYandex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMail.ru[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mGitHub[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m

@@ -212,7 +212,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU GITHUB GITHUB_API GITLAB GITLAB_API STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API GITHUB_RAW NPM_REGISTRY PYPI DOCKER_HUB HUGGING_FACE; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU GITHUB GITHUB_API GITLAB GITLAB_API STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API GITHUB_RAW NPM_REGISTRY PYPI DOCKER_HUB HUGGING_FACE BING DUCKDUCKGO BRAVE_SEARCH TWITCH_API TWITCH_CHAT FACEBOOK_CDN GROQ_API OPENROUTER COHERE_API ELEVENLABS_API TEAMS OUTLOOK AZURE_PORTAL VIBER SLACK ZOOM; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -558,10 +558,25 @@ GITHUB_PAGE_STUB='<html>Octocat developer platform</html>'
 assert_eq "No" "$(lookup_github 4)" "github maps unmarked body to No"
 GITHUB_PAGE_STUB='<html>github Octocat</html>'
 assert_eq "Yes" "$(lookup_github 4)" "github maps page marker to Yes"
+SITE_STUB_NAME="UNMARKED_SEARCH_STUB"
+UNMARKED_SEARCH_STUB='<html>search portal</html>'
+assert_eq "No" "$(lookup_bing 4)" "bing maps unmarked body to No"
+SITE_STUB_NAME="BING_PAGE_STUB"
+BING_PAGE_STUB='<html>bing search</html>'
+assert_eq "Yes" "$(lookup_bing 4)" "bing maps page marker to Yes"
+SITE_STUB_NAME="DUCKDUCKGO_PAGE_STUB"
+DUCKDUCKGO_PAGE_STUB='<html>duckduckgo private search</html>'
+assert_eq "Yes" "$(lookup_duckduckgo 4)" "duckduckgo maps page marker to Yes"
+SITE_STUB_NAME="BRAVE_PAGE_STUB"
+BRAVE_PAGE_STUB='<html>brave search engine</html>'
+assert_eq "Yes" "$(lookup_brave_search 4)" "brave search maps page marker to Yes"
+SITE_STUB_NAME="UNMARKED_SEARCH_STUB"
+assert_eq "No" "$(lookup_duckduckgo 4)" "duckduckgo maps unmarked body to No"
+assert_eq "No" "$(lookup_brave_search 4)" "brave search maps unmarked body to No"
 rm -f "$CURL_META_FILE"
 CURL_META_FILE=""
 unset -f curl_wrapper site_stub_wrapper
-unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB GITHUB_PAGE_STUB
+unset SITE_STUB_NAME UNMARKED_SITE_STUB BLUESKY_PAGE_STUB SNAPCHAT_PAGE_STUB PINTEREST_PAGE_STUB TRUTH_SOCIAL_PAGE_STUB WEIBO_PAGE_STUB BILIBILI_PAGE_STUB NETEASE_MUSIC_PAGE_STUB TWITCH_SITE_PAGE_STUB YANDEX_PAGE_STUB MAIL_RU_PAGE_STUB GITHUB_PAGE_STUB BING_PAGE_STUB DUCKDUCKGO_PAGE_STUB BRAVE_PAGE_STUB UNMARKED_SEARCH_STUB
 JSON_OUTPUT=false
 
 # Douyin region gate (curl_wrapper stubbed)
@@ -744,6 +759,20 @@ assert_eq "Yes" "$(lookup_npm_registry 4)" "npm registry maps reachable endpoint
 assert_eq "Yes" "$(lookup_pypi 4)" "pypi maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_docker_hub 4)" "docker hub maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_hugging_face 4)" "hugging face maps reachable endpoint to Yes"
+DC_PROBE_MODE="up"
+assert_eq "Yes" "$(lookup_twitch_api 4)" "twitch api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_twitch_chat 4)" "twitch chat maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_facebook_cdn 4)" "facebook cdn maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_groq_api 4)" "groq api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_openrouter 4)" "openrouter maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_cohere_api 4)" "cohere api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_elevenlabs_api 4)" "elevenlabs api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_teams 4)" "teams maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_outlook 4)" "outlook maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_azure_portal 4)" "azure portal maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_viber 4)" "viber maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_slack 4)" "slack maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_zoom 4)" "zoom maps reachable endpoint to Yes"
 DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_openai_api 4)" "openai api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_anthropic_api 4)" "anthropic api maps unreachable endpoint to No"
@@ -767,6 +796,20 @@ assert_eq "No" "$(lookup_npm_registry 4)" "npm registry maps unreachable endpoin
 assert_eq "No" "$(lookup_pypi 4)" "pypi maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_docker_hub 4)" "docker hub maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_hugging_face 4)" "hugging face maps unreachable endpoint to No"
+DC_PROBE_MODE="down"
+assert_eq "No" "$(lookup_twitch_api 4)" "twitch api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_twitch_chat 4)" "twitch chat maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_facebook_cdn 4)" "facebook cdn maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_groq_api 4)" "groq api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_openrouter 4)" "openrouter maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_cohere_api 4)" "cohere api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_elevenlabs_api 4)" "elevenlabs api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_teams 4)" "teams maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_outlook 4)" "outlook maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_azure_portal 4)" "azure portal maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_viber 4)" "viber maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_slack 4)" "slack maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_zoom 4)" "zoom maps unreachable endpoint to No"
 unset -f tcp_probe dc_probe_stub host_resolves
 unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false
