@@ -3875,7 +3875,7 @@ add_result() {
     # Wipe the spinner frame line first, then print the result in its
     # place - otherwise the frame (which does not end in a newline) and
     # the result line concatenate and the service name shows twice
-    printf "%s %s: %s\n" \
+    printf "\r\033[K%s %s: %s\n" \
       "$(color "$result_color" "$result_symbol")" \
       "$(bold "$(color SERVICE "$service")")" \
       "$(
