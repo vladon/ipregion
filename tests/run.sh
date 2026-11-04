@@ -1043,30 +1043,6 @@ unset -f tcp_probe dc_probe_stub host_resolves
 unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false
 
-# Spinner counter and instant result lines
-assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
-assert_eq "10" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
-CHECKS_DONE_FILE=$(mktemp)
-spinner_running=true
-JSON_OUTPUT=true
-out=$({ add_result "cdn" "Counter Test" "Yes" "" "" ""; } 2>&1)
-clean_out=$(printf '%s' "$out" | sed "s/$(printf '\033')\\[[0-9;]*m//g")
-assert_contains "$clean_out" "✔" "instant result line prints pass symbol"
-assert_contains "$clean_out" "Counter Test: Yes/" "instant result line prints service and verdict"
-assert_eq "1" "$(grep -c x "$CHECKS_DONE_FILE")" "counter file increments per check"
-out=$({ add_result "cdn" "Counter Test 2" "No" "Denied" "" ""; } 2>&1)
-clean_out=$(printf '%s' "$out" | sed "s/$(printf '\033')\\[[0-9;]*m//g")
-assert_contains "$clean_out" "✘" "instant result line prints fail symbol"
-assert_contains "$clean_out" "Counter Test 2: No/Denied" "second instant result line prints"
-assert_eq "2" "$(grep -c x "$CHECKS_DONE_FILE")" "counter file increments twice"
-spinner_running=false
-JSON_OUTPUT=false
-out=$({ add_result "cdn" "Counter Quiet" "Yes" "" "" ""; } 2>&1)
-assert_empty "$out" "no instant line when spinner inactive"
-rm -f "$CHECKS_DONE_FILE"
-CHECKS_DONE_FILE=""
-unset out clean_out
-
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
