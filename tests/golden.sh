@@ -294,6 +294,8 @@ INCLUDED_SERVICES=(
   "GITHUB_API"
   "GITLAB"
   "GITLAB_API"
+  "STEAM_API"
+  "DISCORD_API"
   # Primary GeoIP group (also rendered by the golden run)
   "MAXMIND"
   "RIPE"

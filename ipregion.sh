@@ -69,6 +69,10 @@ GITHUB_API_PROBE_TARGETS=("api.github.com:443")
 # GitLab site and API transports (verified stable ×3 from both networks)
 GITLAB_PROBE_TARGETS=("gitlab.com:443")
 GITLAB_API_PROBE_TARGETS=("api.gitlab.com:443")
+# Steam Web API and the legacy Discord API host (verified ru01 OK ×2;
+# the mac raw path was flapping during verification, DNS resolving fine)
+STEAM_API_PROBE_TARGETS=("api.steampowered.com:443")
+DISCORD_API_PROBE_TARGETS=("discordapp.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -246,6 +250,7 @@ declare -A CUSTOM_SERVICES=(
   [APPLE]="Apple"
   [APPLE_TRANSPORT]="Apple Transport"
   [STEAM]="Steam"
+  [STEAM_API]="Steam API"
   [STEAM_TRANSPORT]="Steam Transport"
   [TIKTOK]="Tiktok"
   [OOKLA_SPEEDTEST]="Ookla Speedtest"
@@ -282,6 +287,7 @@ declare -A CUSTOM_SERVICES=(
   [TELEGRAM_ACCESS]="Telegram Access"
   [TELEGRAM_DC]="Telegram DC"
   [DISCORD_ACCESS]="Discord Access"
+  [DISCORD_API]="Discord API"
   [DISCORD_GATEWAY]="Discord Gateway"
   [TWITTER]="Twitter (X)"
   [X_API]="X API"
@@ -342,6 +348,7 @@ CUSTOM_SERVICES_ORDER=(
   "APPLE"
   "APPLE_TRANSPORT"
   "STEAM"
+  "STEAM_API"
   "STEAM_TRANSPORT"
   "TIKTOK"
   "OOKLA_SPEEDTEST"
@@ -378,6 +385,7 @@ CUSTOM_SERVICES_ORDER=(
   "TELEGRAM_ACCESS"
   "TELEGRAM_DC"
   "DISCORD_ACCESS"
+  "DISCORD_API"
   "DISCORD_GATEWAY"
   "TWITTER"
   "X_API"
@@ -453,6 +461,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [APPLE]="lookup_apple"
   [APPLE_TRANSPORT]="lookup_apple_transport"
   [STEAM]="lookup_steam"
+  [STEAM_API]="lookup_steam_api"
   [STEAM_TRANSPORT]="lookup_steam_transport"
   [TIKTOK]="lookup_tiktok"
   [OOKLA_SPEEDTEST]="lookup_ookla_speedtest"
@@ -492,6 +501,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [TELEGRAM_ACCESS]="lookup_telegram_access"
   [TELEGRAM_DC]="lookup_telegram_dc"
   [DISCORD_ACCESS]="lookup_discord_access"
+  [DISCORD_API]="lookup_discord_api"
   [DISCORD_GATEWAY]="lookup_discord_gateway"
   [TWITTER]="lookup_twitter"
   [X_API]="lookup_x_api"
@@ -4922,6 +4932,14 @@ lookup_gitlab() {
 
 lookup_gitlab_api() {
   lookup_tcp_targets GITLAB_API_PROBE_TARGETS
+}
+
+lookup_steam_api() {
+  lookup_tcp_targets STEAM_API_PROBE_TARGETS
+}
+
+lookup_discord_api() {
+  lookup_tcp_targets DISCORD_API_PROBE_TARGETS
 }
 
 lookup_facebook_api() {
