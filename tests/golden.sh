@@ -143,9 +143,6 @@ stub_body() {
   *brave.com*)
     printf '%s' '<!doctype html><html><head><title>Brave Search</title></head><body>brave independent search</body></html>'
     ;;
-  *notebooklm.google.com*)
-    printf '%s' '<!doctype html><html><head><title>Gemini Notebook</title></head><body>notebook app shell</body></html>'
-    ;;
   *weixin.qq.com*)
     printf '%s' '<!doctype html><html><head><title>微信</title></head><body>weixin wechat login qr</body></html>'
     ;;
@@ -220,13 +217,6 @@ curl_wrapper() {
   local url="$2"
   local response http_code error_type
 
-  # Emulate the NotebookLM region gate: the meta file carries the final
-  # effective URL after redirects (consumed via read_curl_metric_field)
-  shift 2
-  while (($#)); do
-    shift
-  done
-
   response=$(stub_body "$url")
   if [[ -n "$response" ]]; then
     http_code=200
@@ -237,8 +227,7 @@ curl_wrapper() {
   fi
 
   if [[ -n "$CURL_META_FILE" ]]; then
-    printf 'http_code=%s;latency_ms=100;error_type=%s;effective_url=%s\n' \
-      "$http_code" "$error_type" 'https://notebook.google/?location=unsupported' >"$CURL_META_FILE"
+    printf 'http_code=%s;latency_ms=100;error_type=%s\n' "$http_code" "$error_type" >"$CURL_META_FILE"
   fi
 
   printf '%s' "$response"
@@ -350,7 +339,6 @@ INCLUDED_SERVICES=(
   "LINE"
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
-  "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"
   "PLAY_STORE"

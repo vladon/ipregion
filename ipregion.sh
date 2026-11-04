@@ -317,7 +317,6 @@ declare -A CUSTOM_SERVICES=(
   [GCP_CONSOLE]="GCP Console"
   [ORACLE_CLOUD]="Oracle Cloud"
   [GEMINI]="Google Gemini"
-  [GEMINI_NOTEBOOK]="Gemini Notebook"
   [APPLE]="Apple"
   [APPLE_TRANSPORT]="Apple Transport"
   [APP_STORE]="App Store"
@@ -455,7 +454,6 @@ CUSTOM_SERVICES_ORDER=(
   "GCP_CONSOLE"
   "ORACLE_CLOUD"
   "GEMINI"
-  "GEMINI_NOTEBOOK"
   "APPLE"
   "APPLE_TRANSPORT"
   "APP_STORE"
@@ -637,7 +635,6 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [GCP_CONSOLE]="lookup_gcp_console"
   [ORACLE_CLOUD]="lookup_oracle_cloud"
   [GEMINI]="lookup_gemini"
-  [GEMINI_NOTEBOOK]="lookup_gemini_notebook"
   [APPLE]="lookup_apple"
   [APPLE_TRANSPORT]="lookup_apple_transport"
   [APP_STORE]="lookup_app_store"
@@ -2810,7 +2807,6 @@ curl_wrapper() {
   local url="$2"
   shift 2
   local ip_version user_agent json data data_urlencode file forms headers cookie cookie_jar
-  local effective_url_flag=false effective_url="" meta_effective=""
   local response_with_meta response http_code latency_seconds latency_ms curl_exit
   local error_type=""
   local curl_args=(
@@ -2820,6 +2816,7 @@ curl_wrapper() {
     --retry-connrefused
     --retry "$CURL_RETRIES"
     --max-time "$CURL_TIMEOUT"
+    -w '\n%{http_code}\n%{time_total}'
   )
 
   case "$method" in
@@ -2836,10 +2833,6 @@ curl_wrapper() {
     --ip-version)
       ip_version="$2"
       shift 2
-      ;;
-    --effective-url)
-      effective_url_flag=true
-      shift
       ;;
     --user-agent)
       user_agent="$2"
@@ -2939,12 +2932,6 @@ curl_wrapper() {
     curl_args+=(--interface "$INTERFACE_NAME")
   fi
 
-  if [[ "$effective_url_flag" == true ]]; then
-    curl_args+=(-w '\n%{http_code}\n%{time_total}\n%{url_effective}')
-  else
-    curl_args+=(-w '\n%{http_code}\n%{time_total}')
-  fi
-
   curl_args+=("$url")
 
   response_with_meta=$(curl "${curl_args[@]}")
@@ -2952,24 +2939,16 @@ curl_wrapper() {
   if [[ $curl_exit -ne 0 || -z "$response_with_meta" ]]; then
     error_type="curl_error"
     if [[ -n "$CURL_META_FILE" ]]; then
-      printf "http_code=;latency_ms=;error_type=%s%s\n" "$error_type" "$meta_effective" >"$CURL_META_FILE"
+      printf "http_code=;latency_ms=;error_type=%s\n" "$error_type" >"$CURL_META_FILE"
     fi
     log "$LOG_WARN" "curl request failed for $url"
     echo ""
     return
   fi
 
-  if [[ "$effective_url_flag" == true ]]; then
-    effective_url=$(printf '%s\n' "$response_with_meta" | tail -n 1)
-    latency_seconds=$(printf '%s\n' "$response_with_meta" | tail -n 2 | head -n 1)
-    http_code=$(printf '%s\n' "$response_with_meta" | tail -n 3 | head -n 1)
-    response=$(printf '%s\n' "$response_with_meta" | sed -e '$d' -e '$d' -e '$d')
-    meta_effective=";effective_url=$effective_url"
-  else
-    latency_seconds=$(printf '%s\n' "$response_with_meta" | tail -n 1)
-    http_code=$(printf '%s\n' "$response_with_meta" | tail -n 2 | head -n 1)
-    response=$(printf '%s\n' "$response_with_meta" | sed '$d' | sed '$d')
-  fi
+  latency_seconds=$(printf '%s\n' "$response_with_meta" | tail -n 1)
+  http_code=$(printf '%s\n' "$response_with_meta" | tail -n 2 | head -n 1)
+  response=$(printf '%s\n' "$response_with_meta" | sed '$d' | sed '$d')
 
   if [[ "$latency_seconds" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
     latency_ms=$(awk -v t="$latency_seconds" 'BEGIN { printf "%d", t * 1000 }')
@@ -2980,7 +2959,7 @@ curl_wrapper() {
   if [[ ! "$http_code" =~ ^[0-9]{3}$ ]]; then
     error_type="invalid_http_code"
     if [[ -n "$CURL_META_FILE" ]]; then
-      printf "http_code=;latency_ms=%s;error_type=%s%s\n" "$latency_ms" "$error_type" "$meta_effective" >"$CURL_META_FILE"
+      printf "http_code=;latency_ms=%s;error_type=%s\n" "$latency_ms" "$error_type" >"$CURL_META_FILE"
     fi
     log "$LOG_WARN" "Unexpected HTTP code for $url"
     echo "$response"
@@ -2990,14 +2969,14 @@ curl_wrapper() {
   if [[ "$http_code" =~ ^[45][0-9]{2}$ ]]; then
     error_type="http_${http_code}"
     if [[ -n "$CURL_META_FILE" ]]; then
-      printf "http_code=%s;latency_ms=%s;error_type=%s%s\n" "$http_code" "$latency_ms" "$error_type" "$meta_effective" >"$CURL_META_FILE"
+      printf "http_code=%s;latency_ms=%s;error_type=%s\n" "$http_code" "$latency_ms" "$error_type" >"$CURL_META_FILE"
     fi
     status_from_http_code "$http_code"
     return 0
   fi
 
   if [[ -n "$CURL_META_FILE" ]]; then
-    printf "http_code=%s;latency_ms=%s;error_type=none%s\n" "$http_code" "$latency_ms" "$meta_effective" >"$CURL_META_FILE"
+    printf "http_code=%s;latency_ms=%s;error_type=none\n" "$http_code" "$latency_ms" >"$CURL_META_FILE"
   fi
 
   echo "$response"
@@ -4415,50 +4394,6 @@ gemini_stream_generate_has_reply() {
   done < <(grep_wrapper '^\[\["wrb.fr"' <<<"$response")
 
   echo "no"
-}
-
-# NotebookLM (rebranded "Gemini Notebook"): for non-browser clients
-# unsupported regions intermittently get a 302 whose final URL carries
-# location=unsupported (Google edges alternate between the gate and a
-# clean landing, so a single clean response proves nothing). Probe three
-# times: any gated response means the egress region is unsupported. A
-# browser UA skips the gate entirely (the verdict then only appears
-# in-app after sign-in), so no custom user agent is sent on purpose.
-lookup_gemini_notebook() {
-  local ip_version="$1"
-  local effective_url response error_type attempt
-  local gate_found=false clean_found=false transport_failed=false
-
-  for attempt in 1 2 3; do
-    response=$(curl_wrapper GET "https://notebooklm.google.com/" \
-      --ip-version "$ip_version" \
-      --effective-url)
-
-    if is_status_string "$response"; then
-      echo "$response"
-      return
-    fi
-
-    effective_url=$(read_curl_metric_field "$CURL_META_FILE" "effective_url")
-    if [[ "$effective_url" == *location=unsupported* ]]; then
-      gate_found=true
-    elif [[ -n "$response" ]]; then
-      clean_found=true
-    else
-      error_type=$(read_curl_metric_field "$CURL_META_FILE" "error_type")
-      [[ "$error_type" == "curl_error" ]] && transport_failed=true
-    fi
-  done
-
-  if [[ "$gate_found" == true ]]; then
-    print_value_or_colored "No" "HEART"
-  elif [[ "$clean_found" == true ]]; then
-    print_value_or_colored "Yes" "SERVICE"
-  elif [[ "$transport_failed" == true ]]; then
-    print_value_or_colored "No" "HEART"
-  else
-    echo ""
-  fi
 }
 
 lookup_gemini() {

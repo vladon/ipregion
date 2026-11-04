@@ -308,25 +308,6 @@
         "metrics": {
           "ipv4": {
             "error_type": null,
-            "http_code": 200,
-            "latency_ms": 100,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": 200,
-            "latency_ms": 100,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "Gemini Notebook"
-      },
-      {
-        "ipv4": "\u001b[1;31mNo\u001b[0m",
-        "ipv6": "\u001b[1;31mNo\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
             "http_code": null,
             "latency_ms": null,
             "transport_ip_version": 4
