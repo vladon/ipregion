@@ -235,6 +235,7 @@ assert_true "primary registry defines IPREGISTRY" test -n "${PRIMARY_SERVICES[IP
 assert_contains "${PRIMARY_SERVICES[IPREGISTRY]:-}" "hostname=true" "ipregistry url template kept"
 assert_true "primary registry defines GEOAPIFY_COM" test -n "${PRIMARY_SERVICES[GEOAPIFY_COM]:-}"
 assert_eq "CY" "$(process_response "GEOAPIFY_COM" '{"country":{"iso_code":"CY"}}' "geoapify.com" "json")" "process_response geoapify country filter"
+assert_eq "US" "$(process_response "DETECTOR404" '{"data":{"country":{"ccode":"us"}}}' "geoip.detector404.ru" "json")" "process_response detector404 uppercases country code"
 
 # macOS portability: sed_capture replaces grep -P \K (BSD grep has no -P)
 assert_eq "DE" "$(printf '%s' '"a":1,"sRequestCountry":"DE","b":2' | sed_capture '"sRequestCountry":"([^"]*)')" "sed_capture extracts capture group"

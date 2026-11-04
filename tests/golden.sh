@@ -238,7 +238,7 @@ stub_body() {
     printf '%s' '{"countryCode":"US"}'
     ;;
   *geoip.detector404.ru*)
-    printf '%s' '{"data":{"country":{"ccode":"US"}}}'
+    printf '%s' '{"data":{"country":{"ccode":"us"}}}'
     ;;
   *api.ip2location.io*)
     printf '%s' '{"country_code":"US"}'
