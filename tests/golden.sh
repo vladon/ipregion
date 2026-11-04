@@ -303,6 +303,7 @@ INCLUDED_SERVICES=(
   "MAIL_RU"
   "GITHUB"
   "GITHUB_API"
+  "GITHUB_CODELOAD"
   "GITHUB_RAW"
   "GITLAB"
   "GITLAB_API"
@@ -374,6 +375,7 @@ VERBOSE=false
 # Run ------------------------------------------------------------------------
 
 run_service_group "custom"
+run_service_group "devinfra"
 run_service_group "primary"
 finalize_json
 

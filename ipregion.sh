@@ -86,6 +86,7 @@ NPM_REGISTRY_PROBE_TARGETS=("registry.npmjs.org:443")
 PYPI_PROBE_TARGETS=("pypi.org:443")
 DOCKER_HUB_PROBE_TARGETS=("registry-1.docker.io:443")
 GITHUB_RAW_PROBE_TARGETS=("raw.githubusercontent.com:443")
+GITHUB_CODELOAD_PROBE_TARGETS=("codeload.github.com:443")
 HUGGING_FACE_PROBE_TARGETS=("huggingface.co:443")
 # Twitch API + chat IRC edge, Meta static CDN, AI inference providers,
 # enterprise Microsoft endpoints and communication platforms (verified
@@ -165,6 +166,7 @@ RESULT_JSON=""
 ARR_PRIMARY=()
 ARR_CUSTOM=()
 ARR_CDN=()
+ARR_DEVINFRA=()
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
 ASN_NUMBER=""
@@ -385,15 +387,6 @@ declare -A CUSTOM_SERVICES=(
   [TWITCH_CHAT]="Twitch Chat"
   [YANDEX]="Yandex"
   [MAIL_RU]="Mail.ru"
-  [GITHUB]="GitHub"
-  [GITHUB_API]="GitHub API"
-  [GITHUB_RAW]="GitHub Raw"
-  [GITLAB]="GitLab"
-  [GITLAB_API]="GitLab API"
-  [NPM_REGISTRY]="npm Registry"
-  [PYPI]="PyPI"
-  [DOCKER_HUB]="Docker Hub"
-  [HUGGING_FACE]="Hugging Face"
 )
 
 CUSTOM_SERVICES_ORDER=(
@@ -509,15 +502,6 @@ CUSTOM_SERVICES_ORDER=(
   "TWITCH_CHAT"
   "YANDEX"
   "MAIL_RU"
-  "GITHUB"
-  "GITHUB_API"
-  "GITHUB_RAW"
-  "GITLAB"
-  "GITLAB_API"
-  "NPM_REGISTRY"
-  "PYPI"
-  "DOCKER_HUB"
-  "HUGGING_FACE"
 )
 
 # CDN node lookups form their own -g cdn group; handlers stay in
@@ -533,6 +517,35 @@ CDN_SERVICES_ORDER=(
   "YOUTUBE_CDN"
   "CLOUDFLARE_CDN"
   "NETFLIX_CDN"
+)
+
+# Developer-infrastructure services form their own -g devinfra group;
+# handlers stay in CUSTOM_SERVICES_HANDLERS because they are discovered
+# through the same process_custom_service path.
+declare -A DEVINFRA_SERVICES=(
+  [GITHUB]="GitHub"
+  [GITHUB_API]="GitHub API"
+  [GITHUB_CODELOAD]="GitHub Codeload"
+  [GITHUB_RAW]="GitHub Raw"
+  [GITLAB]="GitLab"
+  [GITLAB_API]="GitLab API"
+  [NPM_REGISTRY]="npm Registry"
+  [PYPI]="PyPI"
+  [DOCKER_HUB]="Docker Hub"
+  [HUGGING_FACE]="Hugging Face"
+)
+
+DEVINFRA_SERVICES_ORDER=(
+  "GITHUB"
+  "GITHUB_API"
+  "GITHUB_CODELOAD"
+  "GITHUB_RAW"
+  "GITLAB"
+  "GITLAB_API"
+  "NPM_REGISTRY"
+  "PYPI"
+  "DOCKER_HUB"
+  "HUGGING_FACE"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -654,6 +667,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [GITHUB]="lookup_github"
   [GITHUB_API]="lookup_github_api"
   [GITHUB_RAW]="lookup_github_raw"
+  [GITHUB_CODELOAD]="lookup_github_codeload"
   [GITLAB]="lookup_gitlab"
   [GITLAB_API]="lookup_gitlab_api"
   [NPM_REGISTRY]="lookup_npm_registry"
@@ -666,6 +680,7 @@ declare -A SERVICE_GROUPS=(
   [primary]="${PRIMARY_SERVICES_ORDER[*]}"
   [custom]="${CUSTOM_SERVICES_ORDER[*]}"
   [cdn]="${CDN_SERVICES_ORDER[*]}"
+  [devinfra]="${DEVINFRA_SERVICES_ORDER[*]}"
 )
 
 EXCLUDED_SERVICES=(
@@ -776,7 +791,7 @@ Options:
   -v, --verbose        Enable verbose logging
   -d, --debug          Enable debug trace; log may contain sensitive data (uploads use redacted copy)
   -j, --json           Output results in JSON format
-  -g, --group GROUP    Run only one group: 'primary', 'custom', 'cdn', or 'all' (default: all)
+  -g, --group GROUP    Run only one group: 'primary', 'custom', 'cdn', 'devinfra', or 'all' (default: all)
   -t, --timeout SEC    Set curl request timeout in seconds (default: $CURL_TIMEOUT)
   -P, --parallel N     Run up to N services in parallel (default: auto)
   -S, --force-spinner  Always show spinner (even in parallel mode)
@@ -801,6 +816,7 @@ Examples:
   $SCRIPT_NAME -g primary            # Check only GeoIP services
   $SCRIPT_NAME -g custom             # Check only popular websites
   $SCRIPT_NAME -g cdn                # Check only CDN nodes
+  $SCRIPT_NAME -g devinfra           # Check only developer infrastructure
   $SCRIPT_NAME -4                    # Test only IPv4
   $SCRIPT_NAME -6                    # Test only IPv6
   $SCRIPT_NAME -p 127.0.0.1:1080     # Use SOCKS5 proxy
@@ -1714,14 +1730,14 @@ parse_arguments() {
       ;;
     -g | --group)
       case "$2" in
-      primary | custom | cdn | all)
+      primary | custom | cdn | devinfra | all)
         GROUPS_TO_SHOW="$2"
         ;;
       "")
-        error_exit "Missing value for --group. Expected: primary, custom, cdn, or all"
+        error_exit "Missing value for --group. Expected: primary, custom, cdn, devinfra, or all"
         ;;
       *)
-        error_exit "Invalid group: $2. Expected: primary, custom, cdn, or all"
+        error_exit "Invalid group: $2. Expected: primary, custom, cdn, devinfra, or all"
         ;;
       esac
       shift 2
@@ -3198,7 +3214,11 @@ process_custom_service() {
   local display_name handler_func group
   local metric_file
 
-  if [[ -n "${CDN_SERVICES[$service]}" ]]; then
+  if [[ -n "${DEVINFRA_SERVICES[$service]}" ]]; then
+    display_name="${DEVINFRA_SERVICES[$service]}"
+    handler_func="${CUSTOM_SERVICES_HANDLERS[$service]}"
+    group="devinfra"
+  elif [[ -n "${CDN_SERVICES[$service]}" ]]; then
     display_name="${CDN_SERVICES[$service]}"
     handler_func="${CUSTOM_SERVICES_HANDLERS[$service]}"
     group="cdn"
@@ -3273,7 +3293,7 @@ run_service_group() {
     fi
 
     case "$group" in
-    custom | cdn)
+    custom | cdn | devinfra)
       is_custom=true
       ;;
     esac
@@ -3294,7 +3314,7 @@ run_service_group_parallel() {
 
   read -ra services_array <<<"$services_string"
 
-  if [[ "$group" == "custom" || "$group" == "cdn" ]]; then
+  if [[ "$group" == "custom" || "$group" == "cdn" || "$group" == "devinfra" ]]; then
     is_custom=true
   fi
 
@@ -3371,7 +3391,7 @@ run_all_services() {
 }
 
 finalize_json() {
-  local t_primary t_custom t_cdn
+  local t_primary t_custom t_cdn t_devinfra
   local IFS=$'\n'
 
   if ((${#ARR_PRIMARY[@]} > 0)); then
@@ -3386,11 +3406,16 @@ finalize_json() {
     t_cdn=$(printf '%s\n' "${ARR_CDN[@]//|||/$'\t'}")
   fi
 
+  if ((${#ARR_DEVINFRA[@]} > 0)); then
+    t_devinfra=$(printf '%s\n' "${ARR_DEVINFRA[@]//|||/$'\t'}")
+  fi
+
   RESULT_JSON=$(
     jq -n \
       --rawfile p <(printf "%s" "$t_primary") \
       --rawfile c <(printf "%s" "$t_custom") \
       --rawfile d <(printf "%s" "$t_cdn") \
+      --rawfile e <(printf "%s" "$t_devinfra") \
       --arg ipv4 "$EXTERNAL_IPV4" \
       --arg ipv6 "$EXTERNAL_IPV6" \
       --arg ipv4_source "$EXTERNAL_IPV4_SOURCE" \
@@ -3455,6 +3480,7 @@ finalize_json() {
         (lines_to_array($p)) as $primary
         | (lines_to_array($c)) as $custom
         | (lines_to_array($d)) as $cdn
+        | (lines_to_array($e)) as $devinfra
         | {
           version: ($version|tonumber),
           ip: {
@@ -3484,7 +3510,8 @@ finalize_json() {
           results: {
             primary: $primary,
             custom:  $custom,
-            cdn:     $cdn
+            cdn:     $cdn,
+            devinfra: $devinfra
           }
         }
       '
@@ -3523,6 +3550,7 @@ add_result() {
   primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   cdn) ARR_CDN+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  devinfra) ARR_DEVINFRA+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
@@ -3545,6 +3573,7 @@ add_result_line() {
   primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   cdn) ARR_CDN+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  devinfra) ARR_DEVINFRA+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
 
@@ -3928,12 +3957,19 @@ print_results() {
     print_table_group "cdn" "CDN"
     print_metrics_group "cdn" "CDN metrics"
     ;;
+  devinfra)
+    print_table_group "devinfra" "Dev Infra"
+    print_metrics_group "devinfra" "Dev Infra metrics"
+    ;;
   *)
     print_table_group "custom" "Popular services"
     print_metrics_group "custom" "Popular service metrics"
     printf "\n"
     print_table_group "cdn" "CDN"
     print_metrics_group "cdn" "CDN metrics"
+    printf "\n"
+    print_table_group "devinfra" "Dev Infra"
+    print_metrics_group "devinfra" "Dev Infra metrics"
     printf "\n"
     print_table_group "primary" "GeoIP services"
     print_metrics_group "primary" "GeoIP service metrics"
@@ -5058,6 +5094,10 @@ lookup_github_raw() {
   lookup_tcp_targets GITHUB_RAW_PROBE_TARGETS
 }
 
+lookup_github_codeload() {
+  lookup_tcp_targets GITHUB_CODELOAD_PROBE_TARGETS
+}
+
 lookup_npm_registry() {
   lookup_tcp_targets NPM_REGISTRY_PROBE_TARGETS
 }
@@ -5424,15 +5464,24 @@ main() {
       run_service_group "cdn"
     fi
     ;;
+  devinfra)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "devinfra"
+    else
+      run_service_group "devinfra"
+    fi
+    ;;
   *)
     if ((PARALLEL_JOBS > 1)); then
       run_service_group_parallel "primary"
       run_service_group_parallel "custom"
       run_service_group_parallel "cdn"
+      run_service_group_parallel "devinfra"
     else
       run_service_group "primary"
       run_service_group "custom"
       run_service_group "cdn"
+      run_service_group "devinfra"
     fi
     ;;
   esac

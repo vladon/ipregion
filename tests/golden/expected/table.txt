@@ -92,8 +92,17 @@
 [1;32mTwitch Chat[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mYandex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMail.ru[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+
+[1;36mCDN[0m
+
+[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
+
+[1;36mDev Infra[0m
+
+[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
 [1;32mGitHub[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mGitHub API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGitHub Codeload[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGitHub Raw[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGitLab[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGitLab API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -101,10 +110,6 @@
 [1;32mPyPI[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDocker Hub[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mHugging Face[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-
-[1;36mCDN[0m
-
-[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
 
 [1;36mGeoIP services[0m
 
