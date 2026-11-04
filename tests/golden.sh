@@ -131,6 +131,9 @@ stub_body() {
   *mail.ru*)
     printf '%s' '<!doctype html><html><head><title>Mail.ru</title></head><body>mail.ru mail</body></html>'
     ;;
+  *github.com*)
+    printf '%s' '<!doctype html><html><head><title>GitHub: Where the world builds software</title></head><body>github Octocat developer platform</body></html>'
+    ;;
   # Primary GeoIP fixtures (all US, iplocation.com CY to exercise its custom handler)
   *geoip.maxmind.com*)
     printf '%s' '{"country":{"iso_code":"US"},"traits":{"autonomous_system_number":64496}}'
@@ -287,6 +290,7 @@ INCLUDED_SERVICES=(
   "TWITCH_SITE"
   "YANDEX"
   "MAIL_RU"
+  "GITHUB"
   # Primary GeoIP group (also rendered by the golden run)
   "MAXMIND"
   "RIPE"

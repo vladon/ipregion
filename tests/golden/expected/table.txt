@@ -69,6 +69,7 @@
 [1;32mTwitch Site[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mYandex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mMail.ru[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mGitHub[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 
 [1;36mCDN[0m
 
