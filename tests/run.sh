@@ -1136,12 +1136,14 @@ clean_out=$(printf '%s' "$out" | sed "s/$(printf '\033')\\[[0-9;]*m//g")
 assert_contains "$clean_out" "✔" "instant result line prints pass symbol"
 assert_contains "$clean_out" "Counter Test: Yes" "instant result line prints service and verdict"
 assert_contains "$out" $'\r\033[K' "instant result line wipes the spinner frame first"
-assert_eq "1" "$(grep -c x "$CHECKS_DONE_FILE")" "counter file increments per check"
+assert_eq "1" "$(grep -c . "$CHECKS_DONE_FILE")" "counter file increments per check"
+assert_contains "1;32" "$(tail -n 1 "$CHECKS_DONE_FILE")" "counter marker carries the verdict color"
 out=$({ add_result "cdn" "Counter Test 2" "No" "Denied" "" ""; } 2>&1)
 clean_out=$(printf '%s' "$out" | sed "s/$(printf '\033')\\[[0-9;]*m//g")
 assert_contains "$clean_out" "✘" "instant result line prints fail symbol"
 assert_contains "$clean_out" "Counter Test 2: No/Denied" "second instant result line prints"
-assert_eq "2" "$(grep -c x "$CHECKS_DONE_FILE")" "counter file increments twice"
+assert_eq "2" "$(grep -c . "$CHECKS_DONE_FILE")" "counter file increments twice"
+assert_contains "1;31" "$(tail -n 1 "$CHECKS_DONE_FILE")" "counter marker switches to the fail color"
 spinner_running=false
 JSON_OUTPUT=false
 out=$({ add_result "cdn" "Counter Quiet" "Yes" "" "" ""; } 2>&1)

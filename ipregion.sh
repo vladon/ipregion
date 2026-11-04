@@ -213,6 +213,7 @@ CHECKS_TOTAL=0
 CHECKS_DONE_FILE=""
 CHECKS_TOTAL_FILE=""
 CHECKS_GROUP_FILE=""
+RUN_START_SECONDS=$SECONDS
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
 ASN_NUMBER=""
@@ -2856,7 +2857,6 @@ spinner_start() {
   # any locale (byte-wise substring slicing would split them under LC_ALL=C)
   local -a spin_frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
   local current_service frame
-  local start_seconds=$SECONDS
   local checks_done=0
 
   SPINNER_SERVICE_FILE=$(mktemp "${TMPDIR:-/tmp}/ipregion_spinner_XXXXXX")
@@ -2875,6 +2875,10 @@ spinner_start() {
         # them or the numeric regex below fails and the count resets to 0
         checks_done=$(wc -l <"$CHECKS_DONE_FILE" 2>/dev/null | tr -d ' ')
         [[ "$checks_done" =~ ^[0-9]+ ]] || checks_done=0
+        # Markers carry the verdict color code: the done counter renders
+        # in the color of the most recent check verdict
+        last_verdict_color=$(tail -n 1 "$CHECKS_DONE_FILE" 2>/dev/null)
+        [[ "$last_verdict_color" =~ ^[0-9]+(;[0-9]+)?$ ]] || last_verdict_color="$COLOR_SERVICE"
         # The total is written by main AFTER this subshell forked, so read
         # it from the file (variable updates do not cross the boundary)
         checks_total=$(cat "$CHECKS_TOTAL_FILE" 2>/dev/null)
@@ -2885,7 +2889,7 @@ spinner_start() {
           current_service="$(cat "$SPINNER_SERVICE_FILE")"
         fi
 
-        local elapsed=$((SECONDS - start_seconds))
+        local elapsed=$((SECONDS - RUN_START_SECONDS))
         local time_str=""
         if ((elapsed > 0)); then
           if ((elapsed >= 60)); then
@@ -2901,7 +2905,8 @@ spinner_start() {
         [[ -n "$time_str" ]] && parts+=("$(color NULL "$time_str")")
         [[ -n "$current_group" ]] && parts+=("$(color HEADER "$current_group")")
         if [[ "$checks_total" =~ ^[0-9]+$ && "$checks_total" -gt 0 ]]; then
-          parts+=("$(color SERVICE "$checks_done")$(color NULL "/$checks_total")")
+          # the done counter renders in the color of the last verdict
+          parts+=("$(color "$last_verdict_color" "$checks_done")$(color NULL "/$checks_total")")
         fi
         [[ -n "$current_service" ]] && parts+=("$(bold "$(color SERVICE "$current_service")")")
 
@@ -3875,6 +3880,14 @@ add_result() {
     # Wipe the spinner frame line first, then print the result in its
     # place - otherwise the frame (which does not end in a newline) and
     # the result line concatenate and the service name shows twice
+    local done_marker_color
+    case "$result_color" in
+    SERVICE) done_marker_color="$COLOR_SERVICE" ;;
+    HEART) done_marker_color="$COLOR_HEART" ;;
+    NULL) done_marker_color="$COLOR_NULL" ;;
+    WARN) done_marker_color="$COLOR_WARN" ;;
+    *) done_marker_color="$COLOR_SERVICE" ;;
+    esac
     printf "\r\033[K%s %s: %s\n" \
       "$(color "$result_color" "$result_symbol")" \
       "$(bold "$(color SERVICE "$service")")" \
@@ -3885,7 +3898,7 @@ add_result() {
         IFS='/'
         printf '%s' "${verdict_parts[*]:-}"
       )" >&2
-    [[ -n "${CHECKS_DONE_FILE:-}" ]] && echo "x" >>"$CHECKS_DONE_FILE"
+    [[ -n "${CHECKS_DONE_FILE:-}" ]] && printf '%s\n' "$done_marker_color" >>"$CHECKS_DONE_FILE"
   fi
 
   if [[ -n "${RESULT_FILE:-}" ]]; then
