@@ -294,8 +294,13 @@ INCLUDED_SERVICES=(
   "MAIL_RU"
   "GITHUB"
   "GITHUB_API"
+  "GITHUB_RAW"
   "GITLAB"
   "GITLAB_API"
+  "NPM_REGISTRY"
+  "PYPI"
+  "DOCKER_HUB"
+  "HUGGING_FACE"
   "STEAM_API"
   "DISCORD_API"
   # Primary GeoIP group (also rendered by the golden run)

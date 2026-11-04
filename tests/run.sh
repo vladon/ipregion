@@ -212,7 +212,7 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU GITHUB GITHUB_API GITLAB GITLAB_API STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU GITHUB GITHUB_API GITLAB GITLAB_API STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API GITHUB_RAW NPM_REGISTRY PYPI DOCKER_HUB HUGGING_FACE; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -739,6 +739,11 @@ assert_eq "Yes" "$(lookup_gitlab_api 4)" "gitlab api maps reachable endpoint to 
 assert_eq "Yes" "$(lookup_steam_api 4)" "steam api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_discord_api 4)" "discord api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_youtube_api 4)" "youtube api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_github_raw 4)" "github raw maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_npm_registry 4)" "npm registry maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_pypi 4)" "pypi maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_docker_hub 4)" "docker hub maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_hugging_face 4)" "hugging face maps reachable endpoint to Yes"
 DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_openai_api 4)" "openai api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_anthropic_api 4)" "anthropic api maps unreachable endpoint to No"
@@ -757,6 +762,11 @@ assert_eq "No" "$(lookup_gitlab_api 4)" "gitlab api maps unreachable endpoint to
 assert_eq "No" "$(lookup_steam_api 4)" "steam api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_discord_api 4)" "discord api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_youtube_api 4)" "youtube api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_github_raw 4)" "github raw maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_npm_registry 4)" "npm registry maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_pypi 4)" "pypi maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_docker_hub 4)" "docker hub maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_hugging_face 4)" "hugging face maps unreachable endpoint to No"
 unset -f tcp_probe dc_probe_stub host_resolves
 unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false
