@@ -1232,6 +1232,15 @@ unset -f curl_wrapper tg_stub_wrapper
 # Spinner counter test needs the marker channel back after monitoring block
 CHECKS_DONE_FILE=""
 
+# --list prints the full check registry, one tab-separated line per check
+list_output=$(bash "$ROOT_DIR/ipregion.sh" --list)
+expected_list_lines=$((${#PRIMARY_SERVICES_ORDER[@]} + ${#CUSTOM_SERVICES_ORDER[@]} + ${#CDN_SERVICES_ORDER[@]} + ${#DEVINFRA_SERVICES_ORDER[@]}))
+assert_eq "$expected_list_lines" "$(printf '%s\n' "$list_output" | grep -c .)" "list prints every registry entry"
+printf '%s\n' "$list_output" | grep -q $'^custom\tGEMINI_NOTEBOOK\tGemini Notebook$' && echo "OK: list carries group/key/display" || {
+  echo "FAIL: list carries group/key/display"
+  failures=$((failures + 1))
+}
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1

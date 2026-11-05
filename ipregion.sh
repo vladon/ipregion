@@ -217,6 +217,7 @@ RUN_START_SECONDS=$SECONDS
 WATCH_INTERVAL=0
 COMPARE_OLD=""
 COMPARE_NEW=""
+LIST_ONLY=false
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
 ASN_NUMBER=""
@@ -1000,6 +1001,7 @@ Options:
   -P, --parallel N     Run up to N services in parallel (default: auto)
   --watch N            Monitoring mode: re-run checks every N seconds and report verdict changes
   --compare OLD NEW    Compare two result JSON files and print verdict changes
+  --list               Print the full check registry (group, key, display) and exit
   --progress-log       Print progress lines instead of spinner
   -4, --ipv4           Test only IPv4
   -6, --ipv6           Test only IPv6
@@ -2045,6 +2047,10 @@ parse_arguments() {
       ;;
     --show-cache)
       CACHE_SHOWN=true
+      shift
+      ;;
+    --list)
+      LIST_ONLY=true
       shift
       ;;
     --include-service)
@@ -6109,6 +6115,31 @@ run_selected_groups() {
   esac
 }
 
+# Prints the full check registry: group, check key, display name -
+# machine-readable (tab-separated), one line per check. Primary
+# registry entries carry "display|domain|url" - display is field one.
+print_check_registry() {
+  local group key display
+  for group in primary custom cdn devinfra; do
+    local -a keys=()
+    case "$group" in
+    primary) keys=("${PRIMARY_SERVICES_ORDER[@]}") ;;
+    custom) keys=("${CUSTOM_SERVICES_ORDER[@]}") ;;
+    cdn) keys=("${CDN_SERVICES_ORDER[@]}") ;;
+    devinfra) keys=("${DEVINFRA_SERVICES_ORDER[@]}") ;;
+    esac
+    for key in "${keys[@]}"; do
+      case "$group" in
+      primary) display="${PRIMARY_SERVICES[$key]%%|*}" ;;
+      custom) display="${CUSTOM_SERVICES[$key]:-}" ;;
+      cdn) display="${CDN_SERVICES[$key]:-}" ;;
+      devinfra) display="${DEVINFRA_SERVICES[$key]:-}" ;;
+      esac
+      printf '%s\t%s\t%s\n' "$group" "$key" "$display"
+    done
+  done
+}
+
 # One "service=v4/v6" line per check from a result JSON
 collect_verdict_lines() {
   local json="$1"
@@ -6212,6 +6243,11 @@ run_monitor_loop() {
 
 main() {
   parse_arguments "$@"
+
+  if [[ "$LIST_ONLY" == true ]]; then
+    print_check_registry
+    exit 0
+  fi
 
   if [[ -n "$COMPARE_OLD" ]]; then
     run_compare "$COMPARE_OLD" "$COMPARE_NEW"

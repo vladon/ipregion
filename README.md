@@ -124,6 +124,211 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 - **Finance**: Stripe API, PayPal, Wise (transport probes)
 - **Dev infra** (`--group devinfra`): GitHub (site + API + Codeload + Raw), GitLab (site + API), npm Registry, PyPI, Docker Hub, Hugging Face
 
+<!-- ipregion:checks-start -->
+
+| Group | Check | Key |
+|---|---|---|
+| primary | maxmind.com | `MAXMIND` |
+| primary | rdap.db.ripe.net | `RIPE` |
+| primary | ipinfo.io | `IPINFO_IO` |
+| primary | cloudflare.com | `CLOUDFLARE` |
+| primary | ipapi.co | `IPAPI_CO` |
+| primary | ifconfig.co | `IFCONFIG_CO` |
+| primary | ip2location.io | `IP2LOCATION_IO` |
+| primary | iplocation.com | `IPLOCATION_COM` |
+| primary | country.is | `COUNTRY_IS` |
+| primary | geojs.io | `GEOJS_IO` |
+| primary | ipapi.is | `IPAPI_IS` |
+| primary | ipbase.com | `IPBASE_COM` |
+| primary | ipquery.io | `IPQUERY_IO` |
+| primary | ipwhois.io | `IPWHOIS_IO` |
+| primary | ipwho.is | `IPWHO_IS` |
+| primary | ip-api.com | `IPAPI_COM` |
+| primary | Detector404 | `DETECTOR404` |
+| primary | ipregistry.co | `IPREGISTRY` |
+| primary | geoapify.com | `GEOAPIFY_COM` |
+| custom | Google | `GOOGLE` |
+| custom | YouTube | `YOUTUBE` |
+| custom | YouTube Premium | `YOUTUBE_PREMIUM` |
+| custom | YouTube Premium (Web) | `YOUTUBE_PREMIUM_WEB` |
+| custom | YouTube API | `YOUTUBE_API` |
+| custom | YouTube Transport | `YOUTUBE_TRANSPORT` |
+| custom | YouTube Music | `YOUTUBE_MUSIC` |
+| custom | Google Search Captcha | `GOOGLE_SEARCH_CAPTCHA` |
+| custom | Google Transport | `GOOGLE_TRANSPORT` |
+| custom | Bing | `BING` |
+| custom | DuckDuckGo | `DUCKDUCKGO` |
+| custom | Brave Search | `BRAVE_SEARCH` |
+| custom | DoH Google | `DOH_GOOGLE` |
+| custom | DoH Cloudflare | `DOH_CLOUDFLARE` |
+| custom | Gmail | `GMAIL` |
+| custom | Google Drive | `GOOGLE_DRIVE` |
+| custom | Google Meet | `GOOGLE_MEET` |
+| custom | Google Photos | `GOOGLE_PHOTOS` |
+| custom | Google Calendar | `GOOGLE_CALENDAR` |
+| custom | Play Store | `PLAY_STORE` |
+| custom | AWS | `AWS` |
+| custom | GCP Console | `GCP_CONSOLE` |
+| custom | Oracle Cloud | `ORACLE_CLOUD` |
+| custom | Google Gemini | `GEMINI` |
+| custom | Gemini Notebook | `GEMINI_NOTEBOOK` |
+| custom | Gemini API | `GEMINI_API` |
+| custom | AI Studio | `AI_STUDIO` |
+| custom | Apple | `APPLE` |
+| custom | Apple Transport | `APPLE_TRANSPORT` |
+| custom | App Store | `APP_STORE` |
+| custom | Apple Music | `APPLE_MUSIC` |
+| custom | Steam | `STEAM` |
+| custom | Steam API | `STEAM_API` |
+| custom | Steam Transport | `STEAM_TRANSPORT` |
+| custom | Tiktok | `TIKTOK` |
+| custom | Ookla Speedtest | `OOKLA_SPEEDTEST` |
+| custom | JetBrains | `JETBRAINS` |
+| custom | PlayStation | `PLAYSTATION` |
+| custom | Microsoft | `MICROSOFT` |
+| custom | Microsoft Transport | `MICROSOFT_TRANSPORT` |
+| custom | Microsoft Teams | `TEAMS` |
+| custom | Outlook | `OUTLOOK` |
+| custom | Azure Portal | `AZURE_PORTAL` |
+| custom | OneDrive | `ONEDRIVE` |
+| custom | Twitch | `TWITCH` |
+| custom | ChatGPT | `CHATGPT` |
+| custom | OpenAI API | `OPENAI_API` |
+| custom | Disney+ | `DISNEY_PLUS` |
+| custom | Disney+ Access | `DISNEY_PLUS_ACCESS` |
+| custom | Reddit Guest Access | `REDDIT_GUEST_ACCESS` |
+| custom | Reddit API | `REDDIT_API` |
+| custom | Claude | `CLAUDE` |
+| custom | Anthropic API | `ANTHROPIC_API` |
+| custom | Reddit | `REDDIT` |
+| custom | Qwen CN API | `QWEN_CN` |
+| custom | Kimi CN API | `KIMI_CN` |
+| custom | GLM CN API | `GLM_CN` |
+| custom | MiniMax CN API | `MINIMAX_CN` |
+| custom | YouTube No Ads | `YOUTUBE_NO_ADS` |
+| custom | Netflix | `NETFLIX` |
+| custom | Netflix Transport | `NETFLIX_TRANSPORT` |
+| custom | Spotify | `SPOTIFY` |
+| custom | Spotify Signup | `SPOTIFY_SIGNUP` |
+| custom | Instagram | `INSTAGRAM` |
+| custom | Instagram API | `INSTAGRAM_API` |
+| custom | Instagram Transport | `INSTAGRAM_TRANSPORT` |
+| custom | TikTok Access | `TIKTOK_ACCESS` |
+| custom | TikTok Transport | `TIKTOK_TRANSPORT` |
+| custom | WhatsApp | `WHATSAPP` |
+| custom | WhatsApp DC | `WHATSAPP_DC` |
+| custom | Telegram Access | `TELEGRAM_ACCESS` |
+| custom | Telegram DC | `TELEGRAM_DC` |
+| custom | Discord Access | `DISCORD_ACCESS` |
+| custom | Discord API | `DISCORD_API` |
+| custom | Discord Gateway | `DISCORD_GATEWAY` |
+| custom | Discord CDN | `DISCORD_CDN` |
+| custom | Twitter (X) | `TWITTER` |
+| custom | X API | `X_API` |
+| custom | Twitter Legacy API | `TWITTER_LEGACY_API` |
+| custom | LinkedIn Access | `LINKEDIN_ACCESS` |
+| custom | LinkedIn API | `LINKEDIN_API` |
+| custom | Facebook Access | `FACEBOOK_ACCESS` |
+| custom | Facebook API | `FACEBOOK_API` |
+| custom | Facebook CDN | `FACEBOOK_CDN` |
+| custom | Messenger Access | `MESSENGER_ACCESS` |
+| custom | Messenger MQTT | `MESSENGER_MQTT` |
+| custom | Viber | `VIBER` |
+| custom | Slack | `SLACK` |
+| custom | Zoom | `ZOOM` |
+| custom | Line | `LINE` |
+| custom | KakaoTalk | `KAKAOTALK` |
+| custom | Threema | `THREEMA` |
+| custom | Threads Access | `THREADS_ACCESS` |
+| custom | Threads API | `THREADS_API` |
+| custom | Threads Transport | `THREADS_TRANSPORT` |
+| custom | Signal Access | `SIGNAL_ACCESS` |
+| custom | Signal Service | `SIGNAL_SERVICE` |
+| custom | Douyin (CN) | `DOUYIN_CN` |
+| custom | WeChat | `WECHAT` |
+| custom | WeChat API | `WECHAT_API` |
+| custom | Baidu | `BAIDU` |
+| custom | Alipay | `ALIPAY` |
+| custom | VK | `VK` |
+| custom | VK API | `VK_API` |
+| custom | OK | `OK_RU` |
+| custom | OK API | `OK_API` |
+| custom | RUTUBE Transport | `RUTUBE_TRANSPORT` |
+| custom | Ozon Transport | `OZON_TRANSPORT` |
+| custom | Grok | `GROK` |
+| custom | xAI API | `XAI_API` |
+| custom | DeepSeek | `DEEPSEEK` |
+| custom | DeepSeek API | `DEEPSEEK_API` |
+| custom | Perplexity | `PERPLEXITY` |
+| custom | Perplexity API | `PERPLEXITY_API` |
+| custom | Copilot | `COPILOT` |
+| custom | Mistral | `MISTRAL` |
+| custom | Mistral API | `MISTRAL_API` |
+| custom | Groq API | `GROQ_API` |
+| custom | OpenRouter | `OPENROUTER` |
+| custom | Cohere API | `COHERE_API` |
+| custom | ElevenLabs API | `ELEVENLABS_API` |
+| custom | Qwen Web | `QWEN_WEB` |
+| custom | DeepL | `DEEPL` |
+| custom | Character.AI | `CHARACTER_AI` |
+| custom | Poe | `POE` |
+| custom | Google Translate | `GOOGLE_TRANSLATE` |
+| custom | Peacock Access | `PEACOCK_ACCESS` |
+| custom | Bluesky | `BLUESKY` |
+| custom | Snapchat | `SNAPCHAT` |
+| custom | Pinterest | `PINTEREST` |
+| custom | Truth Social | `TRUTH_SOCIAL` |
+| custom | Weibo | `WEIBO` |
+| custom | Bilibili | `BILIBILI` |
+| custom | NetEase Music | `NETEASE_MUSIC` |
+| custom | Twitch Site | `TWITCH_SITE` |
+| custom | Twitch API | `TWITCH_API` |
+| custom | Twitch Chat | `TWITCH_CHAT` |
+| custom | Yandex | `YANDEX` |
+| custom | Mail.ru | `MAIL_RU` |
+| custom | Proton | `PROTON` |
+| custom | Dropbox | `DROPBOX` |
+| custom | MEGA | `MEGA` |
+| custom | Epic Games | `EPIC_GAMES` |
+| custom | Battle.net | `BATTLE_NET` |
+| custom | Minecraft Session | `MINECRAFT_SESSION` |
+| custom | Roblox | `ROBLOX` |
+| custom | Roblox API | `ROBLOX_API` |
+| custom | Riot Games | `RIOT` |
+| custom | Xbox | `XBOX` |
+| custom | Stripe API | `STRIPE_API` |
+| custom | PayPal | `PAYPAL` |
+| custom | Wise | `WISE` |
+| custom | Notion | `NOTION` |
+| custom | Figma | `FIGMA` |
+| custom | Miro | `MIRO` |
+| custom | Canva | `CANVA` |
+| custom | Trello | `TRELLO` |
+| custom | Medium | `MEDIUM` |
+| custom | Wikipedia | `WIKIPEDIA` |
+| custom | Stack Overflow | `STACK_OVERFLOW` |
+| custom | Habr | `HABR` |
+| custom | SoundCloud | `SOUNDCLOUD` |
+| custom | Deezer | `DEEZER` |
+| cdn | YouTube CDN | `YOUTUBE_CDN` |
+| cdn | Cloudflare CDN | `CLOUDFLARE_CDN` |
+| cdn | Netflix CDN | `NETFLIX_CDN` |
+| devinfra | GitHub | `GITHUB` |
+| devinfra | GitHub API | `GITHUB_API` |
+| devinfra | GitHub Codeload | `GITHUB_CODELOAD` |
+| devinfra | GitHub Raw | `GITHUB_RAW` |
+| devinfra | GitLab | `GITLAB` |
+| devinfra | GitLab API | `GITLAB_API` |
+| devinfra | npm Registry | `NPM_REGISTRY` |
+| devinfra | PyPI | `PYPI` |
+| devinfra | Docker Hub | `DOCKER_HUB` |
+| devinfra | Hugging Face | `HUGGING_FACE` |
+
+Total: 195 checks.
+<!-- ipregion:checks-end -->
+<!-- ipregion:checks-end -->
+<!-- ipregion:checks-end -->
+
 ### CDN nodes (group cdn)
 
 YouTube CDN, Cloudflare CDN, Netflix CDN — Google/Cloudflare/Netflix edge node detection (`--group cdn`).
