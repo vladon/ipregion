@@ -26,6 +26,9 @@
 [1;32mAWS[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGCP Console[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOracle Cloud[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mHetzner[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mDigitalOcean[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mVultr[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGemini Notebook[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGemini API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mAI Studio[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -72,6 +75,9 @@
 [1;32mLine[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mKakaoTalk[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreema[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mMatrix[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mntfy[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mTelegram Bot API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mThreads API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
@@ -160,6 +166,10 @@
 [1;32mnpm Registry[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mPyPI[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDocker Hub[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mDocker Hub API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGo Modules[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mCrates.io[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mMaven Central[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mHugging Face[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 
 [1;36mGeoIP services[0m

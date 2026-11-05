@@ -214,11 +214,11 @@ CHATGPT_TEST_FRAGMENT=$(grep_wrapper -oE '"derived_fields":\{[^}]*\}' <<<"$CHATG
 assert_eq '{"country":"US","region":"us-east"}' "${CHATGPT_TEST_FRAGMENT#"$CHATGPT_DERIVED_FIELDS_PREFIX"}" "chatgpt derived_fields fragment extracted and prefix stripped"
 
 # Ported upstream services: registry completeness
-for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB GEMINI_NOTEBOOK PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API BING DUCKDUCKGO BRAVE_SEARCH TWITCH_API TWITCH_CHAT FACEBOOK_CDN GROQ_API OPENROUTER COHERE_API ELEVENLABS_API TEAMS OUTLOOK AZURE_PORTAL VIBER SLACK ZOOM LINE DOH_GOOGLE DOH_CLOUDFLARE GMAIL GOOGLE_DRIVE PLAY_STORE APP_STORE AWS GCP_CONSOLE ORACLE_CLOUD ONEDRIVE WECHAT BAIDU ALIPAY PROTON DROPBOX MEGA EPIC_GAMES BATTLE_NET MINECRAFT_SESSION ROBLOX ROBLOX_API RIOT XBOX STRIPE_API PAYPAL WISE GEMINI_API AI_STUDIO GOOGLE_MEET GOOGLE_PHOTOS GOOGLE_CALENDAR YOUTUBE_MUSIC APPLE_MUSIC SOUNDCLOUD DEEZER DISCORD_CDN WECHAT_API KAKAOTALK THREEMA NOTION FIGMA MIRO CANVA TRELLO MEDIUM WIKIPEDIA STACK_OVERFLOW HABR DEEPL CHARACTER_AI POE GOOGLE_TRANSLATE; do
+for service_key in TWITCH CHATGPT DISNEY_PLUS DISNEY_PLUS_ACCESS REDDIT_GUEST_ACCESS NETFLIX NETFLIX_TRANSPORT SPOTIFY SPOTIFY_SIGNUP INSTAGRAM INSTAGRAM_API INSTAGRAM_TRANSPORT TIKTOK_ACCESS TIKTOK_TRANSPORT WHATSAPP WHATSAPP_DC TELEGRAM_ACCESS TELEGRAM_DC DISCORD_ACCESS DISCORD_GATEWAY GOOGLE_SEARCH_CAPTCHA GOOGLE_TRANSPORT TWITTER LINKEDIN_ACCESS YOUTUBE_PREMIUM_WEB YOUTUBE_TRANSPORT APPLE APPLE_TRANSPORT FACEBOOK_ACCESS FACEBOOK_API MESSENGER_ACCESS MESSENGER_MQTT THREADS_ACCESS THREADS_API THREADS_TRANSPORT SIGNAL_ACCESS SIGNAL_SERVICE MICROSOFT MICROSOFT_TRANSPORT STEAM STEAM_TRANSPORT RUTUBE_TRANSPORT OZON_TRANSPORT DOUYIN_CN VK VK_API OK_RU GROK DEEPSEEK PERPLEXITY COPILOT MISTRAL QWEN_WEB GEMINI_NOTEBOOK PEACOCK_ACCESS OPENAI_API ANTHROPIC_API XAI_API DEEPSEEK_API PERPLEXITY_API MISTRAL_API REDDIT_API OK_API LINKEDIN_API X_API BLUESKY SNAPCHAT PINTEREST TRUTH_SOCIAL WEIBO BILIBILI NETEASE_MUSIC TWITCH_SITE YANDEX MAIL_RU STEAM_API DISCORD_API TWITTER_LEGACY_API YOUTUBE_API BING DUCKDUCKGO BRAVE_SEARCH TWITCH_API TWITCH_CHAT FACEBOOK_CDN GROQ_API OPENROUTER COHERE_API ELEVENLABS_API TEAMS OUTLOOK AZURE_PORTAL VIBER SLACK ZOOM LINE DOH_GOOGLE DOH_CLOUDFLARE GMAIL GOOGLE_DRIVE PLAY_STORE APP_STORE AWS GCP_CONSOLE ORACLE_CLOUD ONEDRIVE WECHAT BAIDU ALIPAY PROTON DROPBOX MEGA EPIC_GAMES BATTLE_NET MINECRAFT_SESSION ROBLOX ROBLOX_API RIOT XBOX STRIPE_API PAYPAL WISE GEMINI_API AI_STUDIO GOOGLE_MEET GOOGLE_PHOTOS GOOGLE_CALENDAR YOUTUBE_MUSIC APPLE_MUSIC SOUNDCLOUD DEEZER DISCORD_CDN WECHAT_API KAKAOTALK THREEMA NOTION FIGMA MIRO CANVA TRELLO MEDIUM WIKIPEDIA STACK_OVERFLOW HABR DEEPL CHARACTER_AI POE GOOGLE_TRANSLATE HETZNER DIGITALOCEAN VULTR MATRIX NTFY TELEGRAM_BOT_API; do
   assert_true "custom registry defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}"
   assert_true "custom handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
-for service_key in GITHUB GITHUB_API GITHUB_CODELOAD GITHUB_RAW GITLAB GITLAB_API NPM_REGISTRY PYPI DOCKER_HUB HUGGING_FACE; do
+for service_key in GITHUB GITHUB_API GITHUB_CODELOAD GITHUB_RAW GITLAB GITLAB_API NPM_REGISTRY PYPI DOCKER_HUB DOCKER_HUB_API GO_MODULES CRATES_IO MAVEN_CENTRAL HUGGING_FACE; do
   assert_true "devinfra registry defines $service_key" test -n "${DEVINFRA_SERVICES[$service_key]:-}"
   assert_true "devinfra handler defined for $service_key" test -n "${CUSTOM_SERVICES_HANDLERS[$service_key]:-}"
 done
@@ -1044,6 +1044,17 @@ assert_eq "Yes" "$(lookup_roblox_api 4)" "roblox api maps reachable endpoint to 
 assert_eq "Yes" "$(lookup_wechat_api 4)" "wechat api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_kakaotalk 4)" "kakaotalk maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_threema 4)" "threema maps reachable endpoint to Yes"
+DC_PROBE_MODE="up"
+assert_eq "Yes" "$(lookup_docker_hub_api 4)" "docker hub api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_go_modules 4)" "go modules maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_crates_io 4)" "crates io maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_maven_central 4)" "maven central maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_hetzner 4)" "hetzner maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_digitalocean 4)" "digitalocean maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_vultr 4)" "vultr maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_matrix 4)" "matrix maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_ntfy 4)" "ntfy maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_telegram_bot_api 4)" "telegram bot api maps reachable endpoint to Yes"
 DC_PROBE_MODE="down"
 assert_eq "No" "$(lookup_openai_api 4)" "openai api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_anthropic_api 4)" "anthropic api maps unreachable endpoint to No"
@@ -1121,13 +1132,24 @@ assert_eq "No" "$(lookup_roblox_api 4)" "roblox api maps unreachable endpoint to
 assert_eq "No" "$(lookup_wechat_api 4)" "wechat api maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_kakaotalk 4)" "kakaotalk maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_threema 4)" "threema maps unreachable endpoint to No"
+DC_PROBE_MODE="down"
+assert_eq "No" "$(lookup_docker_hub_api 4)" "docker hub api maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_go_modules 4)" "go modules maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_crates_io 4)" "crates io maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_maven_central 4)" "maven central maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_hetzner 4)" "hetzner maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_digitalocean 4)" "digitalocean maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_vultr 4)" "vultr maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_matrix 4)" "matrix maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_ntfy 4)" "ntfy maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_telegram_bot_api 4)" "telegram bot api maps unreachable endpoint to No"
 unset -f tcp_probe dc_probe_stub host_resolves
 unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
-assert_eq "10" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
+assert_eq "14" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true
 JSON_OUTPUT=true

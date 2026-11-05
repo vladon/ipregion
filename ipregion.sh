@@ -151,6 +151,18 @@ ROBLOX_API_PROBE_TARGETS=("apis.roblox.com:443")
 WECHAT_API_PROBE_TARGETS=("weixin.qq.com:443")
 KAKAOTALK_PROBE_TARGETS=("kakao.com:443")
 THREEMA_PROBE_TARGETS=("threema.ch:443")
+# Dev-ops registries and hosting/cloud provider transports
+DOCKER_HUB_API_PROBE_TARGETS=("hub.docker.com:443")
+GO_MODULES_PROBE_TARGETS=("proxy.golang.org:443")
+CRATES_IO_PROBE_TARGETS=("crates.io:443")
+MAVEN_CENTRAL_PROBE_TARGETS=("repo.maven.apache.org:443")
+HETZNER_PROBE_TARGETS=("hetzner.com:443")
+DIGITALOCEAN_PROBE_TARGETS=("api.digitalocean.com:443")
+VULTR_PROBE_TARGETS=("api.vultr.com:443")
+# Decentralized chat, push notifications, bot infrastructure
+MATRIX_PROBE_TARGETS=("matrix.org:443")
+NTFY_PROBE_TARGETS=("ntfy.sh:443")
+TELEGRAM_BOT_API_PROBE_TARGETS=("api.telegram.org:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -350,6 +362,9 @@ declare -A CUSTOM_SERVICES=(
   [AWS]="AWS"
   [GCP_CONSOLE]="GCP Console"
   [ORACLE_CLOUD]="Oracle Cloud"
+  [HETZNER]="Hetzner"
+  [DIGITALOCEAN]="DigitalOcean"
+  [VULTR]="Vultr"
   [GEMINI]="Google Gemini"
   [GEMINI_NOTEBOOK]="Gemini Notebook"
   [GEMINI_API]="Gemini API"
@@ -419,6 +434,9 @@ declare -A CUSTOM_SERVICES=(
   [LINE]="Line"
   [KAKAOTALK]="KakaoTalk"
   [THREEMA]="Threema"
+  [MATRIX]="Matrix"
+  [NTFY]="ntfy"
+  [TELEGRAM_BOT_API]="Telegram Bot API"
   [THREADS_ACCESS]="Threads Access"
   [THREADS_API]="Threads API"
   [THREADS_TRANSPORT]="Threads Transport"
@@ -516,6 +534,9 @@ CUSTOM_SERVICES_ORDER=(
   "AWS"
   "GCP_CONSOLE"
   "ORACLE_CLOUD"
+  "HETZNER"
+  "DIGITALOCEAN"
+  "VULTR"
   "GEMINI"
   "GEMINI_NOTEBOOK"
   "GEMINI_API"
@@ -585,6 +606,9 @@ CUSTOM_SERVICES_ORDER=(
   "LINE"
   "KAKAOTALK"
   "THREEMA"
+  "MATRIX"
+  "NTFY"
+  "TELEGRAM_BOT_API"
   "THREADS_ACCESS"
   "THREADS_API"
   "THREADS_TRANSPORT"
@@ -686,6 +710,10 @@ declare -A DEVINFRA_SERVICES=(
   [NPM_REGISTRY]="npm Registry"
   [PYPI]="PyPI"
   [DOCKER_HUB]="Docker Hub"
+  [DOCKER_HUB_API]="Docker Hub API"
+  [GO_MODULES]="Go Modules"
+  [CRATES_IO]="Crates.io"
+  [MAVEN_CENTRAL]="Maven Central"
   [HUGGING_FACE]="Hugging Face"
 )
 
@@ -699,6 +727,10 @@ DEVINFRA_SERVICES_ORDER=(
   "NPM_REGISTRY"
   "PYPI"
   "DOCKER_HUB"
+  "DOCKER_HUB_API"
+  "GO_MODULES"
+  "CRATES_IO"
+  "MAVEN_CENTRAL"
   "HUGGING_FACE"
 )
 
@@ -726,6 +758,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [AWS]="lookup_aws"
   [GCP_CONSOLE]="lookup_gcp_console"
   [ORACLE_CLOUD]="lookup_oracle_cloud"
+  [HETZNER]="lookup_hetzner"
+  [DIGITALOCEAN]="lookup_digitalocean"
+  [VULTR]="lookup_vultr"
   [GEMINI]="lookup_gemini"
   [GEMINI_NOTEBOOK]="lookup_gemini_notebook"
   [GEMINI_API]="lookup_gemini_api"
@@ -798,6 +833,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [LINE]="lookup_line"
   [KAKAOTALK]="lookup_kakaotalk"
   [THREEMA]="lookup_threema"
+  [MATRIX]="lookup_matrix"
+  [NTFY]="lookup_ntfy"
+  [TELEGRAM_BOT_API]="lookup_telegram_bot_api"
   [THREADS_ACCESS]="lookup_threads_access"
   [THREADS_API]="lookup_threads_api"
   [THREADS_TRANSPORT]="lookup_threads_transport"
@@ -867,6 +905,10 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [NPM_REGISTRY]="lookup_npm_registry"
   [PYPI]="lookup_pypi"
   [DOCKER_HUB]="lookup_docker_hub"
+  [DOCKER_HUB_API]="lookup_docker_hub_api"
+  [GO_MODULES]="lookup_go_modules"
+  [CRATES_IO]="lookup_crates_io"
+  [MAVEN_CENTRAL]="lookup_maven_central"
   [HUGGING_FACE]="lookup_hugging_face"
   [NOTION]="lookup_notion"
   [FIGMA]="lookup_figma"
@@ -5854,6 +5896,46 @@ lookup_kakaotalk() {
 
 lookup_threema() {
   lookup_tcp_targets THREEMA_PROBE_TARGETS
+}
+
+lookup_docker_hub_api() {
+  lookup_tcp_targets DOCKER_HUB_API_PROBE_TARGETS
+}
+
+lookup_go_modules() {
+  lookup_tcp_targets GO_MODULES_PROBE_TARGETS
+}
+
+lookup_crates_io() {
+  lookup_tcp_targets CRATES_IO_PROBE_TARGETS
+}
+
+lookup_maven_central() {
+  lookup_tcp_targets MAVEN_CENTRAL_PROBE_TARGETS
+}
+
+lookup_hetzner() {
+  lookup_tcp_targets HETZNER_PROBE_TARGETS
+}
+
+lookup_digitalocean() {
+  lookup_tcp_targets DIGITALOCEAN_PROBE_TARGETS
+}
+
+lookup_vultr() {
+  lookup_tcp_targets VULTR_PROBE_TARGETS
+}
+
+lookup_matrix() {
+  lookup_tcp_targets MATRIX_PROBE_TARGETS
+}
+
+lookup_ntfy() {
+  lookup_tcp_targets NTFY_PROBE_TARGETS
+}
+
+lookup_telegram_bot_api() {
+  lookup_tcp_targets TELEGRAM_BOT_API_PROBE_TARGETS
 }
 
 lookup_github_api() {
