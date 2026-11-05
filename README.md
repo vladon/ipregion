@@ -26,6 +26,26 @@ bash ipregion.sh
 
 All releases: https://github.com/vladon/ipregion/releases
 
+### Monitoring mode
+
+Re-run checks on an interval and print only verdict changes:
+
+```bash
+ipregion.sh --watch 300
+```
+
+Optionally push changes to a Telegram bot via environment variables:
+
+```bash
+IPREGION_TG_BOT_TOKEN=123:ABC IPREGION_TG_CHAT_ID=42 ipregion.sh --watch 300
+```
+
+Compare two saved result files without running checks:
+
+```bash
+ipregion.sh --compare yesterday.json today.json
+```
+
 ## Features
 
 - 194 checks in four groups: GeoIP sources (19), popular services (162), dev infra (10) and CDN nodes (3)

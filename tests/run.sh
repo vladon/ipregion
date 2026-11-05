@@ -1181,6 +1181,57 @@ spinner_stop
 rm -f "$SPINNER_SERVICE_FILE"
 SPINNER_SERVICE_FILE=""
 
+# Monitoring kit: verdict line collection, diffing, compare, telegram
+collect_verdict_lines '{"results":{"primary":[{"service":"Alpha","ipv4":"Yes","ipv6":"Yes"}],"custom":[{"service":"Beta","ipv4":"No","ipv6":"Denied"}],"cdn":[],"devinfra":[{"service":"Gamma","ipv4":"N/A","ipv6":"Yes"}]}}' >/tmp/mk_lines.txt
+grep -q "^Alpha=Yes/Yes$" /tmp/mk_lines.txt && grep -q "^Beta=No/Denied$" /tmp/mk_lines.txt && grep -q "^Gamma=N\/A/Yes$" /tmp/mk_lines.txt && echo "OK: verdict lines collected" || {
+  echo "FAIL: verdict lines collected"
+  failures=$((failures + 1))
+}
+
+mk_changes=$(compute_verdict_changes "Alpha=Yes/Yes
+Beta=No/Denied" "Alpha=Yes/Yes
+Beta=Yes/Yes
+Gamma=Yes/-")
+assert_contains "$mk_changes" "Beta: No/Denied → Yes/Yes" "watch diff reports changed verdicts"
+assert_contains "$mk_changes" "+ Gamma: Yes/-" "watch diff reports new checks"
+
+mk_changes=$(compute_verdict_changes "Alpha=Yes/Yes
+Beta=Yes/Yes" "Alpha=Yes/Yes")
+assert_contains "$mk_changes" "- Beta: Yes/Yes" "watch diff reports removed checks"
+mk_changes=$(compute_verdict_changes "Alpha=Yes/Yes" "Alpha=Yes/Yes")
+assert_empty "$mk_changes" "watch diff is empty without changes"
+
+# --compare over two result JSON files
+old_json='{"results":{"primary":[],"custom":[{"service":"GitHub","ipv4":"Yes","ipv6":"Yes"}],"cdn":[],"devinfra":[]}}'
+new_json='{"results":{"primary":[],"custom":[{"service":"GitHub","ipv4":"No","ipv6":"Yes"}],"cdn":[],"devinfra":[]}}'
+echo "$old_json" >"${TMPDIR:-/tmp}/ipregion_cmp_old.json"
+echo "$new_json" >"${TMPDIR:-/tmp}/ipregion_cmp_new.json"
+mk_changes=$(run_compare "${TMPDIR:-/tmp}/ipregion_cmp_old.json" "${TMPDIR:-/tmp}/ipregion_cmp_new.json")
+assert_contains "$mk_changes" "~ GitHub: Yes/Yes → No/Yes" "run_compare reports verdict change"
+rm -f "${TMPDIR:-/tmp}/ipregion_cmp_old.json" "${TMPDIR:-/tmp}/ipregion_cmp_new.json"
+
+# Telegram notify sends the change text to the bot API
+tg_capture_file=$(mktemp)
+tg_stub_wrapper() {
+  printf '%s' "$*" >"$tg_capture_file"
+}
+curl_wrapper() { tg_stub_wrapper "$@"; }
+IPREGION_TG_BOT_TOKEN="123:ABC"
+IPREGION_TG_CHAT_ID="42"
+telegram_send_message "ipregion changes"
+unset IPREGION_TG_BOT_TOKEN IPREGION_TG_CHAT_ID
+assert_contains "$(cat "$tg_capture_file")" "api.telegram.org/bot123:ABC/sendMessage" "telegram notify hits bot API"
+assert_contains "$(cat "$tg_capture_file")" "chat_id=42" "telegram notify carries chat id"
+assert_contains "$(cat "$tg_capture_file")" "text=ipregion changes" "telegram notify carries text"
+# No credentials - silently no-op
+out=$({ telegram_send_message "x"; } 2>&1)
+assert_empty "$out" "telegram notify no-ops without credentials"
+rm -f "$tg_capture_file"
+unset -f curl_wrapper tg_stub_wrapper
+
+# Spinner counter test needs the marker channel back after monitoring block
+CHECKS_DONE_FILE=""
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
