@@ -1919,6 +1919,15 @@ count_group_checks() {
   echo "$count"
 }
 
+# Removes temp files left behind by runs that died before their cleanup
+# traps could run (SIGKILL, dropped SSH sessions). Files newer than 24h
+# are kept: a concurrent instance may still be using them.
+cleanup_stale_temp_files() {
+  local tmp_dir="${TMPDIR:-/tmp}"
+  find "$tmp_dir" -maxdepth 1 -user "$(id -un)" -name 'ipregion_*' -type f -mmin +1440 -exec rm -f {} + 2>/dev/null || true
+  find "$tmp_dir" -maxdepth 1 -user "$(id -un)" -name 'ipregion_parallel_*' -type d -mmin +1440 -exec rm -rf {} + 2>/dev/null || true
+}
+
 parse_arguments() {
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -2869,6 +2878,10 @@ spinner_start() {
 
   (
     while $spinner_running; do
+      # Self-termination sentinel: when the parent's cleanup removed the
+      # service file (or the parent died without cleanup and a later run
+      # swept the stale files), stop spinning instead of looping forever.
+      [[ -f "$SPINNER_SERVICE_FILE" ]] || break
       for frame in "${spin_frames[@]}"; do
         current_service=""
         # BSD wc pads its output with spaces even for stdin reads - strip
@@ -2933,9 +2946,10 @@ spinner_stop() {
 
   if [[ -n "${spinner_pid:-}" ]]; then
     # The rendering subshell may already have died from an INT delivered
-    # to the whole process group; kill and reap unconditionally.
-    kill "$spinner_pid" 2>/dev/null
-    wait "$spinner_pid" 2>/dev/null
+    # to the whole process group - or been reaped by an earlier wait;
+    # kill and reap unconditionally (errors are harmless here).
+    kill "$spinner_pid" 2>/dev/null || true
+    wait "$spinner_pid" 2>/dev/null || true
     spinner_pid=""
   fi
 
@@ -6025,7 +6039,10 @@ main() {
   setup_debug
 
   trap cleanup_on_exit EXIT
-  trap cleanup_on_interrupt INT TERM
+  trap cleanup_on_interrupt INT TERM HUP
+
+  # Best-effort sweep of temp files from earlier crashed runs
+  cleanup_stale_temp_files
 
   if ((PARALLEL_JOBS <= 0)); then
     PARALLEL_JOBS=$(detect_parallel_jobs)
