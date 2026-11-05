@@ -17,6 +17,15 @@ chmod +x ipregion.sh
 bash <(wget -qO- https://ipregion.vladon.sh)
 ```
 
+### Run a pinned release
+
+```bash
+wget -qO ipregion.sh https://github.com/vladon/ipregion/releases/latest/download/ipregion.sh
+bash ipregion.sh
+```
+
+All releases: https://github.com/vladon/ipregion/releases
+
 ## Features
 
 - 194 checks in four groups: GeoIP sources (19), popular services (162), dev infra (10) and CDN nodes (3)
