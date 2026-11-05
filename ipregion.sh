@@ -227,6 +227,7 @@ CHECKS_TOTAL_FILE=""
 CHECKS_GROUP_FILE=""
 RUN_START_SECONDS=$SECONDS
 WATCH_INTERVAL=0
+ONLY_CHANGES=false
 COMPARE_OLD=""
 COMPARE_NEW=""
 LIST_ONLY=false
@@ -1042,6 +1043,7 @@ Options:
   -t, --timeout SEC    Set curl request timeout in seconds (default: $CURL_TIMEOUT)
   -P, --parallel N     Run up to N services in parallel (default: auto)
   --watch N            Monitoring mode: re-run checks every N seconds and report verdict changes
+  --only-changes       With --watch: skip tables and header, print only verdict changes
   --compare OLD NEW    Compare two result JSON files and print verdict changes
   --list               Print the full check registry (group, key, display) and exit
   --progress-log       Print progress lines instead of spinner
@@ -2017,6 +2019,10 @@ parse_arguments() {
         error_exit "Invalid timeout value: $2. Timeout must be a positive integer"
       fi
       shift 2
+      ;;
+    --only-changes)
+      ONLY_CHANGES=true
+      shift
       ;;
     --watch)
       WATCH_INTERVAL="${2:-}"
@@ -6306,6 +6312,7 @@ run_compare() {
 # via IPREGION_TG_BOT_TOKEN / IPREGION_TG_CHAT_ID).
 run_monitor_loop() {
   local prev_verdicts next_verdicts changes
+  finalize_json
   prev_verdicts=$(collect_verdict_lines "$RESULT_JSON")
 
   while true; do
@@ -6352,6 +6359,10 @@ main() {
 
   setup_debug
 
+  if [[ "$ONLY_CHANGES" == true && "$WATCH_INTERVAL" == 0 ]]; then
+    error_exit "--only-changes requires --watch N"
+  fi
+
   trap cleanup_on_exit EXIT
   trap cleanup_on_interrupt INT TERM HUP
 
@@ -6395,7 +6406,7 @@ main() {
   load_registered_countries
   get_asn
 
-  if [[ "$JSON_OUTPUT" != "true" ]]; then
+  if [[ "$JSON_OUTPUT" != "true" && "$ONLY_CHANGES" != true ]]; then
     local restart_spinner=false
     if [[ "$spinner_running" == true ]]; then
       restart_spinner=true
@@ -6435,11 +6446,13 @@ main() {
       "Rendering results..." >&2
   fi
 
-  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true ]]; then
+  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && "$ONLY_CHANGES" != true ]]; then
     spinner_stop
   fi
 
-  print_results
+  if [[ "$ONLY_CHANGES" != true ]]; then
+    print_results
+  fi
 
   if ((WATCH_INTERVAL > 0)); then
     run_monitor_loop

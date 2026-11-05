@@ -1254,6 +1254,10 @@ unset -f curl_wrapper tg_stub_wrapper
 # Spinner counter test needs the marker channel back after monitoring block
 CHECKS_DONE_FILE=""
 
+# --only-changes requires --watch
+oc_err=$(bash "$ROOT_DIR/ipregion.sh" --only-changes 2>&1 || true)
+assert_contains "$oc_err" "requires --watch" "only-changes without watch errors"
+
 # --list prints the full check registry, one tab-separated line per check
 list_output=$(bash "$ROOT_DIR/ipregion.sh" --list)
 expected_list_lines=$((${#PRIMARY_SERVICES_ORDER[@]} + ${#CUSTOM_SERVICES_ORDER[@]} + ${#CDN_SERVICES_ORDER[@]} + ${#DEVINFRA_SERVICES_ORDER[@]}))
