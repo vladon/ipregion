@@ -1152,6 +1152,35 @@ rm -f "$CHECKS_DONE_FILE"
 CHECKS_DONE_FILE=""
 unset out clean_out
 
+# Stale temp file sweep: killed runs leave ipregion_* files behind; the
+# sweep removes files older than 24h and keeps fresh ones
+STALE_TMP="${TMPDIR:-/tmp}/ipregion_stale_unit_test"
+FRESH_TMP="${TMPDIR:-/tmp}/ipregion_fresh_unit_test"
+echo junk >"$STALE_TMP"
+touch -t 202001010000 "$STALE_TMP"
+echo junk >"$FRESH_TMP"
+cleanup_stale_temp_files
+assert_false "stale temp file swept" test -f "$STALE_TMP"
+assert_true "fresh temp file kept" test -f "$FRESH_TMP"
+rm -f "$STALE_TMP" "$FRESH_TMP"
+
+# The spinner rendering subshell self-terminates when its service file
+# is removed (orphaned-subshell protection)
+spinner_start
+sleep 0.3
+rm -f "$SPINNER_SERVICE_FILE"
+# The sentinel is checked once per frame rotation (0.4s) - poll instead
+# of sleeping a fixed interval
+silenced_kill() { kill -0 "$1" 2>/dev/null; }
+for _ in $(seq 1 20); do
+  silenced_kill "$spinner_pid" || break
+  sleep 0.1
+done
+assert_false "spinner subshell self-terminates after cleanup" silenced_kill "$spinner_pid"
+spinner_stop
+rm -f "$SPINNER_SERVICE_FILE"
+SPINNER_SERVICE_FILE=""
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
