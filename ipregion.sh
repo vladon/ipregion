@@ -214,6 +214,9 @@ CHECKS_DONE_FILE=""
 CHECKS_TOTAL_FILE=""
 CHECKS_GROUP_FILE=""
 RUN_START_SECONDS=$SECONDS
+WATCH_INTERVAL=0
+COMPARE_OLD=""
+COMPARE_NEW=""
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
 ASN_NUMBER=""
@@ -995,6 +998,8 @@ Options:
   -g, --group GROUP    Run only one group: 'primary', 'custom', 'cdn', 'devinfra', or 'all' (default: all)
   -t, --timeout SEC    Set curl request timeout in seconds (default: $CURL_TIMEOUT)
   -P, --parallel N     Run up to N services in parallel (default: auto)
+  --watch N            Monitoring mode: re-run checks every N seconds and report verdict changes
+  --compare OLD NEW    Compare two result JSON files and print verdict changes
   --progress-log       Print progress lines instead of spinner
   -4, --ipv4           Test only IPv4
   -6, --ipv6           Test only IPv6
@@ -1968,6 +1973,21 @@ parse_arguments() {
         error_exit "Invalid timeout value: $2. Timeout must be a positive integer"
       fi
       shift 2
+      ;;
+    --watch)
+      WATCH_INTERVAL="${2:-}"
+      if ! [[ "$WATCH_INTERVAL" =~ ^[1-9][0-9]*$ ]]; then
+        error_exit "Invalid watch interval: ${WATCH_INTERVAL:-missing}. Must be a positive integer (seconds)"
+      fi
+      shift 2
+      ;;
+    --compare)
+      COMPARE_OLD="${2:-}"
+      COMPARE_NEW="${3:-}"
+      if [[ -z "$COMPARE_OLD" || -z "$COMPARE_NEW" ]]; then
+        error_exit "--compare requires two files: --compare OLD.json NEW.json"
+      fi
+      shift 3
       ;;
     -P | --parallel)
       if [[ "$2" =~ ^[0-9]+$ ]] && ((10#$2 >= 1)); then
@@ -6019,8 +6039,184 @@ lookup_youtube_no_ads() {
   fi
 }
 
+# Runs the checks for the groups selected via --group: resets per-run
+# accumulators, publishes the planned total, dispatches all groups.
+run_selected_groups() {
+  ARR_PRIMARY=()
+  ARR_CUSTOM=()
+  ARR_CDN=()
+  ARR_DEVINFRA=()
+  [[ -n "${CHECKS_DONE_FILE:-}" ]] && : >"$CHECKS_DONE_FILE"
+
+  if [[ "$JSON_OUTPUT" != "true" && "$PROGRESS_LOG" != true ]]; then
+    local selected_groups total_group
+    case "$GROUPS_TO_SHOW" in
+    primary) selected_groups=(primary) ;;
+    custom) selected_groups=(custom) ;;
+    cdn) selected_groups=(cdn) ;;
+    devinfra) selected_groups=(devinfra) ;;
+    *) selected_groups=(primary custom cdn devinfra) ;;
+    esac
+    CHECKS_TOTAL=0
+    for total_group in "${selected_groups[@]}"; do
+      CHECKS_TOTAL=$((CHECKS_TOTAL + $(count_group_checks "$total_group")))
+    done
+    [[ -n "${CHECKS_TOTAL_FILE:-}" ]] && printf '%s' "$CHECKS_TOTAL" >"$CHECKS_TOTAL_FILE"
+  fi
+
+  case "$GROUPS_TO_SHOW" in
+  primary)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "primary"
+    else
+      run_service_group "primary"
+    fi
+    ;;
+  custom)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "custom"
+    else
+      run_service_group "custom"
+    fi
+    ;;
+  cdn)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "cdn"
+    else
+      run_service_group "cdn"
+    fi
+    ;;
+  devinfra)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "devinfra"
+    else
+      run_service_group "devinfra"
+    fi
+    ;;
+  *)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "primary"
+      run_service_group_parallel "custom"
+      run_service_group_parallel "cdn"
+      run_service_group_parallel "devinfra"
+    else
+      run_service_group "primary"
+      run_service_group "custom"
+      run_service_group "cdn"
+      run_service_group "devinfra"
+    fi
+    ;;
+  esac
+}
+
+# One "service=v4/v6" line per check from a result JSON
+collect_verdict_lines() {
+  local json="$1"
+
+  jq -r '
+    [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[] ]
+    | .[]
+    | .service + "=" + ((.ipv4 // "-") + "/" + (.ipv6 // "-"))
+  ' <<<"$json"
+}
+
+# Human-readable diff of verdict lines between two runs
+compute_verdict_changes() {
+  local prev="$1"
+  local cur="$2"
+  local -a removed added
+  mapfile -t removed < <(printf '%s\n' "$prev" | sort)
+  mapfile -t added < <(printf '%s\n' "$cur" | sort)
+
+  local out="" r a svc found known
+  for r in "${removed[@]}"; do
+    [[ -z "$r" ]] && continue
+    svc="${r%%=*}"
+    found=""
+    for a in "${added[@]}"; do
+      [[ "$a" == "$svc="* ]] && {
+        found="$a"
+        break
+      }
+    done
+    if [[ -n "$found" && "$found" != "$r" ]]; then
+      out+="~ ${svc}: ${r#*=} → ${found#*=}"$'\n'
+    elif [[ -z "$found" ]]; then
+      out+="- ${svc}: ${r#*=}"$'\n'
+    fi
+  done
+  for a in "${added[@]}"; do
+    [[ -z "$a" ]] && continue
+    svc="${a%%=*}"
+    known=false
+    for r in "${removed[@]}"; do
+      [[ "$r" == "$svc="* ]] && {
+        known=true
+        break
+      }
+    done
+    [[ "$known" == true ]] || out+="+ ${svc}: ${a#*=}"$'\n'
+  done
+  printf '%s' "$out"
+}
+
+telegram_send_message() {
+  local text="$1"
+
+  [[ -n "${IPREGION_TG_BOT_TOKEN:-}" && -n "${IPREGION_TG_CHAT_ID:-}" ]] || return 0
+  curl_wrapper POST "https://api.telegram.org/bot${IPREGION_TG_BOT_TOKEN}/sendMessage" \
+    --data "chat_id=${IPREGION_TG_CHAT_ID}" \
+    --data-urlencode "text=${text}" >/dev/null 2>&1 || true
+}
+
+run_compare() {
+  local old_file="$1"
+  local new_file="$2"
+
+  [[ -f "$old_file" ]] || error_exit "Compare: file not found: $old_file"
+  [[ -f "$new_file" ]] || error_exit "Compare: file not found: $new_file"
+
+  local changes
+  changes=$(compute_verdict_changes \
+    "$(collect_verdict_lines "$(cat "$old_file")")" \
+    "$(collect_verdict_lines "$(cat "$new_file")")")
+
+  if [[ -z "$changes" ]]; then
+    echo "No verdict changes."
+  else
+    printf '%s\n' "$changes"
+  fi
+}
+
+# --watch N: re-run the selected groups every N seconds and report
+# verdict changes between cycles (optionally pushing them to Telegram
+# via IPREGION_TG_BOT_TOKEN / IPREGION_TG_CHAT_ID).
+run_monitor_loop() {
+  local prev_verdicts next_verdicts changes
+  prev_verdicts=$(collect_verdict_lines "$RESULT_JSON")
+
+  while true; do
+    sleep "$WATCH_INTERVAL"
+    run_selected_groups
+    finalize_json
+
+    next_verdicts=$(collect_verdict_lines "$RESULT_JSON")
+    changes=$(compute_verdict_changes "$prev_verdicts" "$next_verdicts")
+    if [[ -n "$changes" ]]; then
+      printf '%s\n' "$changes" >&2
+      telegram_send_message "$changes"
+    fi
+    prev_verdicts="$next_verdicts"
+  done
+}
+
 main() {
   parse_arguments "$@"
+
+  if [[ -n "$COMPARE_OLD" ]]; then
+    run_compare "$COMPARE_OLD" "$COMPARE_NEW"
+    exit 0
+  fi
 
   ignore_ip_version_with_proxy
   detect_main_interface
@@ -6098,64 +6294,22 @@ main() {
   fi
 
   if [[ "$JSON_OUTPUT" != "true" && "$PROGRESS_LOG" != true ]]; then
-    local selected_groups total_group
-    case "$GROUPS_TO_SHOW" in
-    primary) selected_groups=(primary) ;;
-    custom) selected_groups=(custom) ;;
-    cdn) selected_groups=(cdn) ;;
-    devinfra) selected_groups=(devinfra) ;;
-    *) selected_groups=(primary custom cdn devinfra) ;;
-    esac
-    CHECKS_TOTAL=0
-    for total_group in "${selected_groups[@]}"; do
-      CHECKS_TOTAL=$((CHECKS_TOTAL + $(count_group_checks "$total_group")))
-    done
-    [[ -n "${CHECKS_TOTAL_FILE:-}" ]] && printf '%s' "$CHECKS_TOTAL" >"$CHECKS_TOTAL_FILE"
+    local restart_spinner=false
+    if [[ "$spinner_running" == true ]]; then
+      restart_spinner=true
+      spinner_stop
+    fi
+
+    finalize_json
+    print_header
+    HEADER_PRINTED=true
+
+    if [[ "$restart_spinner" == true ]]; then
+      spinner_start
+    fi
   fi
 
-  case "$GROUPS_TO_SHOW" in
-  primary)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "primary"
-    else
-      run_service_group "primary"
-    fi
-    ;;
-  custom)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "custom"
-    else
-      run_service_group "custom"
-    fi
-    ;;
-  cdn)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "cdn"
-    else
-      run_service_group "cdn"
-    fi
-    ;;
-  devinfra)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "devinfra"
-    else
-      run_service_group "devinfra"
-    fi
-    ;;
-  *)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "primary"
-      run_service_group_parallel "custom"
-      run_service_group_parallel "cdn"
-      run_service_group_parallel "devinfra"
-    else
-      run_service_group "primary"
-      run_service_group "custom"
-      run_service_group "cdn"
-      run_service_group "devinfra"
-    fi
-    ;;
-  esac
+  run_selected_groups
 
   if [[ "$PROGRESS_LOG" == true && "$JSON_OUTPUT" != "true" ]]; then
     printf "%s %s\n" \
@@ -6168,6 +6322,10 @@ main() {
   fi
 
   print_results
+
+  if ((WATCH_INTERVAL > 0)); then
+    run_monitor_loop
+  fi
 
   cleanup_debug
 
