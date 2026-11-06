@@ -364,6 +364,7 @@ declare -A CUSTOM_SERVICES=(
   [DOH_GOOGLE]="DoH Google"
   [DOH_CLOUDFLARE]="DoH Cloudflare"
   [DNS_INTEGRITY]="DNS Integrity"
+  [DNS_INTERCEPT]="DNS Intercept"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -544,6 +545,7 @@ CUSTOM_SERVICES_ORDER=(
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
   "DNS_INTEGRITY"
+  "DNS_INTERCEPT"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -776,6 +778,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DOH_GOOGLE]="lookup_doh_google"
   [DOH_CLOUDFLARE]="lookup_doh_cloudflare"
   [DNS_INTEGRITY]="lookup_dns_integrity"
+  [DNS_INTERCEPT]="lookup_dns_intercept"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5417,6 +5420,21 @@ doh_dns_answers() {
   return 1
 }
 
+# First egress address echoed by an explicitly addressed resolver for the
+# whoami canary; empty when the query failed or no tool supports server
+# selection (getent cannot). Output format handling mirrors
+# system_dns_answers.
+resolver_echo_answer() {
+  local server="$1"
+  local answer=""
+  if command -v nslookup >/dev/null 2>&1; then
+    answer=$(nslookup -type=A whoami.akamai.net "$server" 2>/dev/null | awk '/^Address/ {print $NF} /has .*address/ {print $NF}' | grep_wrapper -v '#' | sort -u | head -n 1)
+  elif command -v host >/dev/null 2>&1; then
+    answer=$(host -t A whoami.akamai.net "$server" 2>/dev/null | awk '/has .*address/ {print $NF}' | sort -u | head -n 1)
+  fi
+  echo "$answer"
+}
+
 # DNS-integrity diagnostic: a resolver that invents records for names that
 # cannot exist, or that rewrites answers for fixed public records compared
 # against a TLS-protected DoH reference, is spoofing DNS. A records and
@@ -5465,6 +5483,31 @@ lookup_dns_integrity() {
       done <<<"$local_answers"
     done
   done
+  print_value_or_colored "Yes" "SERVICE"
+}
+
+# Port-53 interception diagnostic: whoami.akamai.net echoes the egress
+# address of the resolver that actually fetched the answer. Two
+# independent public resolvers asked directly must echo different
+# egresses (Google and Cloudflare never share one); identical echoes mean
+# one invisible resolver answered both - transparent port-53
+# interception. Yes = clean, No = intercepted, N/A = cannot verify.
+lookup_dns_intercept() {
+  local ip_version="$1"
+  local google_echo cloudflare_echo
+
+  google_echo=$(resolver_echo_answer "8.8.8.8")
+  cloudflare_echo=$(resolver_echo_answer "1.1.1.1")
+  if [[ -z "$google_echo" || -z "$cloudflare_echo" ]]; then
+    # Direct port-53 queries failed (blocked or no resolver tool):
+    # honesty over guessing.
+    echo "$STATUS_NA"
+    return
+  fi
+  if [[ "$google_echo" == "$cloudflare_echo" ]]; then
+    print_value_or_colored "No" "HEART"
+    return
+  fi
   print_value_or_colored "Yes" "SERVICE"
 }
 

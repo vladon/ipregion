@@ -173,6 +173,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | DoH Google | `DOH_GOOGLE` |
 | custom | DoH Cloudflare | `DOH_CLOUDFLARE` |
 | custom | DNS Integrity | `DNS_INTEGRITY` |
+| custom | DNS Intercept | `DNS_INTERCEPT` |
 | custom | Gmail | `GMAIL` |
 | custom | Google Drive | `GOOGLE_DRIVE` |
 | custom | Google Meet | `GOOGLE_MEET` |
@@ -353,7 +354,8 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | devinfra | Maven Central | `MAVEN_CENTRAL` |
 | devinfra | Hugging Face | `HUGGING_FACE` |
 
-Total: 213 checks.
+Total: 214 checks.
+<!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->

@@ -314,6 +314,12 @@ system_dns_answers() {
 doh_dns_answers() {
   system_dns_answers "$@"
 }
+resolver_echo_answer() {
+  case "$1" in
+  8.8.8.8) echo "192.0.2.10" ;;
+  1.1.1.1) echo "192.0.2.20" ;;
+  esac
+}
 
 # Fixed state ----------------------------------------------------------------
 
@@ -428,6 +434,7 @@ INCLUDED_SERVICES=(
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
   "DNS_INTEGRITY"
+  "DNS_INTERCEPT"
   "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"

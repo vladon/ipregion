@@ -1257,6 +1257,28 @@ DNS_INTEGRITY_MODE="nulling6"
 assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps AAAA nulling to No"
 DNS_INTEGRITY_MODE="no_doh"
 assert_eq "N/A" "$(lookup_dns_integrity 4)" "dns integrity stays N/A without a DoH reference"
+resolver_echo_stub() {
+  case "${DNS_INTERCEPT_MODE:-clean}" in
+  intercepted) echo "203.0.113.77" ;;
+  silent) return 0 ;;
+  *)
+    case "$1" in
+    8.8.8.8) echo "192.178.94.25" ;;
+    1.1.1.1) echo "172.68.9.76" ;;
+    esac
+    ;;
+  esac
+}
+resolver_echo_answer() { resolver_echo_stub "$@"; }
+assert_true "custom registry defines DNS_INTERCEPT" test -n "${CUSTOM_SERVICES[DNS_INTERCEPT]:-}"
+DNS_INTERCEPT_MODE="clean"
+assert_eq "Yes" "$(lookup_dns_intercept 4)" "dns intercept maps distinct resolver echoes to Yes"
+DNS_INTERCEPT_MODE="intercepted"
+assert_eq "No" "$(lookup_dns_intercept 4)" "dns intercept maps identical echoes to No"
+DNS_INTERCEPT_MODE="silent"
+assert_eq "N/A" "$(lookup_dns_intercept 4)" "dns intercept stays N/A when probes fail"
+unset -f resolver_echo_answer resolver_echo_stub
+unset DNS_INTERCEPT_MODE
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
 unset DNS_INTEGRITY_MODE
 JSON_OUTPUT=false
