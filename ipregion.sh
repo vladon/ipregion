@@ -363,6 +363,7 @@ declare -A CUSTOM_SERVICES=(
   [BRAVE_SEARCH]="Brave Search"
   [DOH_GOOGLE]="DoH Google"
   [DOH_CLOUDFLARE]="DoH Cloudflare"
+  [DNS_INTEGRITY]="DNS Integrity"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -542,6 +543,7 @@ CUSTOM_SERVICES_ORDER=(
   "BRAVE_SEARCH"
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
+  "DNS_INTEGRITY"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -773,6 +775,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [BRAVE_SEARCH]="lookup_brave_search"
   [DOH_GOOGLE]="lookup_doh_google"
   [DOH_CLOUDFLARE]="lookup_doh_cloudflare"
+  [DNS_INTEGRITY]="lookup_dns_integrity"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5356,6 +5359,99 @@ dns_unresolved() {
   fi
   print_value_or_colored "DNS block" "WARN"
   return 0
+}
+
+# Addresses the SYSTEM resolver returns for the host and record type
+# (A or AAAA), one per line; empty when the name does not resolve or no
+# resolver tool exists. Tool preference mirrors host_resolves.
+system_dns_answers() {
+  local host="$1"
+  local record_type="${2:-A}"
+  local -a answers=()
+  if command -v getent >/dev/null 2>&1; then
+    if [[ "$record_type" == "AAAA" ]]; then
+      mapfile -t answers < <(getent ahostsv6 "$host" 2>/dev/null | awk 'NF {print $1}' | sort -u)
+    else
+      mapfile -t answers < <(getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1}' | sort -u)
+    fi
+  elif command -v nslookup >/dev/null 2>&1; then
+    mapfile -t answers < <(nslookup -type="$record_type" "$host" 2>/dev/null | awk '/^Address/ {print $NF}' | grep_wrapper -v '#' | sort -u)
+  elif command -v host >/dev/null 2>&1; then
+    if [[ "$record_type" == "AAAA" ]]; then
+      mapfile -t answers < <(host -t AAAA "$host" 2>/dev/null | awk '/has IPv6 address/ {print $NF}' | sort -u)
+    else
+      mapfile -t answers < <(host -t A "$host" 2>/dev/null | awk '/has address/ {print $NF}' | sort -u)
+    fi
+  fi
+  printf '%s\n' "${answers[@]+"${answers[@]}"}"
+}
+
+# DoH-JSON reference answer set (one address per line) fetched over TLS so
+# port-53 interception cannot influence it. Tries Cloudflare then Google;
+# returns 1 when neither answered.
+doh_dns_answers() {
+  local host="$1"
+  local record_type="${2:-A}"
+  local ip_version="$3"
+  local answer_type=1
+  [[ "$record_type" == "AAAA" ]] && answer_type=28
+  local -a endpoints=(
+    "https://cloudflare-dns.com/dns-query?name=${host}&type=${record_type}"
+    "https://dns.google/resolve?name=${host}&type=${record_type}"
+  )
+  local endpoint response
+  for endpoint in "${endpoints[@]}"; do
+    response=$(curl_wrapper GET "$endpoint" \
+      --header "Accept: application/dns-json" \
+      --ip-version "$ip_version")
+    [[ -z "$response" ]] && continue
+    if [[ -z "$(process_json "$response" '.Status // empty' 2>/dev/null)" ]]; then
+      continue
+    fi
+    process_json "$response" "(.Answer // [])[] | select(.type == $answer_type) | .data" 2>/dev/null | sort -u
+    return 0
+  done
+  return 1
+}
+
+# DNS-integrity diagnostic: a resolver that invents records for names that
+# cannot exist, or that rewrites answers for fixed public records compared
+# against a TLS-protected DoH reference, is spoofing DNS. Yes = answers
+# clean, No = spoofing or filtering detected.
+lookup_dns_integrity() {
+  local ip_version="$1"
+  local -a canaries=("dns.google" "one.one.one.one")
+  local canary probe_domain="nx-$(date +%s)-$RANDOM.vladon.sh"
+  local local_answers doh_answers answer
+
+  # The zone has no wildcard: an answer for a random label means the
+  # resolver invents records.
+  if [[ -n "$(system_dns_answers "$probe_domain" "A")" ]]; then
+    print_value_or_colored "No" "HEART"
+    return
+  fi
+
+  for canary in "${canaries[@]}"; do
+    doh_answers=$(doh_dns_answers "$canary" "A" "$ip_version") || {
+      # No TLS-protected reference reachable: honesty over guessing.
+      echo "$STATUS_NA"
+      return
+    }
+    local_answers=$(system_dns_answers "$canary" "A")
+    if [[ -z "$local_answers" ]]; then
+      # The reference resolves, the system resolver stays silent: the
+      # answer is filtered or nulled.
+      print_value_or_colored "No" "HEART"
+      return
+    fi
+    while IFS= read -r answer; do
+      if ! grep_wrapper -qxF "$answer" <<<"$doh_answers"; then
+        print_value_or_colored "No" "HEART"
+        return
+      fi
+    done <<<"$local_answers"
+  done
+  print_value_or_colored "Yes" "SERVICE"
 }
 
 lookup_site_access() {

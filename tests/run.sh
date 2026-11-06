@@ -1173,6 +1173,70 @@ unset -f tcp_probe dc_probe_stub host_resolves
 unset DC_PROBE_MODE DNS_STUB_MODE
 JSON_OUTPUT=false
 
+# DNS integrity verdicts (system resolver and DoH reference stubbed)
+dns_integrity_system_stub() {
+  case "${DNS_INTEGRITY_MODE:-clean}" in
+  invent)
+    if [[ "$1" == nx-* ]]; then
+      echo "203.0.113.66"
+      return
+    fi
+    case "$1" in
+    dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
+    one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+    esac
+    ;;
+  rewrite)
+    if [[ "$1" == "one.one.one.one" ]]; then
+      echo "203.0.113.99"
+      return
+    fi
+    printf '8.8.8.8\n8.8.4.4\n'
+    ;;
+  nulling)
+    if [[ "$1" == "one.one.one.one" ]]; then
+      return 0
+    fi
+    printf '8.8.8.8\n8.8.4.4\n'
+    ;;
+  *)
+    if [[ "$1" == nx-* ]]; then
+      return 0
+    fi
+    case "$1" in
+    dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
+    one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+    esac
+    ;;
+  esac
+}
+dns_integrity_doh_stub() {
+  if [[ "${DNS_INTEGRITY_MODE:-clean}" == "no_doh" ]]; then
+    return 1
+  fi
+  case "$1" in
+  dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
+  one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+  esac
+}
+system_dns_answers() { dns_integrity_system_stub "$@"; }
+doh_dns_answers() { dns_integrity_doh_stub "$@"; }
+assert_true "custom registry defines DNS_INTEGRITY" test -n "${CUSTOM_SERVICES[DNS_INTEGRITY]:-}"
+JSON_OUTPUT=true
+DNS_INTEGRITY_MODE="clean"
+assert_eq "Yes" "$(lookup_dns_integrity 4)" "dns integrity maps matching answers to Yes"
+DNS_INTEGRITY_MODE="invent"
+assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps invented records to No"
+DNS_INTEGRITY_MODE="rewrite"
+assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps rewritten answers to No"
+DNS_INTEGRITY_MODE="nulling"
+assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps filtered answers to No"
+DNS_INTEGRITY_MODE="no_doh"
+assert_eq "N/A" "$(lookup_dns_integrity 4)" "dns integrity stays N/A without a DoH reference"
+unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
+unset DNS_INTEGRITY_MODE
+JSON_OUTPUT=false
+
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
 assert_eq "14" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"

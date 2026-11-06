@@ -172,6 +172,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | Brave Search | `BRAVE_SEARCH` |
 | custom | DoH Google | `DOH_GOOGLE` |
 | custom | DoH Cloudflare | `DOH_CLOUDFLARE` |
+| custom | DNS Integrity | `DNS_INTEGRITY` |
 | custom | Gmail | `GMAIL` |
 | custom | Google Drive | `GOOGLE_DRIVE` |
 | custom | Google Meet | `GOOGLE_MEET` |
@@ -181,6 +182,9 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | AWS | `AWS` |
 | custom | GCP Console | `GCP_CONSOLE` |
 | custom | Oracle Cloud | `ORACLE_CLOUD` |
+| custom | Hetzner | `HETZNER` |
+| custom | DigitalOcean | `DIGITALOCEAN` |
+| custom | Vultr | `VULTR` |
 | custom | Google Gemini | `GEMINI` |
 | custom | Gemini Notebook | `GEMINI_NOTEBOOK` |
 | custom | Gemini API | `GEMINI_API` |
@@ -250,6 +254,16 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | Line | `LINE` |
 | custom | KakaoTalk | `KAKAOTALK` |
 | custom | Threema | `THREEMA` |
+| custom | Matrix | `MATRIX` |
+| custom | ntfy | `NTFY` |
+| custom | Telegram Bot API | `TELEGRAM_BOT_API` |
+| custom | Workers.dev | `WORKERS_DEV` |
+| custom | GitHub Pages | `GITHUB_PAGES` |
+| custom | GitLab Pages | `GITLAB_PAGES` |
+| custom | Vercel | `VERCEL_APP` |
+| custom | Netlify | `NETLIFY_APP` |
+| custom | Cloudflare Pages | `PAGES_DEV` |
+| custom | Heroku | `HEROKU_APP` |
 | custom | Threads Access | `THREADS_ACCESS` |
 | custom | Threads API | `THREADS_API` |
 | custom | Threads Transport | `THREADS_TRANSPORT` |
@@ -333,9 +347,14 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | devinfra | npm Registry | `NPM_REGISTRY` |
 | devinfra | PyPI | `PYPI` |
 | devinfra | Docker Hub | `DOCKER_HUB` |
+| devinfra | Docker Hub API | `DOCKER_HUB_API` |
+| devinfra | Go Modules | `GO_MODULES` |
+| devinfra | Crates.io | `CRATES_IO` |
+| devinfra | Maven Central | `MAVEN_CENTRAL` |
 | devinfra | Hugging Face | `HUGGING_FACE` |
 
-Total: 195 checks.
+Total: 213 checks.
+<!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
