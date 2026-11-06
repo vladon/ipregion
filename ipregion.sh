@@ -238,6 +238,7 @@ WATCH_INTERVAL=0
 ONLY_CHANGES=false
 COMPARE_OLD=""
 COMPARE_NEW=""
+FAIL_ON_BLOCK_KEYS=()
 LIST_ONLY=false
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
@@ -1084,8 +1085,9 @@ Options:
   --cache-ttl SEC      Set cache TTL in seconds (default: $CACHE_TTL)
   --clear-cache        Clear the IP cache
   --show-cache         Show cached IP addresses
-  --include-service S  Run only selected services (repeatable; case-insensitive)
-  --exclude-service S  Skip selected services (repeatable; case-insensitive)
+  --include-service S  Include check (repeatable, case-insensitive)
+  --exclude-service S  Exclude check (repeatable, case-insensitive)
+  --fail-on-block S    Exit 1 if check S is not Yes (repeatable)
   --metrics            Show per-service HTTP/latency metrics in table output
   --youtube-lang LANG  Viewer language for the YouTube No Ads check (default: ru)
   -o, --output FILE    Save results to file (.json or .csv)
@@ -2052,6 +2054,16 @@ parse_arguments() {
     --only-changes)
       ONLY_CHANGES=true
       shift
+      ;;
+    --fail-on-block)
+      [[ -z "${2:-}" ]] && error_exit "Missing value for --fail-on-block"
+      local fob_key
+      fob_key=$(normalize_service_name "$2")
+      if ! validate_known_service "$fob_key"; then
+        error_exit "Unknown service for --fail-on-block: $2"
+      fi
+      FAIL_ON_BLOCK_KEYS+=("$fob_key")
+      shift 2
       ;;
     --watch)
       WATCH_INTERVAL="${2:-}"
@@ -6269,6 +6281,11 @@ run_selected_groups() {
     fi
     ;;
   esac
+
+  if ((${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
+    finalize_json
+    fail_on_block_check || return 1
+  fi
 }
 
 # Prints the full check registry: group, check key, display name -
@@ -6294,6 +6311,61 @@ print_check_registry() {
       printf '%s\t%s\t%s\n' "$group" "$key" "$display"
     done
   done
+}
+
+# --fail-on-block: exit nonzero when any of the listed checks is not Yes
+# in the finalized result JSON. Absent results count as blocked.
+# Registry keys resolve to display names first: add_result stores the
+# display name in the results.
+fail_on_block_display() {
+  local key="$1"
+  if [[ -n "${CUSTOM_SERVICES[$key]:-}" ]]; then
+    printf '%s' "${CUSTOM_SERVICES[$key]}"
+  elif [[ -n "${CDN_SERVICES[$key]:-}" ]]; then
+    printf '%s' "${CDN_SERVICES[$key]}"
+  elif [[ -n "${DEVINFRA_SERVICES[$key]:-}" ]]; then
+    printf '%s' "${DEVINFRA_SERVICES[$key]}"
+  elif [[ -n "${PRIMARY_SERVICES[$key]:-}" ]]; then
+    printf '%s' "${PRIMARY_SERVICES[$key]%%|*}"
+  fi
+}
+
+fail_on_block_check() {
+  local key verdict failed_list=""
+  local -a wanted_displays=()
+  for key in "${FAIL_ON_BLOCK_KEYS[@]}"; do
+    wanted_displays+=("$(fail_on_block_display "$key")")
+  done
+  local wanted_json
+  wanted_json=$(printf '%s\n' "${wanted_displays[@]}" | jq -R . | jq -s .)
+
+  for key in "${FAIL_ON_BLOCK_KEYS[@]}"; do
+    verdict=$(jq -r --arg k "$(fail_on_block_display "$key")" \
+      --arg no "No" \
+      --arg denied "$STATUS_DENIED" \
+      --arg server "$STATUS_SERVER_ERROR" \
+      --arg rate "$STATUS_RATE_LIMIT" \
+      --arg region "$STATUS_REGION_BLOCKED" '
+      [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[] ]
+      | map(select(.service == $k))
+      | if length == 0 then "absent"
+        elif any(.[]; .ipv4 == $no or .ipv4 == $denied or .ipv4 == $server or .ipv4 == $rate or .ipv4 == $region or .ipv6 == $no or .ipv6 == $denied or .ipv6 == $server or .ipv6 == $rate or .ipv6 == $region) then "failed"
+        else "ok"
+        end
+    ' <<<"$RESULT_JSON" 2>/dev/null)
+    if [[ "$verdict" == "failed" || "$verdict" == "absent" ]]; then
+      failed_list+="$key "
+    fi
+  done
+
+  if [[ -n "$failed_list" ]]; then
+    printf "FBDBG final failed_list=[%s]\n" "$failed_list" >&2
+    printf "%s %s\n" \
+      "$(color HEART 'FAIL: blocked checks:')" \
+      "${failed_list% }" >&2
+    return 1
+  fi
+  return 0
 }
 
 # One "service=v4/v6" line per check from a result JSON
@@ -6385,7 +6457,7 @@ run_monitor_loop() {
 
   while true; do
     sleep "$WATCH_INTERVAL"
-    run_selected_groups
+    run_selected_groups || exit 1
     finalize_json
 
     next_verdicts=$(collect_verdict_lines "$RESULT_JSON")
@@ -6506,7 +6578,7 @@ main() {
     fi
   fi
 
-  run_selected_groups
+  run_selected_groups || exit 1
 
   if [[ "$PROGRESS_LOG" == true && "$JSON_OUTPUT" != "true" ]]; then
     printf "%s %s\n" \
