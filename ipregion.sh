@@ -5313,11 +5313,26 @@ tcp_probe() {
   wait "$probe_pid" 2>/dev/null
 }
 
+# Hostname of an http(s) URL: scheme, port and path stripped.
+url_host() {
+  local host="${1#*://}"
+  host="${host%%/*}"
+  host="${host%%:*}"
+  echo "$host"
+}
+
 lookup_site_access() {
   local url="$1"
   local marker="$2"
   local ip_version="$3"
   local response error_type
+
+  if ! host_resolves "$(url_host "$url")"; then
+    # Nothing resolved at the resolver: report the DNS-poisoning signature
+    # instead of an indistinguishable transport failure.
+    print_value_or_colored "DNS block" "WARN"
+    return
+  fi
 
   response=$(curl_wrapper GET "$url" \
     --user-agent "$USER_AGENT" \
@@ -5362,6 +5377,11 @@ lookup_region_gate_access() {
   local brand_marker="$3"
   local ip_version="$4"
   local response error_type
+
+  if ! host_resolves "$(url_host "$url")"; then
+    print_value_or_colored "DNS block" "WARN"
+    return
+  fi
 
   response=$(curl_wrapper GET "$url" \
     --user-agent "$USER_AGENT" \
