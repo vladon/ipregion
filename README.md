@@ -175,7 +175,6 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | DNS Integrity | `DNS_INTEGRITY` |
 | custom | DNS Intercept | `DNS_INTERCEPT` |
 | custom | PTR Match | `DNS_PTR` |
-| custom | Rebind Protection | `REBIND_PROTECTION` |
 | custom | Gmail | `GMAIL` |
 | custom | Google Drive | `GOOGLE_DRIVE` |
 | custom | Google Meet | `GOOGLE_MEET` |
@@ -356,7 +355,8 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | devinfra | Maven Central | `MAVEN_CENTRAL` |
 | devinfra | Hugging Face | `HUGGING_FACE` |
 
-Total: 216 checks.
+Total: 215 checks.
+<!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
@@ -369,7 +369,7 @@ Total: 216 checks.
 
 YouTube CDN, Cloudflare CDN, Netflix CDN — Google/Cloudflare/Netflix edge node detection (`--group cdn`).
 
-A green Yes means the service answers from your network; a red No usually means a transport-level block (connection reset or timeout) or a region-gate stub; Denied / Rate-limit / N/A are HTTP-level outcomes. A yellow **DNS block** means the hostname did not resolve at all (typical of DNS poisoning); every check — transport probes, site availability and the bespoke custom handlers — resolves its target before connecting. **Rebind Protection** is special: it flips a dedicated canary record (`rebind-test.vladon.sh`) through the Cloudflare DNS API and watches whether your resolver serves the private answer — set `CF_DNS_API_TOKEN` (Zone.DNS edit on the zone) to enable it; it is excluded from the default group because the TTL wait takes about a minute.
+A green Yes means the service answers from your network; a red No usually means a transport-level block (connection reset or timeout) or a region-gate stub; Denied / Rate-limit / N/A are HTTP-level outcomes. A yellow **DNS block** means the hostname did not resolve at all (typical of DNS poisoning); every check — transport probes, site availability and the bespoke custom handlers — resolves its target before connecting.
 
 ## Country codes
 
