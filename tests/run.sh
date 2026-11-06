@@ -12,6 +12,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=/dev/null
 source "$ROOT_DIR/ipregion.sh"
 
+# Handler tests must not depend on real DNS: web and transport probes both
+# consult host_resolves before connecting. Set DNS_STUB_MODE=blocked locally
+# to exercise the DNS-block verdict paths.
+host_resolves() { [[ "${DNS_STUB_MODE:-ok}" == "ok" ]]; }
+
 failures=0
 
 assert_eq() {
@@ -914,7 +919,6 @@ dc_probe_stub() {
   return 1
 }
 tcp_probe() { dc_probe_stub "$@"; }
-host_resolves() { [[ "${DNS_STUB_MODE:-ok}" == "ok" ]]; }
 JSON_OUTPUT=true
 DC_PROBE_MODE="up"
 assert_eq "Yes" "$(lookup_telegram_dc 4)" "telegram dc maps reachable dc to Yes"
@@ -967,6 +971,8 @@ DNS_STUB_MODE="blocked"
 DC_PROBE_MODE="up"
 assert_eq "DNS block" "$(lookup_telegram_dc 4)" "telegram dc maps failed resolution to DNS block"
 assert_eq "DNS block" "$(lookup_netflix_transport 4)" "netflix transport maps failed resolution to DNS block"
+assert_eq "DNS block" "$(lookup_tiktok_access 4)" "site access maps failed resolution to DNS block"
+assert_eq "DNS block" "$(lookup_peacock_access 4)" "region gate maps failed resolution to DNS block"
 DNS_STUB_MODE="ok"
 DC_PROBE_MODE="up"
 assert_eq "Yes" "$(lookup_openai_api 4)" "openai api maps reachable endpoint to Yes"
