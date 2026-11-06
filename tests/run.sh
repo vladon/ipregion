@@ -126,10 +126,10 @@ assert_true "should_skip_service skips non-included service" should_skip_service
 assert_false "should_skip_service keeps included service" should_skip_service "MAXMIND"
 assert_true "should_skip_service skips default excluded service" should_skip_service "GOOGLE_SEARCH_CAPTCHA"
 assert_true "should_skip_service skips cli excluded service" should_skip_service "YOUTUBE"
-EXCLUDED_SERVICES=("GOOGLE_SEARCH_CAPTCHA" "REBIND_PROTECTION")
-INCLUDED_SERVICES=("REBIND_PROTECTION")
-assert_false "should_skip_service lets inclusion override exclusions" should_skip_service "REBIND_PROTECTION"
-assert_true "should_skip_service still skips excluded non-included service" should_skip_service "GOOGLE_SEARCH_CAPTCHA"
+EXCLUDED_SERVICES=("GOOGLE_SEARCH_CAPTCHA")
+INCLUDED_SERVICES=("GOOGLE_SEARCH_CAPTCHA")
+assert_false "should_skip_service lets inclusion override exclusions" should_skip_service "GOOGLE_SEARCH_CAPTCHA"
+assert_true "should_skip_service still skips excluded non-included service" should_skip_service "YOUTUBE"
 
 INCLUDED_SERVICES=()
 EXCLUDED_SERVICES=("GOOGLE_SEARCH_CAPTCHA")
@@ -1319,68 +1319,6 @@ unset -f system_ptr_answer ptr_system_stub
 unset PTR_MODE
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
 unset DNS_INTEGRITY_MODE
-
-# Nonpublic address classifier (the rebinding pivot target set)
-assert_true "is_nonpublic_ipv4 flags loopback" is_nonpublic_ipv4 "127.0.0.1"
-assert_true "is_nonpublic_ipv4 flags rfc1918" is_nonpublic_ipv4 "10.1.2.3"
-assert_true "is_nonpublic_ipv4 flags rfc1918b" is_nonpublic_ipv4 "192.168.1.1"
-assert_true "is_nonpublic_ipv4 flags 172.16" is_nonpublic_ipv4 "172.16.0.1"
-assert_true "is_nonpublic_ipv4 flags 172.31" is_nonpublic_ipv4 "172.31.255.9"
-assert_true "is_nonpublic_ipv4 flags cgnat" is_nonpublic_ipv4 "100.64.0.1"
-assert_true "is_nonpublic_ipv4 flags link-local" is_nonpublic_ipv4 "169.254.3.4"
-assert_false "is_nonpublic_ipv4 passes public" is_nonpublic_ipv4 "8.8.8.8"
-assert_false "is_nonpublic_ipv4 passes 172.32" is_nonpublic_ipv4 "172.32.0.1"
-assert_false "is_nonpublic_ipv4 passes 100.128" is_nonpublic_ipv4 "100.128.0.1"
-assert_false "is_nonpublic_ipv4 passes test-net" is_nonpublic_ipv4 "192.0.2.111"
-
-# Rebind protection verdicts (Cloudflare API and system resolver stubbed)
-# Re-source the script to restore the pristine EXCLUDED_SERVICES default:
-# the service-filter scenarios above mutate the array.
-source "$ROOT_DIR/ipregion.sh"
-assert_true "custom registry defines REBIND_PROTECTION" test -n "${CUSTOM_SERVICES[REBIND_PROTECTION]:-}"
-assert_true "rebind protection is excluded by default" grep_wrapper -qx "REBIND_PROTECTION" <<<"$(printf '%s\n' "${EXCLUDED_SERVICES[@]}")"
-rebind_api_log=$(mktemp)
-cf_api_stub() {
-  printf '%s %s\n' "$1" "$2" >>"$rebind_api_log"
-  case "$2" in
-  /zones?name=*) echo '{"success":true,"result":[{"id":"zone123"}]}' ;;
-  /zones/zone123/dns_records?type=A*) echo '{"success":true,"result":[{"id":"rec456","content":"192.0.2.111"}]}' ;;
-  *) echo '{"success":true,"result":{"id":"rec456"}}' ;;
-  esac
-}
-cf_dns_api() { cf_api_stub "$@"; }
-rebind_dns_count=$(mktemp)
-rebind_dns_timeline=$(mktemp)
-rebind_dns_reset() {
-  echo 1 >"$rebind_dns_count"
-  printf '%s\n' "$@" >"$rebind_dns_timeline"
-}
-rebind_dns_stub() {
-  local n next
-  n=$(cat "$rebind_dns_count")
-  printf '%s\n' "$((n + 1))" >"$rebind_dns_count"
-  next=$(awk -v n="$n" 'NR == n { print; exit }' "$rebind_dns_timeline")
-  case "${next:-public}" in
-  private) echo "127.0.0.1" ;;
-  *) echo "192.0.2.111" ;;
-  esac
-}
-system_dns_answers() { rebind_dns_stub; }
-JSON_OUTPUT=true
-CF_DNS_API_TOKEN="test-token"
-REBIND_POLL_STEP="0.1"
-REBIND_POLL_MAX="4"
-rebind_dns_reset public public private private
-assert_eq "No" "$(lookup_rebind_protection 4)" "rebind protection maps served private answer to No"
-log_content=$(cat "$rebind_api_log")
-assert_contains "$log_content" "PUT /zones/zone123/dns_records/rec456" "rebind protection writes through the API"
-rebind_dns_reset public public public public public public
-assert_eq "Yes" "$(lookup_rebind_protection 4)" "rebind protection maps stale public answers to Yes"
-unset -f cf_dns_api rebind_dns_stub system_dns_answers
-rm -f "$rebind_api_log" "$rebind_dns_count" "$rebind_dns_timeline"
-rebind_api_log=""
-unset CF_DNS_API_TOKEN REBIND_TIMELINE REBIND_POLL_STEP REBIND_POLL_MAX
-assert_eq "N/A" "$(lookup_rebind_protection 4)" "rebind protection stays N/A without an API token"
 JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
