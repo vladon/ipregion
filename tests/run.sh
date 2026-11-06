@@ -1216,6 +1216,17 @@ dns_integrity_system_stub() {
     fi
     return
     ;;
+  google.com | youtube.com | facebook.com | github.com | cloudflare.com | wikipedia.org | apple.com | microsoft.com)
+    if [[ "${PUBLIC_LEAK_MODE:-clean}" == "silent" ]]; then
+      return
+    fi
+    if [[ "${PUBLIC_LEAK_MODE:-clean}" == "leak" && "$host" == "google.com" ]]; then
+      echo "10.9.9.9"
+      return
+    fi
+    echo "93.184.216.34"
+    return
+    ;;
   dns.google)
     if [[ "$rtype" == "AAAA" ]]; then
       printf '2001:4860:4860::8888\n2001:4860:4860::8844\n'
@@ -1342,6 +1353,15 @@ unset PTR_MODE
 DNSSEC_MODE="validating"
 assert_eq "Yes" "$(lookup_dnssec_validation 4)" "dnssec validation maps failed resolution to Yes"
 unset DNSSEC_MODE PTR_MODE
+assert_true "custom registry defines PUBLIC_ANSWERS" test -n "${CUSTOM_SERVICES[PUBLIC_ANSWERS]:-}"
+assert_false "is_nonpublic_ipv4 passes public addresses" is_nonpublic_ipv4 "93.184.216.34"
+PUBLIC_LEAK_MODE="leak"
+assert_eq "No" "$(lookup_public_answers 4)" "public answers flags private-space injection"
+PUBLIC_LEAK_MODE="clean"
+assert_eq "Yes" "$(lookup_public_answers 4)" "public answers maps all-public answers to Yes"
+PUBLIC_LEAK_MODE="silent"
+assert_eq "N/A" "$(lookup_public_answers 4)" "public answers stays N/A when nothing resolves"
+unset PUBLIC_LEAK_MODE
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
 unset DNS_INTEGRITY_MODE
 JSON_OUTPUT=false

@@ -371,6 +371,7 @@ declare -A CUSTOM_SERVICES=(
   [DNS_INTERCEPT]="DNS Intercept"
   [DNS_PTR]="PTR Match"
   [DNSSEC_VALIDATION]="DNSSEC Validation"
+  [PUBLIC_ANSWERS]="Public Answers"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -556,6 +557,7 @@ CUSTOM_SERVICES_ORDER=(
   "DNS_INTERCEPT"
   "DNS_PTR"
   "DNSSEC_VALIDATION"
+  "PUBLIC_ANSWERS"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -793,6 +795,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_INTERCEPT]="lookup_dns_intercept"
   [DNS_PTR]="lookup_dns_ptr"
   [DNSSEC_VALIDATION]="lookup_dnssec_validation"
+  [PUBLIC_ANSWERS]="lookup_public_answers"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5473,6 +5476,26 @@ system_ptr_answer() {
   echo "$answer"
 }
 
+# True for addresses public services must never serve: this-network,
+# loopback, RFC1918, CGNAT, link-local, benchmarking ranges.
+is_nonpublic_ipv4() {
+  local ip="$1"
+  local o1 o2
+  [[ "$ip" =~ ^[0-9]+(\.[0-9]+){3}$ ]] || return 1
+  o1="${ip%%.*}"
+  o2="${ip#*.}"
+  o2="${o2%%.*}"
+  case "$o1" in
+  0 | 10 | 127) return 0 ;;
+  169) [[ "$o2" == 254 ]] && return 0 ;;
+  172) ((o2 >= 16 && o2 <= 31)) && return 0 ;;
+  100) ((o2 >= 64 && o2 <= 127)) && return 0 ;;
+  192) [[ "$o2" == 168 ]] && return 0 ;;
+  198) ((o2 == 18 || o2 == 19)) && return 0 ;;
+  esac
+  return 1
+}
+
 # DNS-integrity diagnostic: a resolver that invents records for names that
 # cannot exist, or that rewrites answers for fixed public records compared
 # against a TLS-protected DoH reference, is spoofing DNS. A records and
@@ -5620,6 +5643,46 @@ lookup_dnssec_validation() {
   fi
   # Resolution failed while the reference confirms the breakage: the
   # resolver validates signatures.
+  print_value_or_colored "Yes" "SERVICE"
+}
+
+# Private-DNS leak diagnostic: the major public services must never
+# resolve into private address space (RFC1918, loopback, CGNAT,
+# link-local). Any private answer from the system resolver for one of
+# them is an injection - a captive portal, corporate middleware or
+# malware DNS steering clients into internal space. No DoH reference is
+# needed: these names are public by construction. Yes = public answers
+# everywhere, No = private injection detected, N/A = nothing resolved.
+lookup_public_answers() {
+  local ip_version="$1"
+  local -a probe_domains=(
+    "google.com"
+    "youtube.com"
+    "facebook.com"
+    "github.com"
+    "cloudflare.com"
+    "wikipedia.org"
+    "apple.com"
+    "microsoft.com"
+  )
+  local domain answers answer answered=0
+
+  for domain in "${probe_domains[@]}"; do
+    answers=$(system_dns_answers "$domain" "A")
+    while IFS= read -r answer; do
+      [[ -z "$answer" ]] && continue
+      answered=1
+      if is_nonpublic_ipv4 "$answer"; then
+        print_value_or_colored "No" "HEART"
+        return
+      fi
+    done <<<"$answers"
+  done
+  if [[ "$answered" != 1 ]]; then
+    # Not a single public name resolved: there is nothing to judge.
+    echo "$STATUS_NA"
+    return
+  fi
   print_value_or_colored "Yes" "SERVICE"
 }
 
