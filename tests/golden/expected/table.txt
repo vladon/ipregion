@@ -78,6 +78,13 @@
 [1;32mMatrix[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mntfy[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mTelegram Bot API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mWorkers.dev[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGitHub Pages[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mGitLab Pages[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mVercel[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mNetlify[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mCloudflare Pages[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mHeroku[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mThreads API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mThreads Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m

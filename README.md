@@ -56,7 +56,7 @@ ipregion.sh --compare yesterday.json today.json
 
 ## Features
 
-- 204 checks in four groups: GeoIP sources (19), popular services (168), dev infra (14) and CDN nodes (3)
+- 211 checks in four groups: GeoIP sources (19), popular services (175), dev infra (14) and CDN nodes (3)
 - Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -131,6 +131,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 - **CN platforms**: WeChat, WeChat API, Baidu, Alipay
 - **Finance**: Stripe API, PayPal, Wise (transport probes)
 - **Dev infra** (`--group devinfra`): GitHub (site + API + Codeload + Raw), GitLab (site + API), npm Registry, PyPI, Docker Hub (+ API), Go Modules, Crates.io, Maven Central, Hugging Face
+- **Static hosting**: Workers.dev, GitHub Pages, GitLab Pages, Vercel, Netlify, Cloudflare Pages, Heroku (transport probes — this infrastructure is often blocked wholesale)
 - **Hosting**: Hetzner, DigitalOcean, Vultr (transport probes)
 - **Push & chat infra**: Matrix, ntfy, Telegram Bot API (transport probes)
 
