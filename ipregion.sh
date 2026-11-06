@@ -4514,6 +4514,7 @@ lookup_detector404() {
 }
 
 lookup_iplocation_com() {
+  dns_unresolved "iplocation.com" && return
   local transport="$1"
   local ip_version="$2"
   local ip response country_code
@@ -4553,6 +4554,7 @@ lookup_iplocation_com() {
 }
 
 lookup_google() {
+  dns_unresolved "accounts.google.com" && return
   local ip_version="$1"
   local response
 
@@ -4564,6 +4566,7 @@ lookup_google() {
 }
 
 lookup_youtube() {
+  dns_unresolved "www.youtube.com" && return
   local ip_version="$1"
   local response json_result
 
@@ -4574,6 +4577,7 @@ lookup_youtube() {
 }
 
 lookup_youtube_premium() {
+  dns_unresolved "www.youtube.com" && return
   local ip_version="$1"
   local response is_available color_name
 
@@ -4598,6 +4602,7 @@ lookup_youtube_premium() {
 }
 
 lookup_youtube_premium_web() {
+  dns_unresolved "www.youtube.com" && return
   local ip_version="$1"
   local response is_available color_name
 
@@ -4628,6 +4633,7 @@ lookup_youtube_premium_web() {
 }
 
 lookup_google_search_captcha() {
+  dns_unresolved "www.google.com" && return
   local ip_version="$1"
   local response
 
@@ -4856,6 +4862,7 @@ is_notebook_app_page() {
 }
 
 lookup_gemini_notebook() {
+  dns_unresolved "notebooklm.google.com" && return
   local ip_version="$1"
   local effective_url redirect_url response error_type http_code attempt
   local gate_found=false ok_attempts=0
@@ -4893,6 +4900,7 @@ lookup_gemini_notebook() {
 }
 
 lookup_gemini() {
+  dns_unresolved "gemini.google.com" && return
   local ip_version="$1"
   local response batch_response sid bl encoded_bl availability color_name reqid batch_url
   local probe_status stream_freq stream_url stream_response stream_reply
@@ -4974,11 +4982,13 @@ lookup_gemini() {
 }
 
 lookup_apple() {
+  dns_unresolved "gspe1-ssl.ls.apple.com" && return
   local ip_version="$1"
   curl_wrapper GET "https://gspe1-ssl.ls.apple.com/pep/gcc" --ip-version "$ip_version"
 }
 
 lookup_steam() {
+  dns_unresolved "store.steampowered.com" && return
   local ip_version="$1"
   local response
 
@@ -4987,6 +4997,7 @@ lookup_steam() {
 }
 
 lookup_tiktok() {
+  dns_unresolved "www.tiktok.com" && return
   local ip_version="$1"
   local response
 
@@ -4995,6 +5006,7 @@ lookup_tiktok() {
 }
 
 lookup_ookla_speedtest() {
+  dns_unresolved "www.speedtest.net" && return
   local ip_version="$1"
   local response
 
@@ -5003,6 +5015,7 @@ lookup_ookla_speedtest() {
 }
 
 lookup_jetbrains() {
+  dns_unresolved "data.services.jetbrains.com" && return
   local ip_version="$1"
   local response
 
@@ -5011,6 +5024,7 @@ lookup_jetbrains() {
 }
 
 lookup_playstation() {
+  dns_unresolved "www.playstation.com" && return
   local ip_version="$1"
   local response
 
@@ -5019,6 +5033,7 @@ lookup_playstation() {
 }
 
 lookup_microsoft() {
+  dns_unresolved "login.live.com" && return
   local ip_version="$1"
   local response
 
@@ -5027,6 +5042,7 @@ lookup_microsoft() {
 }
 
 lookup_twitch() {
+  dns_unresolved "gql.twitch.tv" && return
   local ip_version="$1"
   local response
 
@@ -5039,6 +5055,7 @@ lookup_twitch() {
 }
 
 lookup_chatgpt() {
+  dns_unresolved "ab.chatgpt.com" && return
   local ip_version="$1"
   local response fragment
 
@@ -5052,6 +5069,7 @@ lookup_chatgpt() {
 }
 
 lookup_disney_plus() {
+  dns_unresolved "disney.api.edge.bamgrid.com" && return
   local ip_version="$1"
   local response
 
@@ -5071,6 +5089,7 @@ lookup_disney_plus() {
 }
 
 lookup_disney_plus_access() {
+  dns_unresolved "disney.api.edge.bamgrid.com" && return
   local ip_version="$1"
   local response errors_count in_supported_location is_available color_name
 
@@ -5120,6 +5139,7 @@ parse_youtube_cdn_iata() {
 }
 
 lookup_youtube_cdn() {
+  dns_unresolved "redirector.googlevideo.com" && return
   local ip_version="$1"
   local response iata location
 
@@ -5141,6 +5161,7 @@ lookup_youtube_cdn() {
 }
 
 lookup_cloudflare_cdn() {
+  dns_unresolved "speed.cloudflare.com" && return
   local ip_version="$1"
   local response iata location
 
@@ -5165,6 +5186,7 @@ lookup_cloudflare_cdn() {
 }
 
 lookup_reddit_guest_access() {
+  dns_unresolved "www.reddit.com" && return
   local ip_version="$1"
   local response is_available color_name
 
@@ -5189,6 +5211,7 @@ lookup_reddit_guest_access() {
 }
 
 lookup_netflix() {
+  dns_unresolved "api.fast.com" && return
   local ip_version="$1"
   local response country
 
@@ -5204,6 +5227,7 @@ lookup_netflix() {
 }
 
 lookup_netflix_cdn() {
+  dns_unresolved "api.fast.com" && return
   local ip_version="$1"
   local response country
 
@@ -5219,6 +5243,7 @@ lookup_netflix_cdn() {
 }
 
 lookup_spotify() {
+  dns_unresolved "spclient.wg.spotify.com" && return
   local ip_version="$1"
   local response country
 
@@ -5236,6 +5261,7 @@ lookup_spotify() {
 }
 
 lookup_spotify_signup() {
+  dns_unresolved "spclient.wg.spotify.com" && return
   local ip_version="$1"
   local response status is_country_launched available color_name
 
@@ -5319,6 +5345,17 @@ url_host() {
   host="${host%%/*}"
   host="${host%%:*}"
   echo "$host"
+}
+
+# Prints the DNS-block verdict and returns 0 when the host fails to
+# resolve, 1 otherwise. First line of custom handlers whose curl bodies
+# bypass the shared site/gate/tcp helpers.
+dns_unresolved() {
+  if host_resolves "$1"; then
+    return 1
+  fi
+  print_value_or_colored "DNS block" "WARN"
+  return 0
 }
 
 lookup_site_access() {
@@ -5500,6 +5537,7 @@ lookup_signal_access() {
 }
 
 lookup_douyin_cn() {
+  dns_unresolved "www.douyin.com" && return
   local ip_version="$1"
   local response error_type
 
@@ -6117,6 +6155,7 @@ lookup_ozon_transport() {
 }
 
 lookup_claude() {
+  dns_unresolved "claude.ai" && return
   local ip_version="$1"
   local response
 
@@ -6134,6 +6173,7 @@ lookup_claude() {
 }
 
 lookup_reddit() {
+  dns_unresolved "www.reddit.com" && return
   local ip_version="$1"
   local response
 
@@ -6159,6 +6199,7 @@ lookup_ai_cn_reachable() {
   local ip_version="$2"
   local response http_code
 
+  dns_unresolved "$(url_host "$url")" && return
   response=$(curl_wrapper GET "$url" --ip-version "$ip_version")
   http_code=$(read_curl_metric_field "$CURL_META_FILE" "http_code")
 
@@ -6188,6 +6229,7 @@ lookup_minimax_cn() {
 }
 
 lookup_youtube_no_ads() {
+  dns_unresolved "www.youtube.com" && return
   local ip_version="$1"
   local cookie_jar response
 

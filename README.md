@@ -344,7 +344,7 @@ Total: 195 checks.
 
 YouTube CDN, Cloudflare CDN, Netflix CDN — Google/Cloudflare/Netflix edge node detection (`--group cdn`).
 
-A green Yes means the service answers from your network; a red No usually means a transport-level block (connection reset or timeout) or a region-gate stub; Denied / Rate-limit / N/A are HTTP-level outcomes. A yellow **DNS block** means the hostname did not resolve at all (typical of DNS poisoning) and is reported by both transport probes and site availability checks.
+A green Yes means the service answers from your network; a red No usually means a transport-level block (connection reset or timeout) or a region-gate stub; Denied / Rate-limit / N/A are HTTP-level outcomes. A yellow **DNS block** means the hostname did not resolve at all (typical of DNS poisoning); every check — transport probes, site availability and the bespoke custom handlers — resolves its target before connecting.
 
 ## Country codes
 
