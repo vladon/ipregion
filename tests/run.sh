@@ -1283,6 +1283,25 @@ printf '%s\n' "$list_output" | grep -q $'^custom\tGEMINI_NOTEBOOK\tGemini Notebo
   failures=$((failures + 1))
 }
 
+# --fail-on-block: verdict gating on the finalized RESULT_JSON
+RESULT_JSON='{"results":{"primary":[],"custom":[{"service":"GitHub","ipv4":"Yes","ipv6":"Yes"},{"service":"DeepL","ipv4":"No","ipv6":"Region blocked"}],"cdn":[],"devinfra":[]}}'
+FAIL_ON_BLOCK_KEYS=("GITHUB")
+fail_on_block_check && echo "OK: fail-on-block passes when Yes" || echo "FAIL: fail-on-block passes when Yes"
+FAIL_ON_BLOCK_KEYS=("DEEPL")
+fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block detects blocked" || echo "OK: fail-on-block detects blocked"
+FAIL_ON_BLOCK_KEYS=("GITHUB" "DEEPL")
+fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block detects partial block" || echo "OK: fail-on-block detects partial block"
+RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[]}}'
+FAIL_ON_BLOCK_KEYS=("GITHUB")
+fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block treats absent as blocked" || echo "OK: fail-on-block treats absent as blocked"
+# Informational verdicts (CDN locations, N/A) are not failures
+RESULT_JSON='{"results":{"primary":[],"custom":[{"service":"YouTube CDN","ipv4":"DE (FRA)","ipv6":"SE (ARN)"},{"service":"Gemini Notebook","ipv4":"N/A","ipv6":"No"}],"cdn":[],"devinfra":[]}}'
+FAIL_ON_BLOCK_KEYS=("YOUTUBE_CDN")
+fail_on_block_check && echo "OK: informational location passes" || echo "FAIL: informational location passes"
+FAIL_ON_BLOCK_KEYS=("GEMINI_NOTEBOOK")
+fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block flags N/A mixed verdict" || echo "OK: N/A mixed verdict passes"
+unset FAIL_ON_BLOCK_KEYS
+
 # Shell completions: syntax and functional bash completion check
 bash -n "$ROOT_DIR/completions/ipregion.bash" && echo "OK: bash completion parses" || {
   echo "FAIL: bash completion parses"
