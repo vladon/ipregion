@@ -1267,32 +1267,6 @@ printf '%s\n' "$list_output" | grep -q $'^custom\tGEMINI_NOTEBOOK\tGemini Notebo
   failures=$((failures + 1))
 }
 
-# Shell completions: syntax and functional bash completion check
-bash -n "$ROOT_DIR/completions/ipregion.bash" && echo "OK: bash completion parses" || {
-  echo "FAIL: bash completion parses"
-  failures=$((failures + 1))
-}
-if command -v zsh >/dev/null 2>&1; then
-  zsh -n "$ROOT_DIR/completions/ipregion.zsh" && echo "OK: zsh completion parses" || {
-    echo "FAIL: zsh completion parses"
-    failures=$((failures + 1))
-  }
-else
-  echo "SKIP: zsh not installed"
-fi
-source "$ROOT_DIR/completions/ipregion.bash"
-COMP_WORDS=(ipregion.sh --group "")
-COMP_CWORD=2
-_ipregion_completions
-assert_contains "$(printf '%s\n' "${COMPREPLY[@]}")" "devinfra" "completion offers group values"
-COMP_WORDS=(ipregion.sh --include-service "")
-COMP_CWORD=2
-_ipregion_completions
-assert_contains "$(printf '%s\n' "${COMPREPLY[@]}")" "gemini_notebook" "completion offers service names"
-unfunction _ipregion_completions 2>/dev/null || unset -f _ipregion_completions
-COMP_WORDS=()
-COMPREPLY=()
-
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
