@@ -5375,7 +5375,10 @@ system_dns_answers() {
       mapfile -t answers < <(getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1}' | sort -u)
     fi
   elif command -v nslookup >/dev/null 2>&1; then
-    mapfile -t answers < <(nslookup -type="$record_type" "$host" 2>/dev/null | awk '/^Address/ {print $NF}' | grep_wrapper -v '#' | sort -u)
+    # macOS nslookup prints AAAA answers in host(1) style ("has AAAA
+    # address"), Linux bind prints "Address:" lines; catch both. The
+    # server header carries a "#53" suffix and is filtered below.
+    mapfile -t answers < <(nslookup -type="$record_type" "$host" 2>/dev/null | awk '/^Address/ {print $NF} /has .*address/ {print $NF}' | grep_wrapper -v '#' | sort -u)
   elif command -v host >/dev/null 2>&1; then
     if [[ "$record_type" == "AAAA" ]]; then
       mapfile -t answers < <(host -t AAAA "$host" 2>/dev/null | awk '/has IPv6 address/ {print $NF}' | sort -u)
@@ -5416,12 +5419,15 @@ doh_dns_answers() {
 
 # DNS-integrity diagnostic: a resolver that invents records for names that
 # cannot exist, or that rewrites answers for fixed public records compared
-# against a TLS-protected DoH reference, is spoofing DNS. Yes = answers
-# clean, No = spoofing or filtering detected.
+# against a TLS-protected DoH reference, is spoofing DNS. A records and
+# AAAA records are both compared: an empty system AAAA while the reference
+# has one is ISP AAAA-nulling. Yes = answers clean, No = spoofing,
+# filtering or nulling detected.
 lookup_dns_integrity() {
   local ip_version="$1"
   local -a canaries=("dns.google" "one.one.one.one")
-  local canary probe_domain="nx-$(date +%s)-$RANDOM.vladon.sh"
+  local -a record_types=("A" "AAAA")
+  local canary record_type probe_domain="nx-$(date +%s)-$RANDOM.vladon.sh"
   local local_answers doh_answers answer
 
   # The zone has no wildcard: an answer for a random label means the
@@ -5432,24 +5438,32 @@ lookup_dns_integrity() {
   fi
 
   for canary in "${canaries[@]}"; do
-    doh_answers=$(doh_dns_answers "$canary" "A" "$ip_version") || {
-      # No TLS-protected reference reachable: honesty over guessing.
-      echo "$STATUS_NA"
-      return
-    }
-    local_answers=$(system_dns_answers "$canary" "A")
-    if [[ -z "$local_answers" ]]; then
-      # The reference resolves, the system resolver stays silent: the
-      # answer is filtered or nulled.
-      print_value_or_colored "No" "HEART"
-      return
-    fi
-    while IFS= read -r answer; do
-      if ! grep_wrapper -qxF "$answer" <<<"$doh_answers"; then
+    for record_type in "${record_types[@]}"; do
+      doh_answers=$(doh_dns_answers "$canary" "$record_type" "$ip_version") || {
+        # No TLS-protected reference reachable: honesty over guessing.
+        echo "$STATUS_NA"
+        return
+      }
+      if [[ -z "$doh_answers" ]]; then
+        # The reference legitimately has no records of this type: nothing
+        # to compare against.
+        continue
+      fi
+      local_answers=$(system_dns_answers "$canary" "$record_type")
+      if [[ -z "$local_answers" ]]; then
+        # The reference resolves, the system resolver stays silent: the
+        # answer is filtered or nulled (the AAAA case is the common ISP
+        # practice of forcing IPv4).
         print_value_or_colored "No" "HEART"
         return
       fi
-    done <<<"$local_answers"
+      while IFS= read -r answer; do
+        if ! grep_wrapper -qxF "$answer" <<<"$doh_answers"; then
+          print_value_or_colored "No" "HEART"
+          return
+        fi
+      done <<<"$local_answers"
+    done
   done
   print_value_or_colored "Yes" "SERVICE"
 }

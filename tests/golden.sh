@@ -296,9 +296,19 @@ host_resolves() {
 
 # DNS integrity: fixed canary sets, never the live resolver or live DoH.
 system_dns_answers() {
-  case "$1" in
-  dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
-  one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+  case "$2" in
+  AAAA)
+    case "$1" in
+    dns.google) printf '2001:4860:4860::8888\n2001:4860:4860::8844\n' ;;
+    one.one.one.one) printf '2606:4700:4700::1111\n2606:4700:4700::1001\n' ;;
+    esac
+    ;;
+  *)
+    case "$1" in
+    dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
+    one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+    esac
+    ;;
   esac
 }
 doh_dns_answers() {

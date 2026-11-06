@@ -1175,48 +1175,70 @@ JSON_OUTPUT=false
 
 # DNS integrity verdicts (system resolver and DoH reference stubbed)
 dns_integrity_system_stub() {
+  local host="$1"
+  local rtype="${2:-A}"
   case "${DNS_INTEGRITY_MODE:-clean}" in
   invent)
-    if [[ "$1" == nx-* ]]; then
+    if [[ "$host" == nx-* ]]; then
       echo "203.0.113.66"
-      return
     fi
-    case "$1" in
-    dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
-    one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
-    esac
+    return
     ;;
   rewrite)
-    if [[ "$1" == "one.one.one.one" ]]; then
+    if [[ "$host" == "one.one.one.one" && "$rtype" == "A" ]]; then
       echo "203.0.113.99"
       return
     fi
-    printf '8.8.8.8\n8.8.4.4\n'
     ;;
   nulling)
-    if [[ "$1" == "one.one.one.one" ]]; then
+    if [[ "$host" == "one.one.one.one" ]]; then
       return 0
     fi
-    printf '8.8.8.8\n8.8.4.4\n'
     ;;
-  *)
-    if [[ "$1" == nx-* ]]; then
+  nulling6)
+    if [[ "$host" == "one.one.one.one" && "$rtype" == "AAAA" ]]; then
       return 0
     fi
-    case "$1" in
-    dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
-    one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
-    esac
+    ;;
+  esac
+  case "$host" in
+  dns.google)
+    if [[ "$rtype" == "AAAA" ]]; then
+      printf '2001:4860:4860::8888\n2001:4860:4860::8844\n'
+    else
+      printf '8.8.8.8\n8.8.4.4\n'
+    fi
+    ;;
+  one.one.one.one)
+    if [[ "$rtype" == "AAAA" ]]; then
+      printf '2606:4700:4700::1111\n2606:4700:4700::1001\n'
+    else
+      printf '1.1.1.1\n1.0.0.1\n'
+    fi
     ;;
   esac
 }
 dns_integrity_doh_stub() {
+  local host="$1"
+  local rtype="${2:-A}"
   if [[ "${DNS_INTEGRITY_MODE:-clean}" == "no_doh" ]]; then
     return 1
   fi
-  case "$1" in
-  dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
-  one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+  case "$host" in
+  dns.google)
+    if [[ "$rtype" == "AAAA" ]]; then
+      printf '2001:4860:4860::8888\n2001:4860:4860::8844\n'
+    else
+      printf '8.8.8.8\n8.8.4.4\n'
+    fi
+    ;;
+  one.one.one.one)
+    if [[ "$rtype" == "AAAA" ]]; then
+      printf '2606:4700:4700::1111\n2606:4700:4700::1001\n'
+    else
+      printf '1.1.1.1\n1.0.0.1\n'
+    fi
+    ;;
   esac
 }
 system_dns_answers() { dns_integrity_system_stub "$@"; }
@@ -1231,6 +1253,8 @@ DNS_INTEGRITY_MODE="rewrite"
 assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps rewritten answers to No"
 DNS_INTEGRITY_MODE="nulling"
 assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps filtered answers to No"
+DNS_INTEGRITY_MODE="nulling6"
+assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps AAAA nulling to No"
 DNS_INTEGRITY_MODE="no_doh"
 assert_eq "N/A" "$(lookup_dns_integrity 4)" "dns integrity stays N/A without a DoH reference"
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
