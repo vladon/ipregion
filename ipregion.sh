@@ -108,6 +108,8 @@ LINE_PROBE_TARGETS=("line.me:443")
 # Encrypted-DNS resolvers, often cut separately from general traffic
 DOH_GOOGLE_PROBE_TARGETS=("dns.google:443")
 DOH_CLOUDFLARE_PROBE_TARGETS=("cloudflare-dns.com:443")
+DOT_GOOGLE_PROBE_TARGETS=("dns.google:853")
+DOT_CLOUDFLARE_PROBE_TARGETS=("one.one.one.one:853")
 # Mail and file-storage transports
 GMAIL_PROBE_TARGETS=("mail.google.com:443")
 PROTON_PROBE_TARGETS=("proton.me:443")
@@ -363,9 +365,12 @@ declare -A CUSTOM_SERVICES=(
   [BRAVE_SEARCH]="Brave Search"
   [DOH_GOOGLE]="DoH Google"
   [DOH_CLOUDFLARE]="DoH Cloudflare"
+  [DOT_GOOGLE]="DoT Google"
+  [DOT_CLOUDFLARE]="DoT Cloudflare"
   [DNS_INTEGRITY]="DNS Integrity"
   [DNS_INTERCEPT]="DNS Intercept"
   [DNS_PTR]="PTR Match"
+  [DNSSEC_VALIDATION]="DNSSEC Validation"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -545,9 +550,12 @@ CUSTOM_SERVICES_ORDER=(
   "BRAVE_SEARCH"
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
+  "DOT_GOOGLE"
+  "DOT_CLOUDFLARE"
   "DNS_INTEGRITY"
   "DNS_INTERCEPT"
   "DNS_PTR"
+  "DNSSEC_VALIDATION"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -779,9 +787,12 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [BRAVE_SEARCH]="lookup_brave_search"
   [DOH_GOOGLE]="lookup_doh_google"
   [DOH_CLOUDFLARE]="lookup_doh_cloudflare"
+  [DOT_GOOGLE]="lookup_dot_google"
+  [DOT_CLOUDFLARE]="lookup_dot_cloudflare"
   [DNS_INTEGRITY]="lookup_dns_integrity"
   [DNS_INTERCEPT]="lookup_dns_intercept"
   [DNS_PTR]="lookup_dns_ptr"
+  [DNSSEC_VALIDATION]="lookup_dnssec_validation"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5577,6 +5588,41 @@ lookup_dns_ptr() {
   print_value_or_colored "Yes" "SERVICE"
 }
 
+# DNSSEC validation diagnostic: dnssec-failed.org carries deliberately
+# broken signatures, so a validating resolver must fail the lookup
+# (SERVFAIL) while a non-validating one happily serves records. The
+# DoH-JSON reference (Cloudflare, then Google - both validating) confirms
+# the canary is still broken before anything is concluded. Yes = the
+# system resolver validates, No = it serves records for a
+# broken-signature domain, N/A = reference unreachable or the canary no
+# longer broken.
+lookup_dnssec_validation() {
+  local ip_version="$1"
+  local canary="dnssec-failed.org"
+  local doh_answer system_answer
+
+  doh_answer=$(doh_dns_answers "$canary" "A" "$ip_version") || {
+    echo "$STATUS_NA"
+    return
+  }
+  if [[ -n "$doh_answer" ]]; then
+    # The TLS reference resolves the canary: its signatures are no longer
+    # broken - nothing to verify against.
+    echo "$STATUS_NA"
+    return
+  fi
+  system_answer=$(system_dns_answers "$canary" "A")
+  if [[ -n "$system_answer" ]]; then
+    # Records served for a domain with broken signatures: the resolver
+    # does not validate DNSSEC.
+    print_value_or_colored "No" "HEART"
+    return
+  fi
+  # Resolution failed while the reference confirms the breakage: the
+  # resolver validates signatures.
+  print_value_or_colored "Yes" "SERVICE"
+}
+
 lookup_site_access() {
   local url="$1"
   local marker="$2"
@@ -6095,6 +6141,14 @@ lookup_doh_google() {
 
 lookup_doh_cloudflare() {
   lookup_tcp_targets DOH_CLOUDFLARE_PROBE_TARGETS
+}
+
+lookup_dot_google() {
+  lookup_tcp_targets DOT_GOOGLE_PROBE_TARGETS
+}
+
+lookup_dot_cloudflare() {
+  lookup_tcp_targets DOT_CLOUDFLARE_PROBE_TARGETS
 }
 
 lookup_gmail() {

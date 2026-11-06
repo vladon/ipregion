@@ -971,6 +971,8 @@ assert_eq "No" "$(lookup_instagram_transport 4)" "instagram transport maps unrea
 assert_eq "No" "$(lookup_threads_transport 4)" "threads transport maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_steam_transport 4)" "steam transport maps unreachable endpoint to No"
 assert_eq "No" "$(lookup_netflix_transport 4)" "netflix transport maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_dot_google 4)" "dot google maps unreachable endpoint to No"
+assert_eq "No" "$(lookup_dot_cloudflare 4)" "dot cloudflare maps unreachable endpoint to No"
 DNS_STUB_MODE="blocked"
 DC_PROBE_MODE="up"
 assert_eq "DNS block" "$(lookup_telegram_dc 4)" "telegram dc maps failed resolution to DNS block"
@@ -990,6 +992,8 @@ assert_eq "Yes" "$(lookup_deepseek_api 4)" "deepseek api maps reachable endpoint
 assert_eq "Yes" "$(lookup_perplexity_api 4)" "perplexity api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_mistral_api 4)" "mistral api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_reddit_api 4)" "reddit api maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_dot_google 4)" "dot google maps reachable endpoint to Yes"
+assert_eq "Yes" "$(lookup_dot_cloudflare 4)" "dot cloudflare maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_ok_api 4)" "ok api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_linkedin_api 4)" "linkedin api maps reachable endpoint to Yes"
 assert_eq "Yes" "$(lookup_x_api 4)" "x api maps reachable endpoint to Yes"
@@ -1206,6 +1210,12 @@ dns_integrity_system_stub() {
     ;;
   esac
   case "$host" in
+  dnssec-failed.org)
+    if [[ "${DNSSEC_MODE:-validating}" == "nonvalidating" ]]; then
+      echo "69.252.80.9"
+    fi
+    return
+    ;;
   dns.google)
     if [[ "$rtype" == "AAAA" ]]; then
       printf '2001:4860:4860::8888\n2001:4860:4860::8844\n'
@@ -1245,6 +1255,11 @@ dns_integrity_doh_stub() {
     ;;
   8.8.8.8.in-addr.arpa) echo "dns.google." ;;
   1.1.1.1.in-addr.arpa) echo "one.one.one.one." ;;
+  dnssec-failed.org)
+    if [[ "${DNSSEC_MODE:-validating}" == "fixed" ]]; then
+      echo "69.252.80.9"
+    fi
+    ;;
   esac
 }
 system_dns_answers() { dns_integrity_system_stub "$@"; }
@@ -1317,6 +1332,16 @@ PTR_MODE="no_doh"
 assert_eq "N/A" "$(lookup_dns_ptr 4)" "dns ptr stays N/A without a DoH reference"
 unset -f system_ptr_answer ptr_system_stub
 unset PTR_MODE
+DNSSEC_MODE="nonvalidating"
+assert_eq "No" "$(lookup_dnssec_validation 4)" "dnssec validation flags resolvers serving broken-signature records"
+DNSSEC_MODE="fixed"
+assert_eq "N/A" "$(lookup_dnssec_validation 4)" "dnssec validation stays N/A when the canary resolves through the reference"
+PTR_MODE="no_doh"
+assert_eq "N/A" "$(lookup_dnssec_validation 4)" "dnssec validation stays N/A without a DoH reference"
+unset PTR_MODE
+DNSSEC_MODE="validating"
+assert_eq "Yes" "$(lookup_dnssec_validation 4)" "dnssec validation maps failed resolution to Yes"
+unset DNSSEC_MODE PTR_MODE
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
 unset DNS_INTEGRITY_MODE
 JSON_OUTPUT=false
