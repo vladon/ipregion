@@ -26,6 +26,14 @@ bash ipregion.sh
 
 All releases: https://github.com/vladon/ipregion/releases
 
+### Shell completions
+
+```bash
+source completions/ipregion.bash                                    # bash
+# zsh: copy to a fpath dir as _ipregion, e.g.
+mkdir -p ~/.zfunc && cp completions/ipregion.zsh ~/.zfunc/_ipregion
+```
+
 ### Monitoring mode
 
 Re-run checks on an interval and print only verdict changes:
