@@ -2819,18 +2819,29 @@ fetch_external_ip() {
 
 discover_external_ips() {
   local ipv4_failed=false ipv6_failed=false
+  local ipv4_tmp ipv4_pid
 
+  # IPv4 and IPv6 discovery hit the same identity services independently -
+  # run them concurrently instead of paying both latencies sequentially
   if ipv4_enabled; then
-    EXTERNAL_IPV4=$(fetch_external_ip 4)
-    if [[ -z "$EXTERNAL_IPV4" ]]; then
-      ipv4_failed=true
-    fi
+    ipv4_tmp=$(mktemp "${TMPDIR:-/tmp}/ipregion_ipv4_XXXXXX")
+    (fetch_external_ip 4 >"$ipv4_tmp") &
+    ipv4_pid=$!
   fi
 
   if ipv6_enabled; then
     EXTERNAL_IPV6=$(fetch_external_ip 6)
     if [[ -z "$EXTERNAL_IPV6" ]]; then
       ipv6_failed=true
+    fi
+  fi
+
+  if ipv4_enabled; then
+    wait "$ipv4_pid"
+    EXTERNAL_IPV4=$(<"$ipv4_tmp")
+    rm -f "$ipv4_tmp"
+    if [[ -z "$EXTERNAL_IPV4" ]]; then
+      ipv4_failed=true
     fi
   fi
 
