@@ -366,6 +366,7 @@ declare -A CUSTOM_SERVICES=(
   [DNS_INTEGRITY]="DNS Integrity"
   [DNS_INTERCEPT]="DNS Intercept"
   [DNS_PTR]="PTR Match"
+  [REBIND_PROTECTION]="Rebind Protection"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -548,6 +549,7 @@ CUSTOM_SERVICES_ORDER=(
   "DNS_INTEGRITY"
   "DNS_INTERCEPT"
   "DNS_PTR"
+  "REBIND_PROTECTION"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -782,6 +784,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_INTEGRITY]="lookup_dns_integrity"
   [DNS_INTERCEPT]="lookup_dns_intercept"
   [DNS_PTR]="lookup_dns_ptr"
+  [REBIND_PROTECTION]="lookup_rebind_protection"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -974,6 +977,9 @@ EXCLUDED_SERVICES=(
   # "IPINFO_IO"
   # "IPAPI_CO"
   "GOOGLE_SEARCH_CAPTCHA"
+  # Inherently slow (waits out a 60s TTL through the DNS API flip);
+  # enable with --include-service rebind_protection and CF_DNS_API_TOKEN.
+  "REBIND_PROTECTION"
 )
 INCLUDED_SERVICES=()
 EXCLUDED_SERVICES_CLI=()
@@ -1987,7 +1993,12 @@ validate_known_service() {
 should_skip_service() {
   local service_name="$1"
 
-  if ((${#INCLUDED_SERVICES[@]} > 0)) && ! is_service_in_list "$service_name" "${INCLUDED_SERVICES[@]}"; then
+  if ((${#INCLUDED_SERVICES[@]} > 0)); then
+    # Explicit inclusion wins over both exclusion lists: a default-excluded
+    # check must stay runnable via --include-service.
+    if is_service_in_list "$service_name" "${INCLUDED_SERVICES[@]}"; then
+      return 1
+    fi
     return 0
   fi
 
@@ -5457,6 +5468,66 @@ system_ptr_answer() {
   echo "$answer"
 }
 
+# Self-hosted DNS rebinding canary: a dedicated low-TTL A record under
+# our zone that the check flips through the Cloudflare DNS API while
+# watching what the system resolver serves.
+REBIND_PROTECTION_RECORD="${REBIND_PROTECTION_RECORD:-rebind-test.vladon.sh}"
+REBIND_PROTECTION_ZONE_NAME="${REBIND_PROTECTION_ZONE_NAME:-vladon.sh}"
+REBIND_PROTECTION_PUBLIC_IP="${REBIND_PROTECTION_PUBLIC_IP:-192.0.2.111}"
+REBIND_PROTECTION_PRIVATE_IP="${REBIND_PROTECTION_PRIVATE_IP:-127.0.0.1}"
+REBIND_PROTECTION_TTL="${REBIND_PROTECTION_TTL:-60}"
+
+# Cloudflare DNS API request; prints the response body on success and
+# returns 1 on missing token, transport failure, or API-level error. The
+# token is only ever sent as a bearer header, never echoed.
+cf_dns_api() {
+  local method="$1"
+  local path="$2"
+  local data="${3:-}"
+  local response
+  if [[ -z "${CF_DNS_API_TOKEN:-}" ]]; then
+    return 1
+  fi
+  local api_args=(--header "Authorization: Bearer ${CF_DNS_API_TOKEN}")
+  if [[ -n "$data" ]]; then
+    api_args+=(--header "Content-Type: application/json" --data "$data")
+  fi
+  response=$(curl_wrapper "$method" "https://api.cloudflare.com/client/v4${path}" "${api_args[@]}") || return 1
+  if [[ -z "$response" ]] || [[ "$(process_json "$response" '.success // false' 2>/dev/null)" != "true" ]]; then
+    return 1
+  fi
+  echo "$response"
+}
+
+cf_dns_record_write() {
+  local zone_id="$1"
+  local record_id="$2"
+  local record_name="$3"
+  local content="$4"
+  cf_dns_api PUT "/zones/${zone_id}/dns_records/${record_id}" \
+    "{\"type\":\"A\",\"name\":\"${record_name}\",\"content\":\"${content}\",\"ttl\":${REBIND_PROTECTION_TTL}}" >/dev/null 2>&1
+}
+
+# True for addresses a rebinding attack would pivot to: this-network,
+# loopback, RFC1918, CGNAT, link-local, benchmarking ranges.
+is_nonpublic_ipv4() {
+  local ip="$1"
+  local o1 o2
+  [[ "$ip" =~ ^[0-9]+(\.[0-9]+){3}$ ]] || return 1
+  o1="${ip%%.*}"
+  o2="${ip#*.}"
+  o2="${o2%%.*}"
+  case "$o1" in
+  0 | 10 | 127) return 0 ;;
+  169) [[ "$o2" == 254 ]] && return 0 ;;
+  172) ((o2 >= 16 && o2 <= 31)) && return 0 ;;
+  100) ((o2 >= 64 && o2 <= 127)) && return 0 ;;
+  192) [[ "$o2" == 168 ]] && return 0 ;;
+  198) ((o2 == 18 || o2 == 19)) && return 0 ;;
+  esac
+  return 1
+}
+
 # DNS-integrity diagnostic: a resolver that invents records for names that
 # cannot exist, or that rewrites answers for fixed public records compared
 # against a TLS-protected DoH reference, is spoofing DNS. A records and
@@ -5569,6 +5640,103 @@ lookup_dns_ptr() {
       return
     fi
   done
+  print_value_or_colored "Yes" "SERVICE"
+}
+
+# Self-hosted DNS rebinding probe against the Cloudflare-hosted canary
+# record: the check writes the public value (TEST-NET-1), waits until the
+# system resolver serves it, flips the record to 127.0.0.1 through the
+# DNS API and watches whether the resolver serves the private answer
+# within the TTL window. Serving the private answer is the rebinding
+# primitive: No. Keeping the stale public answer (TTL or min-TTL
+# honored) is protection: Yes. Needs CF_DNS_API_TOKEN with Zone.DNS edit
+# rights; N/A without a token, on API errors, or when the public baseline
+# cannot be established. Excluded from the default custom group: the TTL
+# wait is inherently slow.
+lookup_rebind_protection() {
+  local ip_version="$1"
+  local poll_step="${REBIND_POLL_STEP:-5}"
+  local poll_max="${REBIND_POLL_MAX:-15}"
+  local zone_json zone_id record_json record_id answers answer
+  local polls baseline_ok=0 saw_private=0
+
+  zone_json=$(cf_dns_api GET "/zones?name=${REBIND_PROTECTION_ZONE_NAME}") || {
+    echo "$STATUS_NA"
+    return
+  }
+  zone_id=$(process_json "$zone_json" '.result[0].id // empty' 2>/dev/null)
+  if [[ -z "$zone_id" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+
+  record_json=$(cf_dns_api GET "/zones/${zone_id}/dns_records?type=A&name=${REBIND_PROTECTION_RECORD}") || {
+    echo "$STATUS_NA"
+    return
+  }
+  record_id=$(process_json "$record_json" '.result[0].id // empty' 2>/dev/null)
+  if [[ -z "$record_id" ]]; then
+    # Bootstrap: create the canary record in the public state.
+    record_json=$(cf_dns_api POST "/zones/${zone_id}/dns_records" \
+      "{\"type\":\"A\",\"name\":\"${REBIND_PROTECTION_RECORD}\",\"content\":\"${REBIND_PROTECTION_PUBLIC_IP}\",\"ttl\":${REBIND_PROTECTION_TTL}}") || {
+      echo "$STATUS_NA"
+      return
+    }
+    record_id=$(process_json "$record_json" '.result.id // empty' 2>/dev/null)
+    if [[ -z "$record_id" ]]; then
+      echo "$STATUS_NA"
+      return
+    fi
+  fi
+
+  cf_dns_record_write "$zone_id" "$record_id" "$REBIND_PROTECTION_RECORD" "$REBIND_PROTECTION_PUBLIC_IP" || {
+    echo "$STATUS_NA"
+    return
+  }
+
+  polls=0
+  while [[ "$polls" -lt "$poll_max" ]]; do
+    answers=$(system_dns_answers "$REBIND_PROTECTION_RECORD" "A")
+    if grep_wrapper -qxF "$REBIND_PROTECTION_PUBLIC_IP" <<<"$answers"; then
+      baseline_ok=1
+      break
+    fi
+    polls=$((polls + 1))
+    [[ "$polls" -lt "$poll_max" ]] && sleep "$poll_step"
+  done
+  if [[ "$baseline_ok" != 1 ]]; then
+    # The resolver never served the public value: no trustworthy baseline
+    # (aggressive caching or a stale private answer) - report, do not
+    # guess.
+    cf_dns_record_write "$zone_id" "$record_id" "$REBIND_PROTECTION_RECORD" "$REBIND_PROTECTION_PUBLIC_IP"
+    echo "$STATUS_NA"
+    return
+  fi
+
+  cf_dns_record_write "$zone_id" "$record_id" "$REBIND_PROTECTION_RECORD" "$REBIND_PROTECTION_PRIVATE_IP"
+
+  polls=0
+  while [[ "$polls" -lt "$poll_max" ]]; do
+    answers=$(system_dns_answers "$REBIND_PROTECTION_RECORD" "A")
+    while IFS= read -r answer; do
+      [[ -z "$answer" ]] && continue
+      if is_nonpublic_ipv4 "$answer"; then
+        saw_private=1
+        break
+      fi
+    done <<<"$answers"
+    [[ "$saw_private" == 1 ]] && break
+    polls=$((polls + 1))
+    [[ "$polls" -lt "$poll_max" ]] && sleep "$poll_step"
+  done
+
+  # Always leave the canary in the public state for the next run.
+  cf_dns_record_write "$zone_id" "$record_id" "$REBIND_PROTECTION_RECORD" "$REBIND_PROTECTION_PUBLIC_IP"
+
+  if [[ "$saw_private" == 1 ]]; then
+    print_value_or_colored "No" "HEART"
+    return
+  fi
   print_value_or_colored "Yes" "SERVICE"
 }
 
