@@ -320,6 +320,23 @@ resolver_echo_answer() {
   1.1.1.1) echo "192.0.2.20" ;;
   esac
 }
+doh_dns_answers() {
+  case "$2" in
+  PTR)
+    case "$1" in
+    8.8.8.8.in-addr.arpa) echo "dns.google" ;;
+    1.1.1.1.in-addr.arpa) echo "one.one.one.one" ;;
+    esac
+    ;;
+  *) system_dns_answers "$@" ;;
+  esac
+}
+system_ptr_answer() {
+  case "$1" in
+  8.8.8.8) echo "dns.google" ;;
+  1.1.1.1) echo "one.one.one.one" ;;
+  esac
+}
 
 # Fixed state ----------------------------------------------------------------
 
@@ -435,6 +452,7 @@ INCLUDED_SERVICES=(
   "DOH_CLOUDFLARE"
   "DNS_INTEGRITY"
   "DNS_INTERCEPT"
+  "DNS_PTR"
   "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"

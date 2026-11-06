@@ -365,6 +365,7 @@ declare -A CUSTOM_SERVICES=(
   [DOH_CLOUDFLARE]="DoH Cloudflare"
   [DNS_INTEGRITY]="DNS Integrity"
   [DNS_INTERCEPT]="DNS Intercept"
+  [DNS_PTR]="PTR Match"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -546,6 +547,7 @@ CUSTOM_SERVICES_ORDER=(
   "DOH_CLOUDFLARE"
   "DNS_INTEGRITY"
   "DNS_INTERCEPT"
+  "DNS_PTR"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -779,6 +781,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DOH_CLOUDFLARE]="lookup_doh_cloudflare"
   [DNS_INTEGRITY]="lookup_dns_integrity"
   [DNS_INTERCEPT]="lookup_dns_intercept"
+  [DNS_PTR]="lookup_dns_ptr"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5400,7 +5403,10 @@ doh_dns_answers() {
   local record_type="${2:-A}"
   local ip_version="$3"
   local answer_type=1
-  [[ "$record_type" == "AAAA" ]] && answer_type=28
+  case "$record_type" in
+  AAAA) answer_type=28 ;;
+  PTR) answer_type=12 ;;
+  esac
   local -a endpoints=(
     "https://cloudflare-dns.com/dns-query?name=${host}&type=${record_type}"
     "https://dns.google/resolve?name=${host}&type=${record_type}"
@@ -5431,6 +5437,22 @@ resolver_echo_answer() {
     answer=$(nslookup -type=A whoami.akamai.net "$server" 2>/dev/null | awk '/^Address/ {print $NF} /has .*address/ {print $NF}' | grep_wrapper -v '#' | sort -u | head -n 1)
   elif command -v host >/dev/null 2>&1; then
     answer=$(host -t A whoami.akamai.net "$server" 2>/dev/null | awk '/has .*address/ {print $NF}' | sort -u | head -n 1)
+  fi
+  echo "$answer"
+}
+
+# PTR name the SYSTEM resolver returns for the IPv4 address; empty when
+# none exists or no tool is available. Field order differs between tools:
+# match the field that is not the queried address.
+system_ptr_answer() {
+  local ip="$1"
+  local answer=""
+  if command -v getent >/dev/null 2>&1; then
+    answer=$(getent hosts "$ip" 2>/dev/null | awk -v addr="$ip" '$1 == addr {print $2; exit} $2 == addr {print $1; exit}')
+  elif command -v nslookup >/dev/null 2>&1; then
+    answer=$(nslookup "$ip" 2>/dev/null | awk '/name =|pointer/ {print $NF}' | head -n 1)
+  elif command -v host >/dev/null 2>&1; then
+    answer=$(host "$ip" 2>/dev/null | awk '/pointer/ {print $NF}' | head -n 1)
   fi
   echo "$answer"
 }
@@ -5508,6 +5530,45 @@ lookup_dns_intercept() {
     print_value_or_colored "No" "HEART"
     return
   fi
+  print_value_or_colored "Yes" "SERVICE"
+}
+
+# Reverse-DNS integrity diagnostic: the PTR names for two stable public
+# addresses (dns.google, one.one.one.one) observed from the DoH-JSON
+# reference over TLS must match what the system resolver returns. A
+# different name is ISP PTR substitution, a silent answer while the
+# reference has one is filtering. Yes = clean, No = substituted or
+# filtered, N/A = cannot verify.
+lookup_dns_ptr() {
+  local ip_version="$1"
+  local -a reverse_targets=("8.8.8.8" "1.1.1.1")
+  local ip local_ptr doh_raw doh_ptr
+
+  for ip in "${reverse_targets[@]}"; do
+    doh_raw=$(doh_dns_answers "${ip}.in-addr.arpa" "PTR" "$ip_version") || {
+      # No TLS-protected reference reachable: honesty over guessing.
+      echo "$STATUS_NA"
+      return
+    }
+    doh_ptr=$(awk '{sub(/\.$/, ""); print tolower($0)}' <<<"$doh_raw")
+    if [[ -z "$doh_ptr" ]]; then
+      # No authoritative PTR published for the target: nothing to compare.
+      continue
+    fi
+    local_ptr=$(system_ptr_answer "$ip")
+    if [[ -z "$local_ptr" ]]; then
+      # The reference has a PTR, the system resolver stays silent: the
+      # reverse answer is filtered.
+      print_value_or_colored "No" "HEART"
+      return
+    fi
+    local_ptr="${local_ptr%.}"
+    local_ptr="${local_ptr,,}"
+    if ! grep_wrapper -qxF "$local_ptr" <<<"$doh_ptr"; then
+      print_value_or_colored "No" "HEART"
+      return
+    fi
+  done
   print_value_or_colored "Yes" "SERVICE"
 }
 

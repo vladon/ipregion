@@ -19,6 +19,7 @@
 [1;32mDoH Cloudflare[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mDNS Integrity[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDNS Intercept[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mPTR Match[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mGmail[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Drive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Meet[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m

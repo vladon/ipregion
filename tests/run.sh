@@ -1221,7 +1221,7 @@ dns_integrity_system_stub() {
 dns_integrity_doh_stub() {
   local host="$1"
   local rtype="${2:-A}"
-  if [[ "${DNS_INTEGRITY_MODE:-clean}" == "no_doh" ]]; then
+  if [[ "${DNS_INTEGRITY_MODE:-clean}" == "no_doh" || "${PTR_MODE:-clean}" == "no_doh" ]]; then
     return 1
   fi
   case "$host" in
@@ -1239,6 +1239,8 @@ dns_integrity_doh_stub() {
       printf '1.1.1.1\n1.0.0.1\n'
     fi
     ;;
+  8.8.8.8.in-addr.arpa) echo "dns.google." ;;
+  1.1.1.1.in-addr.arpa) echo "one.one.one.one." ;;
   esac
 }
 system_dns_answers() { dns_integrity_system_stub "$@"; }
@@ -1257,6 +1259,7 @@ DNS_INTEGRITY_MODE="nulling6"
 assert_eq "No" "$(lookup_dns_integrity 4)" "dns integrity maps AAAA nulling to No"
 DNS_INTEGRITY_MODE="no_doh"
 assert_eq "N/A" "$(lookup_dns_integrity 4)" "dns integrity stays N/A without a DoH reference"
+unset DNS_INTEGRITY_MODE
 resolver_echo_stub() {
   case "${DNS_INTERCEPT_MODE:-clean}" in
   intercepted) echo "203.0.113.77" ;;
@@ -1279,6 +1282,37 @@ DNS_INTERCEPT_MODE="silent"
 assert_eq "N/A" "$(lookup_dns_intercept 4)" "dns intercept stays N/A when probes fail"
 unset -f resolver_echo_answer resolver_echo_stub
 unset DNS_INTERCEPT_MODE
+ptr_system_stub() {
+  case "${PTR_MODE:-clean}" in
+  substituted)
+    if [[ "$1" == "8.8.8.8" ]]; then
+      echo "parked.example.com."
+      return
+    fi
+    ;;
+  filtered)
+    if [[ "$1" == "1.1.1.1" ]]; then
+      return 0
+    fi
+    ;;
+  esac
+  case "$1" in
+  8.8.8.8) echo "dns.google." ;;
+  1.1.1.1) echo "one.one.one.one." ;;
+  esac
+}
+system_ptr_answer() { ptr_system_stub "$@"; }
+assert_true "custom registry defines DNS_PTR" test -n "${CUSTOM_SERVICES[DNS_PTR]:-}"
+PTR_MODE="clean"
+assert_eq "Yes" "$(lookup_dns_ptr 4)" "dns ptr maps matching reverse answers to Yes"
+PTR_MODE="substituted"
+assert_eq "No" "$(lookup_dns_ptr 4)" "dns ptr maps substituted reverse answers to No"
+PTR_MODE="filtered"
+assert_eq "No" "$(lookup_dns_ptr 4)" "dns ptr maps filtered reverse answers to No"
+PTR_MODE="no_doh"
+assert_eq "N/A" "$(lookup_dns_ptr 4)" "dns ptr stays N/A without a DoH reference"
+unset -f system_ptr_answer ptr_system_stub
+unset PTR_MODE
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
 unset DNS_INTEGRITY_MODE
 JSON_OUTPUT=false
