@@ -163,6 +163,14 @@ VULTR_PROBE_TARGETS=("api.vultr.com:443")
 MATRIX_PROBE_TARGETS=("matrix.org:443")
 NTFY_PROBE_TARGETS=("ntfy.sh:443")
 TELEGRAM_BOT_API_PROBE_TARGETS=("api.telegram.org:443")
+# Static hosting platforms: this infrastructure is often blocked wholesale
+WORKERS_DEV_PROBE_TARGETS=("workers.dev:443")
+GITHUB_PAGES_PROBE_TARGETS=("github.io:443")
+GITLAB_PAGES_PROBE_TARGETS=("gitlab.io:443")
+VERCEL_APP_PROBE_TARGETS=("vercel.app:443")
+NETLIFY_APP_PROBE_TARGETS=("netlify.app:443")
+PAGES_DEV_PROBE_TARGETS=("pages.dev:443")
+HEROKU_APP_PROBE_TARGETS=("herokuapp.com:443")
 SPINNER_SERVICE_FILE=""
 DEBUG_LOG_FILE=""
 
@@ -438,6 +446,13 @@ declare -A CUSTOM_SERVICES=(
   [MATRIX]="Matrix"
   [NTFY]="ntfy"
   [TELEGRAM_BOT_API]="Telegram Bot API"
+  [WORKERS_DEV]="Workers.dev"
+  [GITHUB_PAGES]="GitHub Pages"
+  [GITLAB_PAGES]="GitLab Pages"
+  [VERCEL_APP]="Vercel"
+  [NETLIFY_APP]="Netlify"
+  [PAGES_DEV]="Cloudflare Pages"
+  [HEROKU_APP]="Heroku"
   [THREADS_ACCESS]="Threads Access"
   [THREADS_API]="Threads API"
   [THREADS_TRANSPORT]="Threads Transport"
@@ -610,6 +625,13 @@ CUSTOM_SERVICES_ORDER=(
   "MATRIX"
   "NTFY"
   "TELEGRAM_BOT_API"
+  "WORKERS_DEV"
+  "GITHUB_PAGES"
+  "GITLAB_PAGES"
+  "VERCEL_APP"
+  "NETLIFY_APP"
+  "PAGES_DEV"
+  "HEROKU_APP"
   "THREADS_ACCESS"
   "THREADS_API"
   "THREADS_TRANSPORT"
@@ -837,6 +859,13 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MATRIX]="lookup_matrix"
   [NTFY]="lookup_ntfy"
   [TELEGRAM_BOT_API]="lookup_telegram_bot_api"
+  [WORKERS_DEV]="lookup_workers_dev"
+  [GITHUB_PAGES]="lookup_github_pages"
+  [GITLAB_PAGES]="lookup_gitlab_pages"
+  [VERCEL_APP]="lookup_vercel_app"
+  [NETLIFY_APP]="lookup_netlify_app"
+  [PAGES_DEV]="lookup_pages_dev"
+  [HEROKU_APP]="lookup_heroku_app"
   [THREADS_ACCESS]="lookup_threads_access"
   [THREADS_API]="lookup_threads_api"
   [THREADS_TRANSPORT]="lookup_threads_transport"
@@ -5942,6 +5971,34 @@ lookup_ntfy() {
 
 lookup_telegram_bot_api() {
   lookup_tcp_targets TELEGRAM_BOT_API_PROBE_TARGETS
+}
+
+lookup_workers_dev() {
+  lookup_tcp_targets WORKERS_DEV_PROBE_TARGETS
+}
+
+lookup_github_pages() {
+  lookup_tcp_targets GITHUB_PAGES_PROBE_TARGETS
+}
+
+lookup_gitlab_pages() {
+  lookup_tcp_targets GITLAB_PAGES_PROBE_TARGETS
+}
+
+lookup_vercel_app() {
+  lookup_tcp_targets VERCEL_APP_PROBE_TARGETS
+}
+
+lookup_netlify_app() {
+  lookup_tcp_targets NETLIFY_APP_PROBE_TARGETS
+}
+
+lookup_pages_dev() {
+  lookup_tcp_targets PAGES_DEV_PROBE_TARGETS
+}
+
+lookup_heroku_app() {
+  lookup_tcp_targets HEROKU_APP_PROBE_TARGETS
 }
 
 lookup_github_api() {
