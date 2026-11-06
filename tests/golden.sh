@@ -294,6 +294,17 @@ host_resolves() {
   true
 }
 
+# DNS integrity: fixed canary sets, never the live resolver or live DoH.
+system_dns_answers() {
+  case "$1" in
+  dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
+  one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+  esac
+}
+doh_dns_answers() {
+  system_dns_answers "$@"
+}
+
 # Fixed state ----------------------------------------------------------------
 
 INCLUDED_SERVICES=(
@@ -406,6 +417,7 @@ INCLUDED_SERVICES=(
   "LINE"
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
+  "DNS_INTEGRITY"
   "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"
