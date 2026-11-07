@@ -6,7 +6,7 @@ on:
       - master
     paths:
       - ipregion.sh
-      - index.php
+      - index.html
       - tests/run.sh
       - tests/golden.sh
       - tests/golden/**
@@ -119,5 +119,5 @@ jobs:
       - name: Deploy files
         run: |
           rsync -az --delete \
-            ipregion.sh index.php README.md LICENSE \
+            ipregion.sh index.html README.md LICENSE \
             orange-ipregion:/srv/www/ipregion.vladon.sh/
