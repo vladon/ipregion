@@ -307,6 +307,7 @@ system_dns_answers() {
     case "$1" in
     dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
     one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+    *rebind-127-0-0-1*) echo "93.184.216.34" ;;
     google.com | youtube.com | facebook.com | github.com | cloudflare.com | wikipedia.org | apple.com | microsoft.com) echo "93.184.216.34" ;;
     esac
     ;;
@@ -485,6 +486,7 @@ INCLUDED_SERVICES=(
   "DNS_TTL"
   "RESOLVER_CONSENSUS"
   "DNS_LATENCY"
+  "REBIND_PROTECTION"
   "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"
