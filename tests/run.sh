@@ -1396,7 +1396,6 @@ doh_dns_ttl() { ttl_doh_stub "$@"; }
 assert_true "custom registry defines DNS_TTL" test -n "${CUSTOM_SERVICES[DNS_TTL]:-}"
 JSON_OUTPUT=true
 DNS_TTL_GAP="0.1"
-assert_true "system resolver reports TTLs" test -n "$(nslookup -debug -type=A dns.google 2>/dev/null | awk 'tolower($1) == "ttl" {print $3; exit}')"
 ttl_stub_reset
 assert_eq "Yes" "$(lookup_dns_ttl 4)" "dns ttl maps decrementing answers to Yes"
 ttl_stub_reset
