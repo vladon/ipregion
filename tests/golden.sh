@@ -584,6 +584,7 @@ VERBOSE=false
 # Run ------------------------------------------------------------------------
 
 run_service_group "custom"
+run_service_group "dns"
 run_service_group "devinfra"
 run_service_group "primary"
 finalize_json

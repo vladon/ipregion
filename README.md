@@ -174,15 +174,6 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | Brave Search | `BRAVE_SEARCH` |
 | custom | DoH Google | `DOH_GOOGLE` |
 | custom | DoH Cloudflare | `DOH_CLOUDFLARE` |
-| custom | DoT Google | `DOT_GOOGLE` |
-| custom | DoT Cloudflare | `DOT_CLOUDFLARE` |
-| custom | DNS Integrity | `DNS_INTEGRITY` |
-| custom | DNS Intercept | `DNS_INTERCEPT` |
-| custom | PTR Match | `DNS_PTR` |
-| custom | DNSSEC Validation | `DNSSEC_VALIDATION` |
-| custom | Public Answers | `PUBLIC_ANSWERS` |
-| custom | TTL Honesty | `DNS_TTL` |
-| custom | Resolver Consensus | `RESOLVER_CONSENSUS` |
 | custom | Gmail | `GMAIL` |
 | custom | Google Drive | `GOOGLE_DRIVE` |
 | custom | Google Meet | `GOOGLE_MEET` |
@@ -362,8 +353,19 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | devinfra | Crates.io | `CRATES_IO` |
 | devinfra | Maven Central | `MAVEN_CENTRAL` |
 | devinfra | Hugging Face | `HUGGING_FACE` |
+| dns | DNS Integrity | `DNS_INTEGRITY` |
+| dns | DNS Intercept | `DNS_INTERCEPT` |
+| dns | PTR Match | `DNS_PTR` |
+| dns | DNSSEC Validation | `DNSSEC_VALIDATION` |
+| dns | DoT Google | `DOT_GOOGLE` |
+| dns | DoT Cloudflare | `DOT_CLOUDFLARE` |
+| dns | Public Answers | `PUBLIC_ANSWERS` |
+| dns | TTL Honesty | `DNS_TTL` |
+| dns | Resolver Consensus | `RESOLVER_CONSENSUS` |
 
 Total: 221 checks.
+<!-- ipregion:checks-end -->
+<!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->

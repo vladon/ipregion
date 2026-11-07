@@ -7,7 +7,7 @@ _ipregion() {
     '(-v --verbose)'{-v,--verbose}'[Verbose logging]'
     '(-d --debug)'{-d,--debug}'[Debug trace]'
     '(-j --json)'{-j,--json}'[JSON output]'
-    '(-g --group)'{-g,--group}'[Run one group]:group:(primary custom cdn devinfra all)'
+    '(-g --group)'{-g,--group}'[Run one group]:group:(primary custom cdn devinfra dns all)'
     '(-t --timeout)'{-t,--timeout}'[Curl timeout seconds]:seconds:'
     '(-P --parallel)'{-P,--parallel}'[Parallel jobs]:jobs:'
     '--watch[Monitoring mode interval seconds]:seconds:'
