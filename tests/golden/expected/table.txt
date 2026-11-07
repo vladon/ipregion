@@ -25,6 +25,7 @@
 [1;32mDNSSEC Validation[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mPublic Answers[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mTTL Honesty[0m	[0;90mN/A[0m	[0;90mN/A[0m
+[1;32mResolver Consensus[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mGmail[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Drive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Meet[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m

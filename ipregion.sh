@@ -373,6 +373,7 @@ declare -A CUSTOM_SERVICES=(
   [DNSSEC_VALIDATION]="DNSSEC Validation"
   [PUBLIC_ANSWERS]="Public Answers"
   [DNS_TTL]="TTL Honesty"
+  [RESOLVER_CONSENSUS]="Resolver Consensus"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -560,6 +561,7 @@ CUSTOM_SERVICES_ORDER=(
   "DNSSEC_VALIDATION"
   "PUBLIC_ANSWERS"
   "DNS_TTL"
+  "RESOLVER_CONSENSUS"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -799,6 +801,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNSSEC_VALIDATION]="lookup_dnssec_validation"
   [PUBLIC_ANSWERS]="lookup_public_answers"
   [DNS_TTL]="lookup_dns_ttl"
+  [RESOLVER_CONSENSUS]="lookup_resolver_consensus"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5513,8 +5516,8 @@ system_dns_ttl() {
   echo "$answer"
 }
 
-# The remaining TTL the Cloudflare DoH reference reports for the name
-# (first answer); prints nothing when there is no answer, returns 1 on
+# The TTL the Cloudflare DoH reference reports for the name (first
+# answer); prints nothing when there is no answer, returns 1 on
 # transport failure.
 doh_dns_ttl() {
   local host="$1"
@@ -5527,6 +5530,21 @@ doh_dns_ttl() {
     return 1
   fi
   process_json "$response" '.Answer[0].TTL // empty' 2>/dev/null
+}
+
+# Answers an explicitly addressed resolver returned for the host, one
+# per line; empty when it did not answer or no tool supports server
+# selection. Output format handling mirrors system_dns_answers.
+server_dns_answers() {
+  local host="$1"
+  local server="$2"
+  local -a answers=()
+  if command -v nslookup >/dev/null 2>&1; then
+    mapfile -t answers < <(nslookup -type=A "$host" "$server" 2>/dev/null | awk '/^Address/ {print $NF} /has .*address/ {print $NF}' | grep_wrapper -v '#' | sort -u)
+  elif command -v host >/dev/null 2>&1; then
+    mapfile -t answers < <(host -t A "$host" "$server" 2>/dev/null | awk '/has .*address/ {print $NF}' | sort -u)
+  fi
+  printf '%s\n' "${answers[@]+"${answers[@]}"}"
 }
 
 # DNS-integrity diagnostic: a resolver that invents records for names that
@@ -5765,6 +5783,57 @@ lookup_dns_ttl() {
   # The reference refreshed its answer mid-gap and the system resolver
   # served a constant: ambiguous, report rather than guess.
   echo "$STATUS_NA"
+}
+
+# Multi-resolver consensus diagnostic: two fixed canaries (dns.google,
+# one.one.one.one) asked directly at three independent public resolvers
+# (Google, Cloudflare, Quad9) must all return answers from the DoH
+# reference set. An answer outside it is divergence - some resolver in
+# the path serves something else than the authoritative chain. Fewer
+# than two reachable resolvers cannot form a consensus: N/A. Yes = all
+# reachable resolvers agree, No = divergence detected.
+lookup_resolver_consensus() {
+  local ip_version="$1"
+  local -a resolvers=("8.8.8.8" "1.1.1.1" "9.9.9.9")
+  local -a canaries=("dns.google" "one.one.one.one")
+  local resolver canary reachable=0 resolver_ok
+  local -a refs=()
+  local reference answers answer
+
+  for canary in "${canaries[@]}"; do
+    reference=$(doh_dns_answers "$canary" "A" "$ip_version") || {
+      echo "$STATUS_NA"
+      return
+    }
+    refs+=("$reference")
+  done
+
+  for resolver in "${resolvers[@]}"; do
+    resolver_ok=0
+    for canary in "${canaries[@]}"; do
+      answers=$(server_dns_answers "$canary" "$resolver")
+      [[ -z "$answers" ]] && continue
+      resolver_ok=1
+      if [[ "$canary" == "dns.google" ]]; then
+        reference="${refs[0]}"
+      else
+        reference="${refs[1]}"
+      fi
+      while IFS= read -r answer; do
+        [[ -z "$answer" ]] && continue
+        if ! grep_wrapper -qxF "$answer" <<<"$reference"; then
+          print_value_or_colored "No" "HEART"
+          return
+        fi
+      done <<<"$answers"
+    done
+    [[ "$resolver_ok" == 1 ]] && reachable=$((reachable + 1))
+  done
+  if ((reachable < 2)); then
+    echo "$STATUS_NA"
+    return
+  fi
+  print_value_or_colored "Yes" "SERVICE"
 }
 
 lookup_site_access() {

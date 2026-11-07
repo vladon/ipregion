@@ -342,6 +342,12 @@ ttl_dns_count=$(mktemp)
 ttl_doh_count=$(mktemp)
 # The TTL-honesty handler sleeps between its two samples; keep golden fast.
 export DNS_TTL_GAP="0.1"
+server_dns_answers() {
+  case "$1" in
+  dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
+  one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+  esac
+}
 system_dns_ttl() {
   local n
   n=$(cat "$ttl_dns_count")
@@ -475,6 +481,7 @@ INCLUDED_SERVICES=(
   "DNSSEC_VALIDATION"
   "PUBLIC_ANSWERS"
   "DNS_TTL"
+  "RESOLVER_CONSENSUS"
   "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"
