@@ -182,19 +182,19 @@
 [1;36mDNS diagnostics[0m
 
 [1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
+[1;32mDNS Integrity[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mDNS Intercept[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mPTR Match[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mDNSSEC Validation[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mDoT Google[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mDoT Cloudflare[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mPublic Answers[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mTTL Honesty[0m	[0;90mN/A[0m	[0;90mN/A[0m
+[1;32mResolver Consensus[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 
 [1;36mGeoIP services[0m
 
 [1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
-[1;32mDNS_INTEGRITY[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mDNS_INTERCEPT[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mDNS_PTR[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mDNSSEC_VALIDATION[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mDOT_GOOGLE[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mDOT_CLOUDFLARE[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mPUBLIC_ANSWERS[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mDNS_TTL[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mRESOLVER_CONSENSUS[0m	[0;90mN/A[0m	[0;90mN/A[0m
 [1;32mmaxmind.com[0m	[1mUS[0m	[1mUS[0m
 [1;32mrdap.db.ripe.net[0m	[1mUS[0m	[1mUS[0m
 [1;32mipinfo.io[0m	[1mUS[0m	[1mUS[0m
