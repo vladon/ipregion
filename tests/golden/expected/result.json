@@ -3288,6 +3288,25 @@
           }
         },
         "service": "Resolver Consensus"
+      },
+      {
+        "ipv4": "12/180 ms",
+        "ipv6": "12/180 ms",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DNS Latency"
       }
     ],
     "primary": [

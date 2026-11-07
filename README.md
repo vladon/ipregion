@@ -362,8 +362,10 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | dns | Public Answers | `PUBLIC_ANSWERS` |
 | dns | TTL Honesty | `DNS_TTL` |
 | dns | Resolver Consensus | `RESOLVER_CONSENSUS` |
+| dns | DNS Latency | `DNS_LATENCY` |
 
-Total: 221 checks.
+Total: 222 checks.
+<!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
 <!-- ipregion:checks-end -->
@@ -383,7 +385,7 @@ Total: 221 checks.
 
 YouTube CDN, Cloudflare CDN, Netflix CDN — Google/Cloudflare/Netflix edge node detection (`--group cdn`).
 
-A green Yes means the service answers from your network; a red No usually means a transport-level block (connection reset or timeout) or a region-gate stub; Denied / Rate-limit / N/A are HTTP-level outcomes. A yellow **DNS block** means the hostname did not resolve at all (typical of DNS poisoning); every check — transport probes, site availability and the bespoke custom handlers — resolves its target before connecting.
+A green Yes means the service answers from your network; a red No usually means a transport-level block (connection reset or timeout) or a region-gate stub; Denied / Rate-limit / N/A are HTTP-level outcomes. A yellow **DNS block** means the hostname did not resolve at all (typical of DNS poisoning); every check — transport probes, site availability and the bespoke custom handlers — resolves its target before connecting. **DNS Latency** is informational: it shows the system resolver's resolution time next to the DoH-JSON reference ("local/doh ms") for a stable canary.
 
 ## Country codes
 
