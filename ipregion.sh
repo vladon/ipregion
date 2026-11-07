@@ -230,6 +230,7 @@ RESULT_JSON=""
 ARR_PRIMARY=()
 ARR_CUSTOM=()
 ARR_CDN=()
+ARR_DNS=()
 ARR_DEVINFRA=()
 CHECKS_TOTAL=0
 CHECKS_DONE_FILE=""
@@ -365,15 +366,6 @@ declare -A CUSTOM_SERVICES=(
   [BRAVE_SEARCH]="Brave Search"
   [DOH_GOOGLE]="DoH Google"
   [DOH_CLOUDFLARE]="DoH Cloudflare"
-  [DOT_GOOGLE]="DoT Google"
-  [DOT_CLOUDFLARE]="DoT Cloudflare"
-  [DNS_INTEGRITY]="DNS Integrity"
-  [DNS_INTERCEPT]="DNS Intercept"
-  [DNS_PTR]="PTR Match"
-  [DNSSEC_VALIDATION]="DNSSEC Validation"
-  [PUBLIC_ANSWERS]="Public Answers"
-  [DNS_TTL]="TTL Honesty"
-  [RESOLVER_CONSENSUS]="Resolver Consensus"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -553,15 +545,6 @@ CUSTOM_SERVICES_ORDER=(
   "BRAVE_SEARCH"
   "DOH_GOOGLE"
   "DOH_CLOUDFLARE"
-  "DOT_GOOGLE"
-  "DOT_CLOUDFLARE"
-  "DNS_INTEGRITY"
-  "DNS_INTERCEPT"
-  "DNS_PTR"
-  "DNSSEC_VALIDATION"
-  "PUBLIC_ANSWERS"
-  "DNS_TTL"
-  "RESOLVER_CONSENSUS"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -739,6 +722,33 @@ CDN_SERVICES_ORDER=(
   "YOUTUBE_CDN"
   "CLOUDFLARE_CDN"
   "NETFLIX_CDN"
+)
+
+# DNS diagnostics form their own -g dns group; handlers stay in
+# CUSTOM_SERVICES_HANDLERS because they are discovered through the same
+# process_custom_service path.
+declare -A DNS_DIAG_SERVICES=(
+  [DNS_INTEGRITY]="DNS Integrity"
+  [DNS_INTERCEPT]="DNS Intercept"
+  [DNS_PTR]="PTR Match"
+  [DNSSEC_VALIDATION]="DNSSEC Validation"
+  [DOT_GOOGLE]="DoT Google"
+  [DOT_CLOUDFLARE]="DoT Cloudflare"
+  [PUBLIC_ANSWERS]="Public Answers"
+  [DNS_TTL]="TTL Honesty"
+  [RESOLVER_CONSENSUS]="Resolver Consensus"
+)
+
+DNS_DIAG_SERVICES_ORDER=(
+  "DNS_INTEGRITY"
+  "DNS_INTERCEPT"
+  "DNS_PTR"
+  "DNSSEC_VALIDATION"
+  "DOT_GOOGLE"
+  "DOT_CLOUDFLARE"
+  "PUBLIC_ANSWERS"
+  "DNS_TTL"
+  "RESOLVER_CONSENSUS"
 )
 
 # Developer-infrastructure services form their own -g devinfra group;
@@ -987,6 +997,7 @@ declare -A SERVICE_GROUPS=(
   [primary]="${PRIMARY_SERVICES_ORDER[*]}"
   [custom]="${CUSTOM_SERVICES_ORDER[*]}"
   [cdn]="${CDN_SERVICES_ORDER[*]}"
+  [dns]="${DNS_DIAG_SERVICES_ORDER[*]}"
   [devinfra]="${DEVINFRA_SERVICES_ORDER[*]}"
 )
 
@@ -1997,7 +2008,7 @@ is_service_in_list() {
 validate_known_service() {
   local service_name="$1"
 
-  if [[ -n "${PRIMARY_SERVICES[$service_name]:-}" || -n "${CUSTOM_SERVICES[$service_name]:-}" || -n "${CDN_SERVICES[$service_name]:-}" || -n "${DEVINFRA_SERVICES[$service_name]:-}" ]]; then
+  if [[ -n "${PRIMARY_SERVICES[$service_name]:-}" || -n "${CUSTOM_SERVICES[$service_name]:-}" || -n "${CDN_SERVICES[$service_name]:-}" || -n "${DEVINFRA_SERVICES[$service_name]:-}" || -n "${DNS_DIAG_SERVICES[$service_name]:-}" ]]; then
     return 0
   fi
 
@@ -2065,14 +2076,14 @@ parse_arguments() {
       ;;
     -g | --group)
       case "$2" in
-      primary | custom | cdn | devinfra | all)
+      primary | custom | cdn | devinfra | dns | all)
         GROUPS_TO_SHOW="$2"
         ;;
       "")
-        error_exit "Missing value for --group. Expected: primary, custom, cdn, devinfra, or all"
+        error_exit "Missing value for --group. Expected: primary, custom, cdn, devinfra, dns, or all"
         ;;
       *)
-        error_exit "Invalid group: $2. Expected: primary, custom, cdn, devinfra, or all"
+        error_exit "Invalid group: $2. Expected: primary, custom, cdn, devinfra, dns, or all"
         ;;
       esac
       shift 2
@@ -3692,6 +3703,10 @@ process_custom_service() {
     display_name="${DEVINFRA_SERVICES[$service]}"
     handler_func="${CUSTOM_SERVICES_HANDLERS[$service]}"
     group="devinfra"
+  elif [[ -n "${DNS_DIAG_SERVICES[$service]}" ]]; then
+    display_name="${DNS_DIAG_SERVICES[$service]}"
+    handler_func="${CUSTOM_SERVICES_HANDLERS[$service]}"
+    group="dns"
   elif [[ -n "${CDN_SERVICES[$service]}" ]]; then
     display_name="${CDN_SERVICES[$service]}"
     handler_func="${CUSTOM_SERVICES_HANDLERS[$service]}"
@@ -3769,7 +3784,7 @@ run_service_group() {
     fi
 
     case "$group" in
-    custom | cdn | devinfra)
+    custom | cdn | devinfra | dns)
       is_custom=true
       ;;
     esac
@@ -3792,7 +3807,7 @@ run_service_group_parallel() {
 
   read -ra services_array <<<"$services_string"
 
-  if [[ "$group" == "custom" || "$group" == "cdn" || "$group" == "devinfra" ]]; then
+  if [[ "$group" == "custom" || "$group" == "cdn" || "$group" == "devinfra" || "$group" == "dns" ]]; then
     is_custom=true
   fi
 
@@ -3888,12 +3903,17 @@ finalize_json() {
     t_devinfra=$(printf '%s\n' "${ARR_DEVINFRA[@]//|||/$'\t'}")
   fi
 
+  if ((${#ARR_DNS[@]} > 0)); then
+    t_dns=$(printf '%s\n' "${ARR_DNS[@]//|||/$'\t'}")
+  fi
+
   RESULT_JSON=$(
     jq -n \
       --rawfile p <(printf "%s" "$t_primary") \
       --rawfile c <(printf "%s" "$t_custom") \
       --rawfile d <(printf "%s" "$t_cdn") \
       --rawfile e <(printf "%s" "$t_devinfra") \
+      --rawfile n <(printf "%s" "$t_dns") \
       --arg ipv4 "$EXTERNAL_IPV4" \
       --arg ipv6 "$EXTERNAL_IPV6" \
       --arg ipv4_source "$EXTERNAL_IPV4_SOURCE" \
@@ -3959,6 +3979,7 @@ finalize_json() {
         | (lines_to_array($c)) as $custom
         | (lines_to_array($d)) as $cdn
         | (lines_to_array($e)) as $devinfra
+        | (lines_to_array($n)) as $dns
         | {
           version: ($version|tonumber),
           ip: {
@@ -3989,7 +4010,8 @@ finalize_json() {
             primary: $primary,
             custom:  $custom,
             cdn:     $cdn,
-            devinfra: $devinfra
+            devinfra: $devinfra,
+            dns:     $dns
           }
         }
       '
@@ -4084,6 +4106,7 @@ add_result() {
   primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   cdn) ARR_CDN+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  dns) ARR_DNS+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   devinfra) ARR_DEVINFRA+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
@@ -4107,6 +4130,7 @@ add_result_line() {
   primary) ARR_PRIMARY+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   custom) ARR_CUSTOM+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   cdn) ARR_CDN+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
+  dns) ARR_DNS+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   devinfra) ARR_DEVINFRA+=("$service|||$ipv4|||$ipv6|||$ipv4_metric|||$ipv6_metric") ;;
   esac
 }
@@ -4495,6 +4519,10 @@ print_results() {
     print_table_group "devinfra" "Dev Infra"
     print_metrics_group "devinfra" "Dev Infra metrics"
     ;;
+  dns)
+    print_table_group "dns" "DNS diagnostics"
+    print_metrics_group "dns" "DNS diagnostics metrics"
+    ;;
   *)
     print_table_group "custom" "Popular services"
     print_metrics_group "custom" "Popular service metrics"
@@ -4504,6 +4532,9 @@ print_results() {
     printf "\n"
     print_table_group "devinfra" "Dev Infra"
     print_metrics_group "devinfra" "Dev Infra metrics"
+    printf "\n"
+    print_table_group "dns" "DNS diagnostics"
+    print_metrics_group "dns" "DNS diagnostics metrics"
     printf "\n"
     print_table_group "primary" "GeoIP services"
     print_metrics_group "primary" "GeoIP service metrics"
@@ -6767,6 +6798,7 @@ run_selected_groups() {
   ARR_PRIMARY=()
   ARR_CUSTOM=()
   ARR_CDN=()
+  ARR_DNS=()
   ARR_DEVINFRA=()
   [[ -n "${CHECKS_DONE_FILE:-}" ]] && : >"$CHECKS_DONE_FILE"
 
@@ -6776,8 +6808,9 @@ run_selected_groups() {
     primary) selected_groups=(primary) ;;
     custom) selected_groups=(custom) ;;
     cdn) selected_groups=(cdn) ;;
+    dns) selected_groups=(dns) ;;
     devinfra) selected_groups=(devinfra) ;;
-    *) selected_groups=(primary custom cdn devinfra) ;;
+    *) selected_groups=(primary custom cdn devinfra dns) ;;
     esac
     CHECKS_TOTAL=0
     for total_group in "${selected_groups[@]}"; do
@@ -6806,6 +6839,13 @@ run_selected_groups() {
       run_service_group_parallel "cdn"
     else
       run_service_group "cdn"
+    fi
+    ;;
+  dns)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "dns"
+    else
+      run_service_group "dns"
     fi
     ;;
   devinfra)
@@ -6841,13 +6881,14 @@ run_selected_groups() {
 # registry entries carry "display|domain|url" - display is field one.
 print_check_registry() {
   local group key display
-  for group in primary custom cdn devinfra; do
+  for group in primary custom cdn devinfra dns; do
     local -a keys=()
     case "$group" in
     primary) keys=("${PRIMARY_SERVICES_ORDER[@]}") ;;
     custom) keys=("${CUSTOM_SERVICES_ORDER[@]}") ;;
     cdn) keys=("${CDN_SERVICES_ORDER[@]}") ;;
     devinfra) keys=("${DEVINFRA_SERVICES_ORDER[@]}") ;;
+    dns) keys=("${DNS_DIAG_SERVICES_ORDER[@]}") ;;
     esac
     for key in "${keys[@]}"; do
       case "$group" in
@@ -6855,6 +6896,7 @@ print_check_registry() {
       custom) display="${CUSTOM_SERVICES[$key]:-}" ;;
       cdn) display="${CDN_SERVICES[$key]:-}" ;;
       devinfra) display="${DEVINFRA_SERVICES[$key]:-}" ;;
+      dns) display="${DNS_DIAG_SERVICES[$key]:-}" ;;
       esac
       printf '%s\t%s\t%s\n' "$group" "$key" "$display"
     done
@@ -6873,6 +6915,8 @@ fail_on_block_display() {
     printf '%s' "${CDN_SERVICES[$key]}"
   elif [[ -n "${DEVINFRA_SERVICES[$key]:-}" ]]; then
     printf '%s' "${DEVINFRA_SERVICES[$key]}"
+  elif [[ -n "${DNS_DIAG_SERVICES[$key]:-}" ]]; then
+    printf '%s' "${DNS_DIAG_SERVICES[$key]}"
   elif [[ -n "${PRIMARY_SERVICES[$key]:-}" ]]; then
     printf '%s' "${PRIMARY_SERVICES[$key]%%|*}"
   fi
@@ -6894,7 +6938,7 @@ fail_on_block_check() {
       --arg server "$STATUS_SERVER_ERROR" \
       --arg rate "$STATUS_RATE_LIMIT" \
       --arg region "$STATUS_REGION_BLOCKED" '
-      [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[] ]
+      [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[], .results.dns[]? ]
       | map(select(.service == $k))
       | if length == 0 then "absent"
         elif any(.[]; .ipv4 == $no or .ipv4 == $denied or .ipv4 == $server or .ipv4 == $rate or .ipv4 == $region or .ipv6 == $no or .ipv6 == $denied or .ipv6 == $server or .ipv6 == $rate or .ipv6 == $region) then "failed"
@@ -6907,7 +6951,6 @@ fail_on_block_check() {
   done
 
   if [[ -n "$failed_list" ]]; then
-    printf "FBDBG final failed_list=[%s]\n" "$failed_list" >&2
     printf "%s %s\n" \
       "$(color HEART 'FAIL: blocked checks:')" \
       "${failed_list% }" >&2
@@ -6921,7 +6964,7 @@ collect_verdict_lines() {
   local json="$1"
 
   jq -r '
-    [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[] ]
+    [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[], .results.dns[]? ]
     | .[]
     | .service + "=" + ((.ipv4 // "-") + "/" + (.ipv6 // "-"))
   ' <<<"$json"

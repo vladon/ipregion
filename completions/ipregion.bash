@@ -10,7 +10,7 @@ _ipregion_completions() {
 
   case "$prev" in
   -g | --group)
-    COMPREPLY=($(compgen -W "primary custom cdn devinfra all" -- "$cur"))
+    COMPREPLY=($(compgen -W "primary custom cdn devinfra dns all" -- "$cur"))
     return
     ;;
   --include-service | --exclude-service)

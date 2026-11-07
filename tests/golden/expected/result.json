@@ -224,177 +224,6 @@
             "transport_ip_version": 6
           }
         },
-        "service": "DoT Google"
-      },
-      {
-        "ipv4": "\u001b[1;31mNo\u001b[0m",
-        "ipv6": "\u001b[1;31mNo\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "DoT Cloudflare"
-      },
-      {
-        "ipv4": "\u001b[1;32mYes\u001b[0m",
-        "ipv6": "\u001b[1;32mYes\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "DNS Integrity"
-      },
-      {
-        "ipv4": "\u001b[1;32mYes\u001b[0m",
-        "ipv6": "\u001b[1;32mYes\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "DNS Intercept"
-      },
-      {
-        "ipv4": "\u001b[1;32mYes\u001b[0m",
-        "ipv6": "\u001b[1;32mYes\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "PTR Match"
-      },
-      {
-        "ipv4": "\u001b[1;32mYes\u001b[0m",
-        "ipv6": "\u001b[1;32mYes\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "DNSSEC Validation"
-      },
-      {
-        "ipv4": "\u001b[1;32mYes\u001b[0m",
-        "ipv6": "\u001b[1;32mYes\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "Public Answers"
-      },
-      {
-        "ipv4": "N/A",
-        "ipv6": "N/A",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "TTL Honesty"
-      },
-      {
-        "ipv4": "\u001b[1;32mYes\u001b[0m",
-        "ipv6": "\u001b[1;32mYes\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
-        "service": "Resolver Consensus"
-      },
-      {
-        "ipv4": "\u001b[1;31mNo\u001b[0m",
-        "ipv6": "\u001b[1;31mNo\u001b[0m",
-        "metrics": {
-          "ipv4": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 4
-          },
-          "ipv6": {
-            "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
-            "transport_ip_version": 6
-          }
-        },
         "service": "Gmail"
       },
       {
@@ -3288,7 +3117,179 @@
         "service": "Hugging Face"
       }
     ],
+    "dns": [],
     "primary": [
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DNS_INTEGRITY"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DNS_INTERCEPT"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DNS_PTR"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DNSSEC_VALIDATION"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DOT_GOOGLE"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DOT_CLOUDFLARE"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "PUBLIC_ANSWERS"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DNS_TTL"
+      },
+      {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "RESOLVER_CONSENSUS"
+      },
       {
         "ipv4": "US",
         "ipv6": "US",

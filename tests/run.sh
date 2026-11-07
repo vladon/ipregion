@@ -154,6 +154,7 @@ add_result "primary" "MAXMIND" "US" "DE" "http_code=200;latency_ms=120;transport
 add_result "primary" "RIPE" "US" "FR" "http_code=200;latency_ms=100;transport_ip_version=4;error_type=none" "http_code=429;latency_ms=90;transport_ip_version=6;error_type=http_429"
 add_result "custom" "Google" "US" "DE" "http_code=200;latency_ms=80;transport_ip_version=4;error_type=none" "http_code=200;latency_ms=95;transport_ip_version=6;error_type=none"
 add_result "cdn" "YouTube CDN" "US" "" "" ""
+add_result "dns" "DNS Integrity" "Yes" "Yes" "" ""
 add_result "devinfra" "Docker Hub" "US" "" "" ""
 
 finalize_json
@@ -167,6 +168,7 @@ assert_eq "US" "$(process_json "$RESULT_JSON" ".consensus.ipv4.country")" "final
 assert_eq "200" "$(process_json "$RESULT_JSON" ".results.primary[0].metrics.ipv4.http_code")" "finalize_json parses metrics"
 assert_eq "http_429" "$(process_json "$RESULT_JSON" ".results.primary[1].metrics.ipv6.error_type")" "finalize_json keeps error_type"
 assert_eq "YouTube CDN" "$(process_json "$RESULT_JSON" ".results.cdn[0].service")" "finalize_json includes cdn results"
+assert_eq "DNS Integrity" "$(process_json "$RESULT_JSON" ".results.dns[0].service")" "finalize_json includes dns results"
 assert_eq "Docker Hub" "$(process_json "$RESULT_JSON" ".results.devinfra[0].service")" "finalize_json includes devinfra results"
 
 # Regression: literal "null" jq output must not void the whole result JSON
@@ -1275,7 +1277,7 @@ dns_integrity_doh_stub() {
 }
 system_dns_answers() { dns_integrity_system_stub "$@"; }
 doh_dns_answers() { dns_integrity_doh_stub "$@"; }
-assert_true "custom registry defines DNS_INTEGRITY" test -n "${CUSTOM_SERVICES[DNS_INTEGRITY]:-}"
+assert_true "dns registry defines DNS_INTEGRITY" test -n "${DNS_DIAG_SERVICES[DNS_INTEGRITY]:-}"
 JSON_OUTPUT=true
 DNS_INTEGRITY_MODE="clean"
 assert_eq "Yes" "$(lookup_dns_integrity 4)" "dns integrity maps matching answers to Yes"
@@ -1303,7 +1305,7 @@ resolver_echo_stub() {
   esac
 }
 resolver_echo_answer() { resolver_echo_stub "$@"; }
-assert_true "custom registry defines DNS_INTERCEPT" test -n "${CUSTOM_SERVICES[DNS_INTERCEPT]:-}"
+assert_true "dns registry defines DNS_INTERCEPT" test -n "${DNS_DIAG_SERVICES[DNS_INTERCEPT]:-}"
 DNS_INTERCEPT_MODE="clean"
 assert_eq "Yes" "$(lookup_dns_intercept 4)" "dns intercept maps distinct resolver echoes to Yes"
 DNS_INTERCEPT_MODE="intercepted"
@@ -1332,7 +1334,7 @@ ptr_system_stub() {
   esac
 }
 system_ptr_answer() { ptr_system_stub "$@"; }
-assert_true "custom registry defines DNS_PTR" test -n "${CUSTOM_SERVICES[DNS_PTR]:-}"
+assert_true "dns registry defines DNS_PTR" test -n "${DNS_DIAG_SERVICES[DNS_PTR]:-}"
 PTR_MODE="clean"
 assert_eq "Yes" "$(lookup_dns_ptr 4)" "dns ptr maps matching reverse answers to Yes"
 PTR_MODE="substituted"
@@ -1353,7 +1355,14 @@ unset PTR_MODE
 DNSSEC_MODE="validating"
 assert_eq "Yes" "$(lookup_dnssec_validation 4)" "dnssec validation maps failed resolution to Yes"
 unset DNSSEC_MODE PTR_MODE
-assert_true "custom registry defines PUBLIC_ANSWERS" test -n "${CUSTOM_SERVICES[PUBLIC_ANSWERS]:-}"
+RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"Yes","ipv6":"Yes"}]}}'
+FAIL_ON_BLOCK_KEYS=("DNS_INTEGRITY")
+fail_on_block_check && echo "OK: fail-on-block passes dns group Yes" || echo "FAIL: fail-on-block passes dns group Yes"
+RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"No","ipv6":"N/A"}]}}'
+fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block flags dns group No" || echo "OK: fail-on-block flags dns group No"
+unset FAIL_ON_BLOCK_KEYS
+RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[]}}'
+assert_true "dns registry defines PUBLIC_ANSWERS" test -n "${DNS_DIAG_SERVICES[PUBLIC_ANSWERS]:-}"
 assert_false "is_nonpublic_ipv4 passes public addresses" is_nonpublic_ipv4 "93.184.216.34"
 PUBLIC_LEAK_MODE="leak"
 assert_eq "No" "$(lookup_public_answers 4)" "public answers flags private-space injection"
@@ -1393,7 +1402,7 @@ ttl_doh_stub() {
 }
 system_dns_ttl() { ttl_dns_stub; }
 doh_dns_ttl() { ttl_doh_stub "$@"; }
-assert_true "custom registry defines DNS_TTL" test -n "${CUSTOM_SERVICES[DNS_TTL]:-}"
+assert_true "dns registry defines DNS_TTL" test -n "${DNS_DIAG_SERVICES[DNS_TTL]:-}"
 JSON_OUTPUT=true
 DNS_TTL_GAP="0.1"
 ttl_stub_reset
@@ -1429,7 +1438,7 @@ consensus_stub() {
   one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
   esac
 }
-assert_true "custom registry defines RESOLVER_CONSENSUS" test -n "${CUSTOM_SERVICES[RESOLVER_CONSENSUS]:-}"
+assert_true "dns registry defines RESOLVER_CONSENSUS" test -n "${DNS_DIAG_SERVICES[RESOLVER_CONSENSUS]:-}"
 JSON_OUTPUT=true
 CONSENSUS_MODE="divergent"
 assert_eq "No" "$(lookup_resolver_consensus 4)" "resolver consensus flags a diverging resolver"
@@ -1445,6 +1454,7 @@ JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
+assert_eq "9" "$(count_group_checks dns)" "count_group_checks counts dns group"
 assert_eq "14" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true
@@ -1556,7 +1566,7 @@ assert_contains "$oc_err" "requires --watch" "only-changes without watch errors"
 
 # --list prints the full check registry, one tab-separated line per check
 list_output=$(bash "$ROOT_DIR/ipregion.sh" --list)
-expected_list_lines=$((${#PRIMARY_SERVICES_ORDER[@]} + ${#CUSTOM_SERVICES_ORDER[@]} + ${#CDN_SERVICES_ORDER[@]} + ${#DEVINFRA_SERVICES_ORDER[@]}))
+expected_list_lines=$((${#PRIMARY_SERVICES_ORDER[@]} + ${#CUSTOM_SERVICES_ORDER[@]} + ${#CDN_SERVICES_ORDER[@]} + ${#DEVINFRA_SERVICES_ORDER[@]} + ${#DNS_DIAG_SERVICES_ORDER[@]}))
 assert_eq "$expected_list_lines" "$(printf '%s\n' "$list_output" | grep -c .)" "list prints every registry entry"
 printf '%s\n' "$list_output" | grep -q $'^custom\tGEMINI_NOTEBOOK\tGemini Notebook$' && echo "OK: list carries group/key/display" || {
   echo "FAIL: list carries group/key/display"
@@ -1600,6 +1610,7 @@ COMP_WORDS=(ipregion.sh --group "")
 COMP_CWORD=2
 _ipregion_completions
 assert_contains "$(printf '%s\n' "${COMPREPLY[@]}")" "devinfra" "completion offers group values"
+assert_contains "$(printf '%s\n' "${COMPREPLY[@]}")" "dns" "completion offers dns group"
 COMP_WORDS=(ipregion.sh --include-service "")
 COMP_CWORD=2
 _ipregion_completions
