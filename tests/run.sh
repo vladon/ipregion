@@ -1362,6 +1362,58 @@ assert_eq "Yes" "$(lookup_public_answers 4)" "public answers maps all-public ans
 PUBLIC_LEAK_MODE="silent"
 assert_eq "N/A" "$(lookup_public_answers 4)" "public answers stays N/A when nothing resolves"
 unset PUBLIC_LEAK_MODE
+
+# TTL honesty verdicts (system resolver and DoH reference stubbed; the
+# handlers run inside command substitutions, so the sample counters live
+# in files)
+ttl_dns_count=$(mktemp)
+ttl_doh_count=$(mktemp)
+ttl_stub_reset() {
+  echo 1 >"$ttl_dns_count"
+  echo 1 >"$ttl_doh_count"
+}
+ttl_dns_stub() {
+  local n
+  n=$(cat "$ttl_dns_count")
+  printf '%s\n' "$((n + 1))" >"$ttl_dns_count"
+  case "${DNS_TTL_MODE:-decrement}" in
+  constant) echo 300 ;;
+  silent) return 0 ;;
+  *) case "$n" in 1) echo 600 ;; *) echo 580 ;; esac ;;
+  esac
+}
+ttl_doh_stub() {
+  local n
+  n=$(cat "$ttl_doh_count")
+  printf '%s\n' "$((n + 1))" >"$ttl_doh_count"
+  case "${DOH_TTL_MODE:-decrement}" in
+  const) echo 600 ;;
+  *) case "$n" in 1) echo 600 ;; *) echo 580 ;; esac ;;
+  esac
+}
+system_dns_ttl() { ttl_dns_stub; }
+doh_dns_ttl() { ttl_doh_stub "$@"; }
+assert_true "custom registry defines DNS_TTL" test -n "${CUSTOM_SERVICES[DNS_TTL]:-}"
+JSON_OUTPUT=true
+DNS_TTL_GAP="0.1"
+assert_true "system resolver reports TTLs" test -n "$(nslookup -debug -type=A dns.google 2>/dev/null | awk 'tolower($1) == "ttl" {print $3; exit}')"
+ttl_stub_reset
+assert_eq "Yes" "$(lookup_dns_ttl 4)" "dns ttl maps decrementing answers to Yes"
+ttl_stub_reset
+DNS_TTL_MODE="constant"
+assert_eq "No" "$(lookup_dns_ttl 4)" "dns ttl maps constant answers to No"
+DNS_TTL_MODE="silent"
+assert_eq "N/A" "$(lookup_dns_ttl 4)" "dns ttl stays N/A when TTLs are unreadable"
+DNS_TTL_MODE="constant"
+DOH_TTL_MODE="const"
+assert_eq "N/A" "$(lookup_dns_ttl 4)" "dns ttl stays N/A when neither side ages"
+unset DNS_TTL_MODE
+DOH_TTL_MODE="const"
+ttl_stub_reset
+assert_eq "Yes" "$(lookup_dns_ttl 4)" "dns ttl proves caching even on a non-aging reference"
+unset -f system_dns_ttl doh_dns_ttl ttl_dns_stub ttl_doh_stub
+rm -f "$ttl_dns_count" "$ttl_doh_count"
+unset DNS_TTL_MODE DNS_TTL_GAP DOH_TTL_MODE
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
 unset DNS_INTEGRITY_MODE
 JSON_OUTPUT=false

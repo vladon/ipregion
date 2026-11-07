@@ -338,6 +338,22 @@ system_ptr_answer() {
   1.1.1.1) echo "one.one.one.one" ;;
   esac
 }
+ttl_dns_count=$(mktemp)
+ttl_doh_count=$(mktemp)
+# The TTL-honesty handler sleeps between its two samples; keep golden fast.
+export DNS_TTL_GAP="0.1"
+system_dns_ttl() {
+  local n
+  n=$(cat "$ttl_dns_count")
+  printf '%s\n' "$((n + 1))" >"$ttl_dns_count"
+  case "$n" in 1) echo 600 ;; *) echo 580 ;; esac
+}
+doh_dns_ttl() {
+  local n
+  n=$(cat "$ttl_doh_count")
+  printf '%s\n' "$((n + 1))" >"$ttl_doh_count"
+  case "$n" in 1) echo 600 ;; *) echo 580 ;; esac
+}
 
 # Fixed state ----------------------------------------------------------------
 
@@ -458,6 +474,7 @@ INCLUDED_SERVICES=(
   "DNS_PTR"
   "DNSSEC_VALIDATION"
   "PUBLIC_ANSWERS"
+  "DNS_TTL"
   "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"

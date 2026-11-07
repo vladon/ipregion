@@ -372,6 +372,7 @@ declare -A CUSTOM_SERVICES=(
   [DNS_PTR]="PTR Match"
   [DNSSEC_VALIDATION]="DNSSEC Validation"
   [PUBLIC_ANSWERS]="Public Answers"
+  [DNS_TTL]="TTL Honesty"
   [GMAIL]="Gmail"
   [GOOGLE_DRIVE]="Google Drive"
   [GOOGLE_MEET]="Google Meet"
@@ -558,6 +559,7 @@ CUSTOM_SERVICES_ORDER=(
   "DNS_PTR"
   "DNSSEC_VALIDATION"
   "PUBLIC_ANSWERS"
+  "DNS_TTL"
   "GMAIL"
   "GOOGLE_DRIVE"
   "GOOGLE_MEET"
@@ -796,6 +798,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_PTR]="lookup_dns_ptr"
   [DNSSEC_VALIDATION]="lookup_dnssec_validation"
   [PUBLIC_ANSWERS]="lookup_public_answers"
+  [DNS_TTL]="lookup_dns_ttl"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5496,6 +5499,36 @@ is_nonpublic_ipv4() {
   return 1
 }
 
+# The TTL the SYSTEM resolver served for the host's first A record;
+# empty when the tool cannot report TTLs or the lookup failed. nslookup
+# reports "ttl = N" in debug mode; host -a embeds the TTL in the RR line.
+system_dns_ttl() {
+  local host="$1"
+  local answer=""
+  if command -v nslookup >/dev/null 2>&1; then
+    answer=$(nslookup -debug -type=A "$host" 2>/dev/null | awk 'tolower($1) == "ttl" {print $3; exit}')
+  elif command -v host >/dev/null 2>&1; then
+    answer=$(host -a "$host" 2>/dev/null | awk 'tolower($2) == "in" && toupper($3) == "A" {print $2; exit}')
+  fi
+  echo "$answer"
+}
+
+# The remaining TTL the Cloudflare DoH reference reports for the name
+# (first answer); prints nothing when there is no answer, returns 1 on
+# transport failure.
+doh_dns_ttl() {
+  local host="$1"
+  local ip_version="$2"
+  local response
+  response=$(curl_wrapper GET "https://cloudflare-dns.com/dns-query?name=${host}&type=A" \
+    --header "Accept: application/dns-json" \
+    --ip-version "$ip_version")
+  if [[ -z "$response" ]] || [[ -z "$(process_json "$response" '.Status // empty' 2>/dev/null)" ]]; then
+    return 1
+  fi
+  process_json "$response" '.Answer[0].TTL // empty' 2>/dev/null
+}
+
 # DNS-integrity diagnostic: a resolver that invents records for names that
 # cannot exist, or that rewrites answers for fixed public records compared
 # against a TLS-protected DoH reference, is spoofing DNS. A records and
@@ -5684,6 +5717,54 @@ lookup_public_answers() {
     return
   fi
   print_value_or_colored "Yes" "SERVICE"
+}
+
+# TTL honesty diagnostic: a caching resolver serves answers with
+# DECREMENTING TTLs. The system resolver's TTL for a stable canary is
+# sampled twice; the DoH reference must age its own answer over the same
+# gap, otherwise the verdict is inconclusive. Yes = TTLs decrement
+# (cached, honest), No = a constant TTL is served - the client-visible
+# signature of TTL substitution (clamped or rewritten) or of a
+# non-caching forwarder, N/A = TTLs unreadable or inconclusive
+# reference.
+lookup_dns_ttl() {
+  local ip_version="$1"
+  local canary="dns.google"
+  local ttl_gap="${DNS_TTL_GAP:-15}"
+  local first second doh_first doh_second
+
+  first=$(system_dns_ttl "$canary")
+  if [[ -z "$first" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  doh_first=$(doh_dns_ttl "$canary" "$ip_version")
+  if [[ -z "$doh_first" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  sleep "$ttl_gap"
+  second=$(system_dns_ttl "$canary")
+  doh_second=$(doh_dns_ttl "$canary" "$ip_version")
+  if [[ -z "$second" || -z "$doh_second" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  if ((second < first)); then
+    # The system resolver aged its own answer: honest caching, whatever
+    # the reference did mid-gap.
+    print_value_or_colored "Yes" "SERVICE"
+    return
+  fi
+  if ((doh_second < doh_first)); then
+    # The reference aged, the system resolver served a constant TTL:
+    # rewritten, clamped, or a non-caching forwarder.
+    print_value_or_colored "No" "HEART"
+    return
+  fi
+  # The reference refreshed its answer mid-gap and the system resolver
+  # served a constant: ambiguous, report rather than guess.
+  echo "$STATUS_NA"
 }
 
 lookup_site_access() {
