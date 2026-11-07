@@ -118,6 +118,8 @@ jobs:
 
       - name: Deploy files
         run: |
+          install -d deploy-stage
+          cp ipregion.sh index.html README.md LICENSE deploy-stage/
           rsync -az --delete \
-            ipregion.sh index.html README.md LICENSE \
+            deploy-stage/ \
             orange-ipregion:/srv/www/ipregion.vladon.sh/
