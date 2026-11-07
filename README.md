@@ -366,20 +366,22 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 
 Total: 222 checks.
 <!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
-<!-- ipregion:checks-end -->
+
+### DNS diagnostics (group dns)
+
+The whole family runs with `--group dns` and is reference-based and token-free: every verdict is derived from public canaries or a TLS-protected DoH reference, never from the author's infrastructure.
+
+| Check | Detects | Verdict |
+|---|---|---|
+| DNS Integrity | Fabricated records (random-label NXDOMAIN canary) and rewritten, clamped or filtered A/AAAA answers for `dns.google` / `one.one.one.one` vs the DoH reference | **Yes** = clean; **No** = spoofing or filtering; **N/A** = reference unreachable |
+| DNS Intercept | Transparent port-53 interception: `whoami.akamai.net` echoes the same egress address for two independent public resolvers | **Yes** = clean; **No** = intercepted; **N/A** = probes fail |
+| PTR Match | Reverse answers for 8.8.8.8 / 1.1.1.1 vs the DoH reference | **Yes** = match; **No** = substituted or filtered; **N/A** = reference unreachable or no published PTR |
+| DNSSEC Validation | `dnssec-failed.org` (permanently broken signatures) must SERVFAIL | **Yes** = resolver validates; **No** = serves broken-signature records; **N/A** = canary no longer broken or reference unreachable |
+| DoT Google / DoT Cloudflare | DNS-over-TLS reachability (`dns.google:853`, `one.one.one.one:853`) | **Yes/No** per transport |
+| Public Answers | Private-address answers (RFC1918, loopback, CGNAT) for eight major public names | **Yes** = all public; **No** = private injection; **N/A** = nothing resolved |
+| TTL Honesty | Cache behavior: the served TTL must decrement between samples | **Yes** = decrementing (honest cache); **No** = constant (substituted or non-caching forwarder); **N/A** = ambiguous |
+| Resolver Consensus | `dns.google` and `one.one.one.one` asked directly at 8.8.8.8 / 1.1.1.1 / 9.9.9.9 must all match the DoH reference | **Yes** = consensus; **No** = divergence; **N/A** = fewer than two reachable |
+| DNS Latency | Informational: system-resolver vs DoH-JSON resolution time ("local/doh ms") for a stable canary | milliseconds; **N/A** = bash < 5 or lookup failure |
 
 ### CDN nodes (group cdn)
 
