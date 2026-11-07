@@ -1413,6 +1413,32 @@ assert_eq "Yes" "$(lookup_dns_ttl 4)" "dns ttl proves caching even on a non-agin
 unset -f system_dns_ttl doh_dns_ttl ttl_dns_stub ttl_doh_stub
 rm -f "$ttl_dns_count" "$ttl_doh_count"
 unset DNS_TTL_MODE DNS_TTL_GAP DOH_TTL_MODE
+server_dns_answers() { consensus_stub "$@"; }
+consensus_stub() {
+  local host="$1"
+  local server="$2"
+  if [[ "${CONSENSUS_MODE:-consistent}" == "divergent" && "$server" == "9.9.9.9" ]]; then
+    echo "203.0.113.44"
+    return
+  fi
+  if [[ "${CONSENSUS_MODE:-consistent}" == "partial" && "$server" != "8.8.8.8" ]]; then
+    return
+  fi
+  case "$host" in
+  dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
+  one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
+  esac
+}
+assert_true "custom registry defines RESOLVER_CONSENSUS" test -n "${CUSTOM_SERVICES[RESOLVER_CONSENSUS]:-}"
+JSON_OUTPUT=true
+CONSENSUS_MODE="divergent"
+assert_eq "No" "$(lookup_resolver_consensus 4)" "resolver consensus flags a diverging resolver"
+CONSENSUS_MODE="partial"
+assert_eq "N/A" "$(lookup_resolver_consensus 4)" "resolver consensus stays N/A with one reachable resolver"
+CONSENSUS_MODE="consistent"
+assert_eq "Yes" "$(lookup_resolver_consensus 4)" "resolver consensus maps agreeing resolvers to Yes"
+unset CONSENSUS_MODE
+unset -f server_dns_answers consensus_stub
 unset -f system_dns_answers doh_dns_answers dns_integrity_system_stub dns_integrity_doh_stub
 unset DNS_INTEGRITY_MODE
 JSON_OUTPUT=false
