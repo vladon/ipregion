@@ -348,6 +348,8 @@ server_dns_answers() {
   one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
   esac
 }
+system_dns_latency_ms() { echo 12; }
+doh_dns_latency_ms() { echo 180; }
 system_dns_ttl() {
   local n
   n=$(cat "$ttl_dns_count")
@@ -482,6 +484,7 @@ INCLUDED_SERVICES=(
   "PUBLIC_ANSWERS"
   "DNS_TTL"
   "RESOLVER_CONSENSUS"
+  "DNS_LATENCY"
   "GEMINI_NOTEBOOK"
   "GMAIL"
   "GOOGLE_DRIVE"

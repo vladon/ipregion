@@ -1438,7 +1438,27 @@ consensus_stub() {
   one.one.one.one) printf '1.1.1.1\n1.0.0.1\n' ;;
   esac
 }
-assert_true "dns registry defines RESOLVER_CONSENSUS" test -n "${DNS_DIAG_SERVICES[RESOLVER_CONSENSUS]:-}"
+assert_true "custom registry defines RESOLVER_CONSENSUS" test -n "${DNS_DIAG_SERVICES[RESOLVER_CONSENSUS]:-}"
+assert_true "custom registry defines DNS_LATENCY" test -n "${DNS_DIAG_SERVICES[DNS_LATENCY]:-}"
+assert_eq "600" "$(seconds_to_ms "0.600123")" "seconds_to_ms converts sub-second values"
+assert_eq "1800" "$(seconds_to_ms "1.800000")" "seconds_to_ms converts multi-second values"
+assert_eq "5" "$(seconds_to_ms "0.005")" "seconds_to_ms pads short fractions"
+latency_dns_stub() { echo 42; }
+latency_doh_stub() {
+  if [[ "${DNS_LATENCY_MODE:-both}" == "both" ]]; then
+    echo "180"
+  fi
+}
+system_dns_latency_ms() { latency_dns_stub; }
+doh_dns_latency_ms() { latency_doh_stub "$@"; }
+JSON_OUTPUT=true
+assert_eq "42/180 ms" "$(lookup_dns_latency 4)" "dns latency reports local and doh milliseconds"
+DNS_LATENCY_MODE="local_only"
+assert_eq "N/A" "$(lookup_dns_latency 4)" "dns latency stays N/A when the DoH lookup fails"
+DNS_LATENCY_MODE="none"
+assert_eq "N/A" "$(lookup_dns_latency 4)" "dns latency stays N/A when the local lookup fails"
+unset DNS_LATENCY_MODE
+unset -f system_dns_latency_ms doh_dns_latency_ms latency_dns_stub latency_doh_stub
 JSON_OUTPUT=true
 CONSENSUS_MODE="divergent"
 assert_eq "No" "$(lookup_resolver_consensus 4)" "resolver consensus flags a diverging resolver"
@@ -1454,7 +1474,7 @@ JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
-assert_eq "9" "$(count_group_checks dns)" "count_group_checks counts dns group"
+assert_eq "10" "$(count_group_checks dns)" "count_group_checks counts dns group"
 assert_eq "14" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true

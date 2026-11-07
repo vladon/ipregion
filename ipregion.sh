@@ -737,6 +737,7 @@ declare -A DNS_DIAG_SERVICES=(
   [PUBLIC_ANSWERS]="Public Answers"
   [DNS_TTL]="TTL Honesty"
   [RESOLVER_CONSENSUS]="Resolver Consensus"
+  [DNS_LATENCY]="DNS Latency"
 )
 
 DNS_DIAG_SERVICES_ORDER=(
@@ -749,6 +750,7 @@ DNS_DIAG_SERVICES_ORDER=(
   "PUBLIC_ANSWERS"
   "DNS_TTL"
   "RESOLVER_CONSENSUS"
+  "DNS_LATENCY"
 )
 
 # Developer-infrastructure services form their own -g devinfra group;
@@ -812,6 +814,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [PUBLIC_ANSWERS]="lookup_public_answers"
   [DNS_TTL]="lookup_dns_ttl"
   [RESOLVER_CONSENSUS]="lookup_resolver_consensus"
+  [DNS_LATENCY]="lookup_dns_latency"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5578,6 +5581,64 @@ server_dns_answers() {
   printf '%s\n' "${answers[@]+"${answers[@]}"}"
 }
 
+# Decimal seconds to integer milliseconds (integer math: bash arithmetic
+# has no floats).
+seconds_to_ms() {
+  local t="$1"
+  local int_part frac_part
+  if [[ "$t" != *.* ]]; then
+    echo $((10#$t * 1000))
+    return
+  fi
+  int_part="${t%%.*}"
+  frac_part="${t#*.}"
+  while ((${#frac_part} < 6)); do
+    frac_part="${frac_part}0"
+  done
+  echo $((10#$int_part * 1000 + 10#$frac_part / 1000))
+}
+
+# Resolution time in milliseconds for one system-resolver A lookup,
+# including tool startup; empty when the platform cannot measure
+# (EPOCHREALTIME needs bash >= 5) or the lookup failed.
+system_dns_latency_ms() {
+  local host="$1"
+  local start end answers
+  [[ -n "${EPOCHREALTIME:-}" ]] || {
+    echo ""
+    return
+  }
+  start="$EPOCHREALTIME"
+  answers=$(system_dns_answers "$host" "A")
+  end="$EPOCHREALTIME"
+  [[ -z "$answers" ]] && {
+    echo ""
+    return
+  }
+  awk -v s="$start" -v e="$end" 'BEGIN { printf "%d", (e - s) * 1000 }'
+}
+
+# Resolution time in milliseconds for one DoH-JSON lookup through the
+# reference, measured the same way as system_dns_latency_ms so both
+# sides compare like for like.
+doh_dns_latency_ms() {
+  local host="$1"
+  local ip_version="$2"
+  local start end answers
+  [[ -n "${EPOCHREALTIME:-}" ]] || {
+    echo ""
+    return
+  }
+  start="$EPOCHREALTIME"
+  answers=$(doh_dns_answers "$host" "A" "$ip_version")
+  end="$EPOCHREALTIME"
+  [[ -z "$answers" ]] && {
+    echo ""
+    return
+  }
+  awk -v s="$start" -v e="$end" 'BEGIN { printf "%d", (e - s) * 1000 }'
+}
+
 # DNS-integrity diagnostic: a resolver that invents records for names that
 # cannot exist, or that rewrites answers for fixed public records compared
 # against a TLS-protected DoH reference, is spoofing DNS. A records and
@@ -5865,6 +5926,25 @@ lookup_resolver_consensus() {
     return
   fi
   print_value_or_colored "Yes" "SERVICE"
+}
+
+# DNS latency diagnostic: reports the system resolver's round-trip for a
+# stable canary next to the same lookup through the DoH reference
+# ("local/doh" milliseconds). Both sides include tool startup, so the
+# numbers compare like for like. N/A when the platform cannot measure
+# (bash < 5) or either lookup fails.
+lookup_dns_latency() {
+  local ip_version="$1"
+  local canary="dns.google"
+  local local_ms doh_ms
+
+  local_ms=$(system_dns_latency_ms "$canary")
+  doh_ms=$(doh_dns_latency_ms "$canary" "$ip_version")
+  if [[ -z "$local_ms" || -z "$doh_ms" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  printf '%d/%d ms' "$local_ms" "$doh_ms"
 }
 
 lookup_site_access() {
