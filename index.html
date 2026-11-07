@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ipregion — IP geolocation &amp; region availability from your terminal</title>
+<meta name="description" content="Single-file Bash CLI that reports IP geolocation and whether popular services are available in your region, over IPv4 and IPv6.">
+<style>
+	:root {
+		color-scheme: light dark;
+		--bg: #0d1117;
+		--fg: #e6edf3;
+		--muted: #8d96a0;
+		--card: #161b22;
+		--border: #30363d;
+		--accent: #3fb950;
+		--accent-dim: #238636;
+	}
+	@media (prefers-color-scheme: light) {
+		:root {
+			--bg: #ffffff;
+			--fg: #1f2328;
+			--muted: #59636e;
+			--card: #f6f8fa;
+			--border: #d1d9e0;
+			--accent: #1a7f37;
+			--accent-dim: #1a7f37;
+		}
+	}
+	* { box-sizing: border-box; margin: 0; padding: 0; }
+	body {
+		background: var(--bg);
+		color: var(--fg);
+		font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+		-webkit-font-smoothing: antialiased;
+	}
+	main { max-width: 760px; margin: 0 auto; padding: 64px 24px 48px; }
+	.logo {
+		display: inline-block;
+		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-size: 15px;
+		font-weight: 600;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 2px 10px;
+		color: var(--accent);
+		margin-bottom: 20px;
+	}
+	h1 { font-size: 40px; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 12px; }
+	.tagline { font-size: 19px; color: var(--muted); margin-bottom: 36px; }
+	.tagline code {
+		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-size: 15px;
+		color: var(--fg);
+	}
+	h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; }
+	section { margin-bottom: 40px; }
+	.install-card {
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		padding: 14px 16px;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	.install-card code {
+		flex: 1;
+		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-size: 14px;
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+	.install-card .prompt { color: var(--accent); user-select: none; }
+	.copy-btn {
+		background: var(--accent-dim);
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		padding: 6px 12px;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.copy-btn:hover { filter: brightness(1.1); }
+	.alt-commands {
+		margin-top: 14px;
+		font-size: 14px;
+		color: var(--muted);
+	}
+	.alt-commands code {
+		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-size: 13px;
+		color: var(--fg);
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 4px;
+		padding: 1px 6px;
+	}
+	.hint { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+	.features { list-style: none; }
+	.features li { padding: 5px 0 5px 26px; position: relative; }
+	.features li::before {
+		content: "▸";
+		position: absolute;
+		left: 6px;
+		color: var(--accent);
+	}
+	.features b { font-weight: 600; }
+	.features .detail { color: var(--muted); font-size: 14.5px; }
+	.links { display: flex; flex-wrap: wrap; gap: 10px; }
+	.links a {
+		display: inline-block;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 7px 14px;
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--fg);
+		text-decoration: none;
+		background: var(--card);
+	}
+	.links a:hover { border-color: var(--accent); color: var(--accent); }
+	footer {
+		margin-top: 56px;
+		padding-top: 20px;
+		border-top: 1px solid var(--border);
+		font-size: 13px;
+		color: var(--muted);
+	}
+	footer a { color: var(--muted); }
+	@media (max-width: 560px) {
+		h1 { font-size: 30px; }
+		.install-card { flex-direction: column; align-items: stretch; text-align: left; }
+		.copy-btn { align-self: flex-end; }
+	}
+</style>
+</head>
+<body>
+<main>
+	<header>
+		<span class="logo">$ ipregion</span>
+		<h1>ipregion</h1>
+		<p class="tagline">Where is your IP, and what does the internet think about it — <code>Google</code>, <code>YouTube</code>, <code>Steam</code> and friends included.</p>
+	</header>
+
+	<section id="install">
+		<h2>Install</h2>
+		<div class="install-card">
+			<span class="prompt">$</span><code id="install-cmd">bash &lt;(wget -qO- https://ipregion.vladon.sh)</code>
+			<button class="copy-btn" id="copy-btn" type="button">Copy</button>
+		</div>
+		<p class="alt-commands">
+			Or download it first: <code>wget -O ipregion.sh https://ipregion.vladon.sh</code><br>
+			Script needs <b>bash ≥ 4.3</b>, plus <code>curl</code>, <code>wget</code> and <code>jq</code>.
+		</p>
+		<p class="hint">curl and wget always receive the raw script — this page is shown only to browsers. The script itself is always available at <a href="/ipregion.sh" style="color: var(--accent);">/ipregion.sh</a>.</p>
+	</section>
+
+	<section id="usage">
+		<h2>Quick start</h2>
+		<ul class="features">
+			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion</code> <span class="detail">— consensus geolocation across many GeoIP providers</span></li>
+			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion -g custom</code> <span class="detail">— region checks on popular sites (Google, YouTube, Gemini, Steam, TikTok, Apple…)</span></li>
+			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion --json</code> / <code style="font-family: ui-monospace, Menlo, monospace;">--csv</code> <span class="detail">— machine-readable output</span></li>
+			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion --proxy socks5://…</code> <span class="detail">— or bind to a specific interface; IPv4 and IPv6 run in parallel</span></li>
+		</ul>
+	</section>
+
+	<section id="resources">
+		<h2>Resources</h2>
+		<nav class="links">
+			<a href="https://github.com/vladon/ipregion">GitHub</a>
+			<a href="/README.md">README</a>
+			<a href="/ipregion.sh">Script source</a>
+			<a href="https://github.com/vladon/ipregion/releases">Releases</a>
+		</nav>
+	</section>
+
+	<footer>
+		MIT license · heavily rewritten fork of <a href="https://github.com/vernette/ipregion">vernette/ipregion</a>
+	</footer>
+</main>
+<script>
+	document.getElementById("copy-btn").addEventListener("click", async function () {
+		var cmd = document.getElementById("install-cmd").textContent;
+		try {
+			await navigator.clipboard.writeText(cmd);
+		} catch (e) {
+			var ta = document.createElement("textarea");
+			ta.value = cmd;
+			document.body.appendChild(ta);
+			ta.select();
+			document.execCommand("copy");
+			ta.remove();
+		}
+		this.textContent = "Copied!";
+		var btn = this;
+		setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+	});
+</script>
+</body>
+</html>
