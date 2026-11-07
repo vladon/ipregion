@@ -192,7 +192,6 @@
 [1;32mTTL Honesty[0m	[0;90mN/A[0m	[0;90mN/A[0m
 [1;32mResolver Consensus[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDNS Latency[0m	[1m12/180 ms[0m	[1m12/180 ms[0m
-[1;32mRebind Protection[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 
 [1;36mGeoIP services[0m
 

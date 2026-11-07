@@ -738,7 +738,6 @@ declare -A DNS_DIAG_SERVICES=(
   [DNS_TTL]="TTL Honesty"
   [RESOLVER_CONSENSUS]="Resolver Consensus"
   [DNS_LATENCY]="DNS Latency"
-  [REBIND_PROTECTION]="Rebind Protection"
 )
 
 DNS_DIAG_SERVICES_ORDER=(
@@ -752,7 +751,6 @@ DNS_DIAG_SERVICES_ORDER=(
   "DNS_TTL"
   "RESOLVER_CONSENSUS"
   "DNS_LATENCY"
-  "REBIND_PROTECTION"
 )
 
 # Developer-infrastructure services form their own -g devinfra group;
@@ -817,7 +815,6 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_TTL]="lookup_dns_ttl"
   [RESOLVER_CONSENSUS]="lookup_resolver_consensus"
   [DNS_LATENCY]="lookup_dns_latency"
-  [REBIND_PROTECTION]="lookup_rebind_protection"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
   [GOOGLE_MEET]="lookup_google_meet"
@@ -5948,44 +5945,6 @@ lookup_dns_latency() {
     return
   fi
   printf '%d/%d ms' "$local_ms" "$doh_ms"
-}
-
-# DNS rebinding diagnostic through the public 1u.ms canary: the first
-# query for a fresh canary name resolves to a public IP and every query
-# within the following five seconds resolves to 127.0.0.1 (TTL 0, so
-# honest resolvers re-fetch each time). A resolver that serves the
-# loopback answer is vulnerable to rebinding; one that keeps serving the
-# public answer (clamped caching or filtering) is protected. N/A when
-# the canary never answers (service down or blocked upstream).
-lookup_rebind_protection() {
-  local ip_version="$1"
-  local canary="ipregion-$$-$RANDOM-make-93-184-216-34-rebind-127-0-0-1-rr.1u.ms"
-  local answers answer saw_public=0 saw_private=0 sample
-
-  for sample in 1 2 3 4; do
-    answers=$(system_dns_answers "$canary" "A")
-    while IFS= read -r answer; do
-      [[ -z "$answer" ]] && continue
-      if is_nonpublic_ipv4 "$answer"; then
-        saw_private=1
-      else
-        saw_public=1
-      fi
-    done <<<"$answers"
-    [[ "$saw_private" == 1 ]] && break
-    [[ "$sample" -lt 4 ]] && sleep 1
-  done
-  if [[ "$saw_private" != 1 && "$saw_public" != 1 ]]; then
-    # Not a single answer for a fresh canary name: service down or
-    # blocked upstream.
-    echo "$STATUS_NA"
-    return
-  fi
-  if [[ "$saw_private" == 1 ]]; then
-    print_value_or_colored "No" "HEART"
-    return
-  fi
-  print_value_or_colored "Yes" "SERVICE"
 }
 
 lookup_site_access() {

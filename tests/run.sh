@@ -1443,33 +1443,6 @@ assert_true "custom registry defines DNS_LATENCY" test -n "${DNS_DIAG_SERVICES[D
 assert_eq "600" "$(seconds_to_ms "0.600123")" "seconds_to_ms converts sub-second values"
 assert_eq "1800" "$(seconds_to_ms "1.800000")" "seconds_to_ms converts multi-second values"
 assert_eq "5" "$(seconds_to_ms "0.005")" "seconds_to_ms pads short fractions"
-rebind_dns_count=$(mktemp)
-rebind_dns_reset() {
-  echo 1 >"$rebind_dns_count"
-}
-rebind_dns_stub() {
-  local n
-  n=$(cat "$rebind_dns_count")
-  printf '%s\n' "$((n + 1))" >"$rebind_dns_count"
-  case "${REBIND_MODE:-protected}" in
-  vulnerable) case "$n" in 1) echo "93.184.216.34" ;; *) echo "127.0.0.1" ;; esac ;;
-  dead) return 0 ;;
-  *) echo "93.184.216.34" ;;
-  esac
-}
-system_dns_answers() { rebind_dns_stub "$@"; }
-assert_true "custom registry defines REBIND_PROTECTION" test -n "${DNS_DIAG_SERVICES[REBIND_PROTECTION]:-}"
-REBIND_MODE="vulnerable"
-assert_eq "No" "$(lookup_rebind_protection 4)" "rebind protection flags resolvers serving the loopback flip"
-rebind_dns_reset
-REBIND_MODE="protected"
-assert_eq "Yes" "$(lookup_rebind_protection 4)" "rebind protection maps clamped answers to protected"
-rebind_dns_reset
-REBIND_MODE="dead"
-assert_eq "N/A" "$(lookup_rebind_protection 4)" "rebind protection stays N/A when the canary never answers"
-unset REBIND_MODE
-unset -f system_dns_answers rebind_dns_stub
-rm -f "$rebind_dns_count"
 latency_dns_stub() { echo 42; }
 latency_doh_stub() {
   if [[ "${DNS_LATENCY_MODE:-both}" == "both" ]]; then
@@ -1501,7 +1474,7 @@ JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
-assert_eq "11" "$(count_group_checks dns)" "count_group_checks counts dns group"
+assert_eq "10" "$(count_group_checks dns)" "count_group_checks counts dns group"
 assert_eq "14" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true
