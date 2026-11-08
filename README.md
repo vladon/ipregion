@@ -87,6 +87,8 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --group custom # Popular websites only
 ./ipregion.sh --group cdn # CDN node checks only
 ./ipregion.sh --group devinfra # Developer infrastructure only
+./ipregion.sh --group dns # DNS diagnostics only
+./ipregion.sh -g dns --watch 60 --dns-summary # one-line DNS verdict summary every 60s
 ./ipregion.sh --ipv4 # IPv4 only
 ./ipregion.sh --ipv6 # IPv6 only
 ./ipregion.sh --proxy 127.0.0.1:1080 # Use SOCKS5 proxy
@@ -383,9 +385,9 @@ The whole family runs with `--group dns` and is reference-based and token-free: 
 | Public Answers | Private-address answers (RFC1918, loopback, CGNAT) for eight major public names | **Yes** = all public; **No** = private injection; **N/A** = nothing resolved |
 | TTL Honesty | Cache behavior: the served TTL must decrement between samples | **Yes** = decrementing (honest cache); **No** = constant (substituted or non-caching forwarder); **N/A** = ambiguous |
 | Resolver Consensus | `dns.google` and `one.one.one.one` asked directly at 8.8.8.8 / 1.1.1.1 / 9.9.9.9 must all match the DoH reference | **Yes** = consensus; **No** = divergence; **N/A** = fewer than two reachable |
-| Rebind Protection | Public 1u.ms rebinding canary: a fresh name resolves to a public IP first and to 127.0.0.1 on follow-up queries (TTL 0) | **Yes** = protected (loopback never served); **No** = vulnerable (serves the flip); **N/A** = canary unreachable |
 | DNS Latency | Informational: system-resolver vs DoH-JSON resolution time ("local/doh ms") for a stable canary | milliseconds; **N/A** = bash < 5 or lookup failure |
 | Resolver Latency | Informational: direct `dns.google` query round-trip to Google/Cloudflare/Quad9 ("G/C/Q ms"); "-" = silent resolver | milliseconds; **N/A** = bash < 5 or none answered |
+| Rebind Protection | Public 1u.ms rebinding canary: a fresh name resolves to a public IP first and to 127.0.0.1 on follow-up queries (TTL 0) | **Yes** = protected (loopback never served); **No** = vulnerable (serves the flip); **N/A** = canary unreachable |
 
 ### CDN nodes (group cdn)
 

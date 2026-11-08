@@ -8,6 +8,7 @@ _ipregion() {
     '(-d --debug)'{-d,--debug}'[Debug trace]'
     '(-j --json)'{-j,--json}'[JSON output]'
     '(-g --group)'{-g,--group}'[Run one group]:group:(primary custom cdn devinfra dns all)'
+    '--dns-summary[With --watch: one-line DNS-family summary per cycle]'
     '(-t --timeout)'{-t,--timeout}'[Curl timeout seconds]:seconds:'
     '(-P --parallel)'{-P,--parallel}'[Parallel jobs]:jobs:'
     '--watch[Monitoring mode interval seconds]:seconds:'
