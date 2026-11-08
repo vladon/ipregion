@@ -3295,14 +3295,14 @@
         "metrics": {
           "ipv4": {
             "error_type": null,
-            "http_code": 200,
-            "latency_ms": 12,
+            "http_code": null,
+            "latency_ms": null,
             "transport_ip_version": 4
           },
           "ipv6": {
             "error_type": null,
-            "http_code": 200,
-            "latency_ms": 180,
+            "http_code": null,
+            "latency_ms": null,
             "transport_ip_version": 6
           }
         },
@@ -3314,14 +3314,14 @@
         "metrics": {
           "ipv4": {
             "error_type": null,
-            "http_code": 200,
-            "latency_ms": 21,
+            "http_code": null,
+            "latency_ms": null,
             "transport_ip_version": 4
           },
           "ipv6": {
             "error_type": null,
-            "http_code": 200,
-            "latency_ms": 21,
+            "http_code": null,
+            "latency_ms": null,
             "transport_ip_version": 6
           }
         },
