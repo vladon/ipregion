@@ -1443,6 +1443,33 @@ assert_true "custom registry defines DNS_LATENCY" test -n "${DNS_DIAG_SERVICES[D
 assert_eq "600" "$(seconds_to_ms "0.600123")" "seconds_to_ms converts sub-second values"
 assert_eq "1800" "$(seconds_to_ms "1.800000")" "seconds_to_ms converts multi-second values"
 assert_eq "5" "$(seconds_to_ms "0.005")" "seconds_to_ms pads short fractions"
+server_latency_dns_count=$(mktemp)
+server_latency_reset() {
+  echo 1 >"$server_latency_dns_count"
+}
+server_dns_latency_ms() {
+  local n
+  n=$(cat "$server_latency_dns_count")
+  printf '%s\n' "$((n + 1))" >"$server_latency_dns_count"
+  case "${RESOLVER_LATENCY_MODE:-all}" in
+  one_dead) case "$2" in 1.1.1.1) return 0 ;; esac ;;
+  all_dead) return 0 ;;
+  esac
+  case "$n" in 1) echo 12 ;; *) echo 8 ;; esac
+}
+assert_true "custom registry defines RESOLVER_LATENCY" test -n "${DNS_DIAG_SERVICES[RESOLVER_LATENCY]:-}"
+server_latency_reset
+RESOLVER_LATENCY_MODE="all"
+assert_eq "12/8/8 ms" "$(lookup_resolver_latency 4)" "resolver latency reports per-resolver milliseconds"
+server_latency_reset
+RESOLVER_LATENCY_MODE="one_dead"
+assert_eq "12/-/8 ms" "$(lookup_resolver_latency 4)" "resolver latency marks silent resolvers as dash"
+server_latency_reset
+RESOLVER_LATENCY_MODE="all_dead"
+assert_eq "N/A" "$(lookup_resolver_latency 4)" "resolver latency stays N/A when nothing answers"
+unset RESOLVER_LATENCY_MODE
+unset -f server_dns_latency_ms server_latency_reset
+rm -f "$server_latency_dns_count"
 rebind_dns_count=$(mktemp)
 rebind_dns_reset() {
   echo 1 >"$rebind_dns_count"
@@ -1501,7 +1528,7 @@ JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
-assert_eq "11" "$(count_group_checks dns)" "count_group_checks counts dns group"
+assert_eq "12" "$(count_group_checks dns)" "count_group_checks counts dns group"
 assert_eq "14" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true

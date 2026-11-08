@@ -738,6 +738,7 @@ declare -A DNS_DIAG_SERVICES=(
   [DNS_TTL]="TTL Honesty"
   [RESOLVER_CONSENSUS]="Resolver Consensus"
   [DNS_LATENCY]="DNS Latency"
+  [RESOLVER_LATENCY]="Resolver Latency"
   [REBIND_PROTECTION]="Rebind Protection"
 )
 
@@ -752,6 +753,7 @@ DNS_DIAG_SERVICES_ORDER=(
   "DNS_TTL"
   "RESOLVER_CONSENSUS"
   "DNS_LATENCY"
+  "RESOLVER_LATENCY"
   "REBIND_PROTECTION"
 )
 
@@ -817,6 +819,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_TTL]="lookup_dns_ttl"
   [RESOLVER_CONSENSUS]="lookup_resolver_consensus"
   [DNS_LATENCY]="lookup_dns_latency"
+  [RESOLVER_LATENCY]="lookup_resolver_latency"
   [REBIND_PROTECTION]="lookup_rebind_protection"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
@@ -5642,6 +5645,26 @@ doh_dns_latency_ms() {
   awk -v s="$start" -v e="$end" 'BEGIN { printf "%d", (e - s) * 1000 }'
 }
 
+# Resolution time in milliseconds for one direct query to an explicitly
+# addressed resolver, measured like the other latency helpers.
+server_dns_latency_ms() {
+  local host="$1"
+  local server="$2"
+  local start end answers
+  [[ -n "${EPOCHREALTIME:-}" ]] || {
+    echo ""
+    return
+  }
+  start="$EPOCHREALTIME"
+  answers=$(server_dns_answers "$host" "$server")
+  end="$EPOCHREALTIME"
+  [[ -z "$answers" ]] && {
+    echo ""
+    return
+  }
+  awk -v s="$start" -v e="$end" 'BEGIN { printf "%d", (e - s) * 1000 }'
+}
+
 # DNS-integrity diagnostic: a resolver that invents records for names that
 # cannot exist, or that rewrites answers for fixed public records compared
 # against a TLS-protected DoH reference, is spoofing DNS. A records and
@@ -5986,6 +6009,33 @@ lookup_rebind_protection() {
     return
   fi
   print_value_or_colored "Yes" "SERVICE"
+}
+
+# Resolver latency diagnostic: round-trip of one direct dns.google query
+# to each of the three independent public resolvers (Google, Cloudflare,
+# Quad9), reported as "G/C/Q ms". A resolver that does not answer is
+# shown as "-"; N/A only when none of the three answered or the platform
+# cannot measure. Informational verdict, no failure semantics.
+lookup_resolver_latency() {
+  local ip_version="$1"
+  local -a resolvers=("8.8.8.8" "1.1.1.1" "9.9.9.9")
+  local resolver ms out="" any=0
+
+  for resolver in "${resolvers[@]}"; do
+    ms=$(server_dns_latency_ms "dns.google" "$resolver")
+    if [[ -z "$ms" ]]; then
+      out+="-/"
+    else
+      out+="$ms/"
+      any=1
+    fi
+  done
+  out="${out%/} ms"
+  if [[ "$any" != 1 ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  printf '%s' "$out"
 }
 
 lookup_site_access() {
