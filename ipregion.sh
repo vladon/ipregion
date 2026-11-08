@@ -5976,6 +5976,15 @@ lookup_dns_latency() {
     echo "$STATUS_NA"
     return
   fi
+  # --metrics integration: the IPv4 pass reports the system-resolver
+  # time, the IPv6 pass the DoH reference time.
+  if [[ -n "${CURL_META_FILE:-}" ]]; then
+    if [[ "$ip_version" == "6" ]]; then
+      printf 'http_code=200;latency_ms=%d;transport_ip_version=%s;error_type=none\n' "$doh_ms" "$ip_version" >"$CURL_META_FILE"
+    else
+      printf 'http_code=200;latency_ms=%d;transport_ip_version=%s;error_type=none\n' "$local_ms" "$ip_version" >"$CURL_META_FILE"
+    fi
+  fi
   printf '%d/%d ms' "$local_ms" "$doh_ms"
 }
 
@@ -6025,14 +6034,19 @@ lookup_rebind_protection() {
 lookup_resolver_latency() {
   local ip_version="$1"
   local -a resolvers=("8.8.8.8" "1.1.1.1" "9.9.9.9")
-  local resolver ms out="" any=0
+  local resolver ms out="" any=0 total=0 answered=0
+  local -a ms_values=()
 
   for resolver in "${resolvers[@]}"; do
     ms=$(server_dns_latency_ms "dns.google" "$resolver")
     if [[ -z "$ms" ]]; then
       out+="-/"
+      ms_values+=(0)
     else
       out+="$ms/"
+      ms_values+=("$ms")
+      total=$((total + ms))
+      answered=$((answered + 1))
       any=1
     fi
   done
@@ -6040,6 +6054,11 @@ lookup_resolver_latency() {
   if [[ "$any" != 1 ]]; then
     echo "$STATUS_NA"
     return
+  fi
+  # --metrics integration: the average round-trip across the resolvers
+  # that answered.
+  if [[ -n "${CURL_META_FILE:-}" && "$answered" -gt 0 ]]; then
+    printf 'http_code=200;latency_ms=%d;transport_ip_version=%s;error_type=none\n' "$((total / answered))" "$ip_version" >"$CURL_META_FILE"
   fi
   printf '%s' "$out"
 }
@@ -7307,6 +7326,11 @@ main() {
     error_exit "--only-changes requires --watch N"
   fi
 
+  if [[ "$DNS_SUMMARY" == true && ("$GROUPS_TO_SHOW" == "dns" || "$GROUPS_TO_SHOW" == "all") ]]; then
+    # The summary line replaces all other DNS-family output: quiet run.
+    ONLY_CHANGES=true
+  fi
+
   trap cleanup_on_exit EXIT
   trap cleanup_on_interrupt INT TERM HUP
 
@@ -7328,7 +7352,7 @@ main() {
   detect_distro
   install_dependencies
 
-  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true ]]; then
+  if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && "$ONLY_CHANGES" != true ]]; then
     spinner_start
   fi
 

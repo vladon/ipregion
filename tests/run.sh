@@ -1475,8 +1475,11 @@ RESOLVER_LATENCY_MODE="all"
 assert_eq "12/8/8 ms" "$(lookup_resolver_latency 4)" "resolver latency reports per-resolver milliseconds"
 server_latency_reset
 RESOLVER_LATENCY_MODE="one_dead"
+CURL_META_FILE=$(mktemp)
 assert_eq "12/-/8 ms" "$(lookup_resolver_latency 4)" "resolver latency marks silent resolvers as dash"
-server_latency_reset
+grep -q "latency_ms=10" "$CURL_META_FILE" && echo "OK: resolver latency writes average metric" || echo "FAIL: resolver latency writes average metric"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
 RESOLVER_LATENCY_MODE="all_dead"
 assert_eq "N/A" "$(lookup_resolver_latency 4)" "resolver latency stays N/A when nothing answers"
 unset RESOLVER_LATENCY_MODE
@@ -1517,12 +1520,18 @@ latency_doh_stub() {
 }
 system_dns_latency_ms() { latency_dns_stub; }
 doh_dns_latency_ms() { latency_doh_stub "$@"; }
-JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
 assert_eq "42/180 ms" "$(lookup_dns_latency 4)" "dns latency reports local and doh milliseconds"
+grep -q "latency_ms=42" "$CURL_META_FILE" && echo "OK: dns latency writes system metric" || echo "FAIL: dns latency writes system metric"
 DNS_LATENCY_MODE="local_only"
 assert_eq "N/A" "$(lookup_dns_latency 4)" "dns latency stays N/A when the DoH lookup fails"
+DNS_LATENCY_MODE="both"
+lookup_dns_latency 6 >/dev/null
+grep -q "latency_ms=180" "$CURL_META_FILE" && echo "OK: dns latency v6 pass writes doh metric" || echo "FAIL: dns latency v6 pass writes doh metric"
 DNS_LATENCY_MODE="none"
 assert_eq "N/A" "$(lookup_dns_latency 4)" "dns latency stays N/A when the local lookup fails"
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
 unset DNS_LATENCY_MODE
 unset -f system_dns_latency_ms doh_dns_latency_ms latency_dns_stub latency_doh_stub
 JSON_OUTPUT=true
