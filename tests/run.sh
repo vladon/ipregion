@@ -1458,18 +1458,6 @@ server_dns_latency_ms() {
   case "$n" in 1) echo 12 ;; *) echo 8 ;; esac
 }
 assert_true "custom registry defines RESOLVER_LATENCY" test -n "${DNS_DIAG_SERVICES[RESOLVER_LATENCY]:-}"
-assert_eq "integrity" "$(dns_summary_token DNS_INTEGRITY)" "dns summary token maps integrity"
-assert_eq "rebind" "$(dns_summary_token REBIND_PROTECTION)" "dns summary token maps rebind"
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"Yes"},{"service":"DNS Intercept","ipv4":"Yes"},{"service":"PTR Match","ipv4":"Yes"},{"service":"DNSSEC Validation","ipv4":"Yes"},{"service":"DoT Google","ipv4":"Yes"},{"service":"DoT Cloudflare","ipv4":"Yes"},{"service":"Public Answers","ipv4":"Yes"},{"service":"TTL Honesty","ipv4":"Yes"},{"service":"Resolver Consensus","ipv4":"Yes"},{"service":"DNS Latency","ipv4":"12/180 ms"},{"service":"Resolver Latency","ipv4":"12/8/45 ms"},{"service":"Rebind Protection","ipv4":"No"}]}}'
-dns_summary_out=$(dns_summary_line 2>&1)
-assert_contains "$dns_summary_out" "integrity=Yes" "dns summary carries integrity verdict"
-assert_contains "$dns_summary_out" "rebind=No" "dns summary carries rebind verdict"
-assert_contains "$dns_summary_out" "latency=12/180 ms" "dns summary carries latency value"
-assert_contains "$dns_summary_out" "rlatency=12/8/45 ms" "dns summary carries resolver latency value"
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[]}}'
-dns_summary_out=$(dns_summary_line 2>&1)
-assert_contains "$dns_summary_out" "integrity=n/a" "dns summary renders n/a without dns results"
-unset dns_summary_out
 server_latency_reset
 RESOLVER_LATENCY_MODE="all"
 assert_eq "12/8/8 ms" "$(lookup_resolver_latency 4)" "resolver latency reports per-resolver milliseconds"

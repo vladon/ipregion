@@ -239,7 +239,6 @@ CHECKS_GROUP_FILE=""
 RUN_START_SECONDS=$SECONDS
 WATCH_INTERVAL=0
 ONLY_CHANGES=false
-DNS_SUMMARY=false
 COMPARE_OLD=""
 COMPARE_NEW=""
 FAIL_ON_BLOCK_KEYS=()
@@ -1124,7 +1123,6 @@ Options:
   -P, --parallel N     Run up to N services in parallel (default: auto)
   --watch N            Monitoring mode: re-run checks every N seconds and report verdict changes
   --only-changes       With --watch: skip tables and header, print only verdict changes
-  --dns-summary        With --watch: print a one-line DNS-family verdict summary every cycle
   --compare OLD NEW    Compare two result JSON files and print verdict changes
   --list               Print the full check registry (group, key, display) and exit
   --progress-log       Print progress lines instead of spinner
@@ -2109,10 +2107,6 @@ parse_arguments() {
       ;;
     --only-changes)
       ONLY_CHANGES=true
-      shift
-      ;;
-    --dns-summary)
-      DNS_SUMMARY=true
       shift
       ;;
     --fail-on-block)
@@ -7147,39 +7141,6 @@ collect_verdict_lines() {
   ' <<<"$json"
 }
 
-# Short token for a DNS-family check, used by the --dns-summary line.
-dns_summary_token() {
-  case "$1" in
-  DNS_INTEGRITY) echo "integrity" ;;
-  DNS_INTERCEPT) echo "intercept" ;;
-  DNS_PTR) echo "ptr" ;;
-  DNSSEC_VALIDATION) echo "dnssec" ;;
-  DOT_GOOGLE) echo "dot-g" ;;
-  DOT_CLOUDFLARE) echo "dot-cf" ;;
-  PUBLIC_ANSWERS) echo "public" ;;
-  DNS_TTL) echo "ttl" ;;
-  RESOLVER_CONSENSUS) echo "consensus" ;;
-  DNS_LATENCY) echo "latency" ;;
-  RESOLVER_LATENCY) echo "rlatency" ;;
-  REBIND_PROTECTION) echo "rebind" ;;
-  *) echo "$1" ;;
-  esac
-}
-
-# One-line DNS-family verdict summary for --watch cycles:
-#   DNS integrity=Yes intercept=Yes ... latency=12/180 ms rebind=Yes
-dns_summary_line() {
-  local key token verdict out="DNS"
-  for key in "${DNS_DIAG_SERVICES_ORDER[@]}"; do
-    token=$(dns_summary_token "$key")
-    verdict=$(jq -r --arg k "${DNS_DIAG_SERVICES[$key]}" \
-      '[.results.dns[]?] | map(select(.service == $k))[0].ipv4 // "n/a"' \
-      <<<"${RESULT_JSON:-}" 2>/dev/null)
-    out+=" $token=$verdict"
-  done
-  printf '%s\n' "$out" >&2
-}
-
 # Human-readable diff of verdict lines between two runs
 compute_verdict_changes() {
   local prev="$1"
@@ -7266,9 +7227,6 @@ run_monitor_loop() {
     if [[ -n "$changes" ]]; then
       printf '%s\n' "$changes" >&2
       telegram_send_message "$changes"
-    fi
-    if [[ "$DNS_SUMMARY" == true && ("$GROUPS_TO_SHOW" == "dns" || "$GROUPS_TO_SHOW" == "all") ]]; then
-      dns_summary_line
     fi
     prev_verdicts="$next_verdicts"
   done
@@ -7396,10 +7354,6 @@ main() {
 
   if [[ "$ONLY_CHANGES" != true ]]; then
     print_results
-  fi
-
-  if [[ "$DNS_SUMMARY" == true && ("$GROUPS_TO_SHOW" == "dns" || "$GROUPS_TO_SHOW" == "all") ]]; then
-    dns_summary_line
   fi
 
   if ((WATCH_INTERVAL > 0)); then
