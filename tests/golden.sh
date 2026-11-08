@@ -351,6 +351,13 @@ server_dns_answers() {
 }
 system_dns_latency_ms() { echo 12; }
 doh_dns_latency_ms() { echo 180; }
+server_dns_latency_ms() {
+  case "$2" in
+  8.8.8.8) echo 12 ;;
+  1.1.1.1) echo 8 ;;
+  9.9.9.9) echo 45 ;;
+  esac
+}
 system_dns_ttl() {
   local n
   n=$(cat "$ttl_dns_count")
@@ -486,6 +493,7 @@ INCLUDED_SERVICES=(
   "DNS_TTL"
   "RESOLVER_CONSENSUS"
   "DNS_LATENCY"
+  "RESOLVER_LATENCY"
   "REBIND_PROTECTION"
   "GEMINI_NOTEBOOK"
   "GMAIL"
