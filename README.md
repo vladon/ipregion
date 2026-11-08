@@ -389,6 +389,28 @@ The whole family runs with `--group dns` and is reference-based and token-free: 
 | Resolver Latency | Informational: direct `dns.google` query round-trip to Google/Cloudflare/Quad9 ("G/C/Q ms"); "-" = silent resolver | milliseconds; **N/A** = bash < 5 or none answered |
 | Rebind Protection | Public 1u.ms rebinding canary: a fresh name resolves to a public IP first and to 127.0.0.1 on follow-up queries (TTL 0) | **Yes** = protected (loopback never served); **No** = vulnerable (serves the flip); **N/A** = canary unreachable |
 
+Example output from a VPS behind systemd-resolved (`--group dns`, IPv4+IPv6):
+
+```text
+DNS diagnostics
+
+Service             IPv4           IPv6
+DNS Integrity       Yes            Yes
+DNS Intercept       Yes            Yes
+PTR Match           Yes            Yes
+DNSSEC Validation   Yes            Yes
+DoT Google          Yes            Yes
+DoT Cloudflare      Yes            Yes
+Public Answers      Yes            Yes
+TTL Honesty         Yes            Yes
+Resolver Consensus  Yes            Yes
+DNS Latency         211/1046 ms    100/769 ms
+Resolver Latency    98/131/177 ms  174/97/126 ms
+Rebind Protection   No             No
+```
+
+The same family in one line during monitoring: `./ipregion.sh -g dns --watch 60 --dns-summary` prints `DNS integrity=Yes ... rebind=No` every cycle.
+
 ### CDN nodes (group cdn)
 
 YouTube CDN, Cloudflare CDN, Netflix CDN — Google/Cloudflare/Netflix edge node detection (`--group cdn`).
