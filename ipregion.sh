@@ -781,6 +781,7 @@ declare -A DEVINFRA_SERVICES=(
   [MAVEN_CENTRAL]="Maven Central"
   [HUGGING_FACE]="Hugging Face"
   [CERT_EXPIRY]="Cert Expiry"
+  [PROXY_EGRESS]="Proxy Egress"
 )
 
 DEVINFRA_SERVICES_ORDER=(
@@ -799,6 +800,7 @@ DEVINFRA_SERVICES_ORDER=(
   "MAVEN_CENTRAL"
   "HUGGING_FACE"
   "CERT_EXPIRY"
+  "PROXY_EGRESS"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -999,6 +1001,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [MAVEN_CENTRAL]="lookup_maven_central"
   [HUGGING_FACE]="lookup_hugging_face"
   [CERT_EXPIRY]="lookup_cert_expiry"
+  [PROXY_EGRESS]="lookup_proxy_egress"
   [NOTION]="lookup_notion"
   [FIGMA]="lookup_figma"
   [MIRO]="lookup_miro"
@@ -6033,6 +6036,31 @@ lookup_rebind_protection() {
     return
   fi
   print_value_or_colored "Yes" "SERVICE"
+}
+
+# Proxy egress diagnostic: with a proxy configured (--proxy or the
+# standard proxy env vars), reports the country the proxy exits from
+# (the same geo the proxied checks see). No = the proxy did not answer
+# (dead, blocked, or unauthenticated) - the row is most useful in
+# --watch, where a flip from a country to No means the proxy just died.
+# N/A = no proxy configured, nothing to check.
+lookup_proxy_egress() {
+  if [[ -z "$PROXY_ADDR" && -z "${ALL_PROXY:-}" && -z "${HTTPS_PROXY:-}" && -z "${https_proxy:-}" && -z "${HTTP_PROXY:-}" && -z "${http_proxy:-}" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  local response country
+  response=$(curl_wrapper GET "https://api.country.is/" --header "Accept: application/json")
+  [[ -z "$response" ]] && {
+    print_value_or_colored "No" "HEART"
+    return
+  }
+  country=$(process_json "$response" '.country // empty' 2>/dev/null)
+  if [[ -z "$country" ]]; then
+    print_value_or_colored "No" "HEART"
+    return
+  fi
+  printf '%s' "$country"
 }
 
 # Resolver latency diagnostic: round-trip of one direct dns.google query

@@ -135,7 +135,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 - **Stores & clouds**: App Store, Play Store, AWS, GCP Console, Oracle Cloud (transport probes)
 - **CN platforms**: WeChat, WeChat API, Baidu, Alipay
 - **Finance**: Stripe API, PayPal, Wise (transport probes)
-- **Dev infra** (`--group devinfra`): GitHub (site + API + Codeload + Raw), GitLab (site + API), npm Registry, PyPI, Docker Hub (+ API), Go Modules, Crates.io, Maven Central, Hugging Face, TLS certificate expiry for `CERT_EXPIRY_HOST` (days remaining; point the env at your own domain)
+- **Dev infra** (`--group devinfra`): GitHub (site + API + Codeload + Raw), GitLab (site + API), npm Registry, PyPI, Docker Hub (+ API), Go Modules, Crates.io, Maven Central, Hugging Face, TLS certificate expiry for `CERT_EXPIRY_HOST` (days remaining; point the env at your own domain), Proxy Egress (with `--proxy` or proxy env: the country the proxy exits from; No = proxy dead)
 - **Static hosting**: Workers.dev, GitHub Pages, GitLab Pages, Vercel, Netlify, Cloudflare Pages, Heroku (transport probes — this infrastructure is often blocked wholesale)
 - **Hosting**: Hetzner, DigitalOcean, Vultr (transport probes)
 - **Push & chat infra**: Matrix, ntfy, Telegram Bot API (transport probes)
