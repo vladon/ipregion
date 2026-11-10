@@ -1763,6 +1763,34 @@ CERT_DAYS_MODE="unreachable"
 assert_eq "N/A" "$(lookup_cert_expiry 4)" "cert expiry stays N/A without a parseable end date"
 unset -f cert_days_remaining cert_days_stub cert_tcp_stub tcp_probe
 unset CERT_DAYS_MODE
+
+# Regression: tls_notafter must bound the TLS session - a TCP tarpit
+# (accepts, never speaks TLS) used to block openssl s_client forever.
+if command -v python3 >/dev/null 2>&1 && command -v openssl >/dev/null 2>&1; then
+  python3 - <<'PY' &
+import socket
+import time
+
+listener = socket.socket()
+listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+listener.bind(("127.0.0.1", 4430))
+listener.listen(5)
+conn, _ = listener.accept()
+time.sleep(30)
+PY
+  tarpit_pid=$!
+  sleep 0.5
+  tarpit_start=$SECONDS
+  tarpit_out=$(tls_notafter 127.0.0.1 4430)
+  assert_empty "tls_notafter returns nothing against a TLS tarpit" "$tarpit_out"
+  ((SECONDS - tarpit_start <= 20)) || {
+    failures=$((failures + 1))
+    echo "tls_notafter exceeded the 20s test bound against a tarpit"
+  }
+  kill "$tarpit_pid" 2>/dev/null
+  wait "$tarpit_pid" 2>/dev/null
+fi
+
 rm -f "$rebind_dns_count"
 latency_dns_stub() { echo 42; }
 latency_doh_stub() {
