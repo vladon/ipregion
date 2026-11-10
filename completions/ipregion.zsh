@@ -26,6 +26,7 @@ _ipregion() {
     '--show-cache[Show cached IPs]'
     '--include-service[Include check]:service:->services'
     '--exclude-service[Exclude check]:service:->services'
+    '--fail-on-block[Exit 1 if the check is not Yes]:service:->services'
     '--metrics[Show per-service metrics]'
     '--youtube-lang[YouTube language]:lang:(ru en)'
     '(-o --output)'{-o,--output}'[Output file]:file:_files'
