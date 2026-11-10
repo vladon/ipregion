@@ -1460,12 +1460,15 @@ server_dns_latency_ms() {
 assert_true "custom registry defines RESOLVER_LATENCY" test -n "${DNS_DIAG_SERVICES[RESOLVER_LATENCY]:-}"
 assert_eq "integrity" "$(dns_summary_token DNS_INTEGRITY)" "dns summary token maps integrity"
 assert_eq "rebind" "$(dns_summary_token REBIND_PROTECTION)" "dns summary token maps rebind"
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"Yes"},{"service":"DNS Intercept","ipv4":"Yes"},{"service":"PTR Match","ipv4":"Yes"},{"service":"DNSSEC Validation","ipv4":"Yes"},{"service":"DoT Google","ipv4":"Yes"},{"service":"DoT Cloudflare","ipv4":"Yes"},{"service":"Public Answers","ipv4":"Yes"},{"service":"TTL Honesty","ipv4":"Yes"},{"service":"Resolver Consensus","ipv4":"Yes"},{"service":"DNS Latency","ipv4":"12/180 ms"},{"service":"Resolver Latency","ipv4":"12/8/45 ms"},{"service":"Rebind Protection","ipv4":"No"}]}}'
+RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"Yes"},{"service":"DNS Intercept","ipv4":"Yes"},{"service":"PTR Match","ipv4":"Yes"},{"service":"DNSSEC Validation","ipv4":"Yes"},{"service":"DoT Google","ipv4":"Yes"},{"service":"DoT Cloudflare","ipv4":"Yes"},{"service":"Public Answers","ipv4":"Yes"},{"service":"TTL Honesty","ipv4":"Yes"},{"service":"Resolver Consensus","ipv4":"Yes"},{"service":"DNS Latency","ipv4":"12/180 ms"},{"service":"DNS Jitter","ipv4":"±7/±20 ms"},{"service":"Resolver Latency","ipv4":"12/8/45 ms"},{"service":"Resolver Jitter","ipv4":"±0 ms"},{"service":"DoH via Proxy","ipv4":"Yes"},{"service":"Rebind Protection","ipv4":"No"}]}}'
 dns_summary_out=$(dns_summary_line 2>&1)
 assert_contains "$dns_summary_out" "integrity=Yes" "dns summary carries integrity verdict"
 assert_contains "$dns_summary_out" "rebind=No" "dns summary carries rebind verdict"
 assert_contains "$dns_summary_out" "latency=12/180 ms" "dns summary carries latency value"
 assert_contains "$dns_summary_out" "rlatency=12/8/45 ms" "dns summary carries resolver latency value"
+assert_contains "$dns_summary_out" "jitter=±7/±20 ms" "dns summary carries jitter value"
+assert_contains "$dns_summary_out" "rjitter=±0 ms" "dns summary carries resolver jitter verdict"
+assert_contains "$dns_summary_out" "dohvia=Yes" "dns summary carries doh via proxy verdict"
 RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[]}}'
 dns_summary_out=$(dns_summary_line 2>&1)
 assert_contains "$dns_summary_out" "integrity=n/a" "dns summary renders n/a without dns results"
@@ -1657,6 +1660,34 @@ unset ALL_PROXY HTTPS_PROXY https_proxy HTTP_PROXY http_proxy
 assert_eq "N/A" "$(lookup_proxy_egress 4)" "proxy egress stays N/A without a proxy"
 unset -f curl_wrapper proxy_egress_curl_stub
 unset PROXY_EGRESS_MODE
+doh_proxy_curl_stub() {
+  if [[ "${DOH_PROXY_MODE:-ok}" == "cf_dead" && "$2" == *cloudflare* ]]; then
+    return 1
+  fi
+  if [[ "${DOH_PROXY_MODE:-ok}" == "dead" ]]; then
+    return 1
+  fi
+  if [[ "${DOH_PROXY_MODE:-ok}" == "garbage" ]]; then
+    echo '{"error":"nope"}'
+    return 0
+  fi
+  echo '{"Status":0,"Answer":[{"data":"8.8.8.8"}]}'
+}
+curl_wrapper() { doh_proxy_curl_stub "$@"; }
+PROXY_ADDR="127.0.0.1:2080"
+DOH_PROXY_MODE="ok"
+assert_eq "Yes" "$(lookup_doh_via_proxy 4)" "doh via proxy maps ok endpoints to Yes"
+DOH_PROXY_MODE="cf_dead"
+assert_eq "No" "$(lookup_doh_via_proxy 4)" "doh via proxy flags a dead endpoint as No"
+DOH_PROXY_MODE="garbage"
+assert_eq "No" "$(lookup_doh_via_proxy 4)" "doh via proxy flags garbage answers as No"
+DOH_PROXY_MODE="dead"
+assert_eq "No" "$(lookup_doh_via_proxy 4)" "doh via proxy flags proxy-broken doh as No"
+PROXY_ADDR=""
+unset ALL_PROXY HTTPS_PROXY https_proxy HTTP_PROXY http_proxy
+assert_eq "N/A" "$(lookup_doh_via_proxy 4)" "doh via proxy stays N/A without a proxy"
+unset -f curl_wrapper doh_proxy_curl_stub
+unset PROXY_ADDR DOH_PROXY_MODE
 cert_tcp_stub() { return 0; }
 tcp_probe() { cert_tcp_stub "$@"; }
 cert_days_remaining() { cert_days_stub "$@"; }
@@ -1723,7 +1754,7 @@ JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
-assert_eq "14" "$(count_group_checks dns)" "count_group_checks counts dns group"
+assert_eq "15" "$(count_group_checks dns)" "count_group_checks counts dns group"
 assert_eq "16" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true
