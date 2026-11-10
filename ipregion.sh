@@ -363,6 +363,7 @@ declare -A CUSTOM_SERVICES=(
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
   [GOOGLE_TRANSPORT]="Google Transport"
   [REDIRECT_CHAIN]="Redirect Chain"
+  [HTTP2_SUPPORT]="HTTP/2"
   [BING]="Bing"
   [DUCKDUCKGO]="DuckDuckGo"
   [BRAVE_SEARCH]="Brave Search"
@@ -543,6 +544,7 @@ CUSTOM_SERVICES_ORDER=(
   "GOOGLE_SEARCH_CAPTCHA"
   "GOOGLE_TRANSPORT"
   "REDIRECT_CHAIN"
+  "HTTP2_SUPPORT"
   "BING"
   "DUCKDUCKGO"
   "BRAVE_SEARCH"
@@ -810,6 +812,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
   [GOOGLE_TRANSPORT]="lookup_google_transport"
   [REDIRECT_CHAIN]="lookup_redirect_chain"
+  [HTTP2_SUPPORT]="lookup_http2_support"
   [BING]="lookup_bing"
   [DUCKDUCKGO]="lookup_duckduckgo"
   [BRAVE_SEARCH]="lookup_brave_search"
@@ -6927,6 +6930,34 @@ lookup_redirect_chain() {
     return
   fi
   print_value_or_colored "Yes" "SERVICE"
+}
+
+# HTTP/2 support detection for two stable public names: the ALPN-
+# negotiated protocol version curl reports for each lookup. Both must
+# negotiate HTTP/2; any fallback to HTTP/1 is a downgraded path (legacy
+# proxy, middlebox, or hijacked upstream). Yes-like "h2" when both
+# negotiate HTTP/2; "no h2" on any fallback; N/A when neither is
+# measurable.
+lookup_http2_support() {
+  local -a canaries=("https://www.google.com" "https://www.cloudflare.com")
+  local url versions="" version any=0
+
+  for url in "${canaries[@]}"; do
+    version=$(curl_wrapper GET "$url" -o /dev/null -w '%{http_version}')
+    [[ -z "$version" ]] && continue
+    any=1
+    versions+="${version}/"
+  done
+  versions="${versions%/}"
+  if [[ "$any" != 1 ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  if grep_wrapper -q "1\." <<<"$versions"; then
+    print_value_or_colored "no h2" "TABLE_VALUE"
+    return
+  fi
+  print_value_or_colored "h2" "SERVICE"
 }
 
 lookup_youtube_transport() {

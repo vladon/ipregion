@@ -119,6 +119,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 
 - **Messengers**: WhatsApp (site + transport probe), Telegram (site + MTProto datacenter probe), Discord (site + gateway + CDN probe), Signal, Messenger, Viber, Slack, Zoom, Line, WeChat (+ API), KakaoTalk, Threema
 - **Encrypted DNS**: dns.google, cloudflare-dns.com (DoH transport probes)
+- **Web sanity**: Redirect Chain (unexpected redirect chains on major names = hijack/injection), HTTP/2 (ALPN-negotiated protocol on google/cloudflare; HTTP/1 fallback = "no h2")
 - **Search**: Bing, DuckDuckGo, Brave Search
 - **Social**: Instagram, Facebook (Access + API + CDN), Threads, TikTok (region + access), Twitter (X), LinkedIn, VK, OK, Reddit (region + guest access), Bluesky, Snapchat, Pinterest, Truth Social, Weibo, Bilibili, NetEase Music, Twitch (Site + API + Chat), Yandex, Mail.ru, GitHub
 - **AI**: ChatGPT, Claude, Gemini Notebook / NotebookLM (3-attempt region gate), Gemini API, AI Studio, Grok, DeepSeek, Perplexity, Copilot, Mistral, Qwen Web, DeepL (451 region gate), Character.AI, Poe, Google Translate + API transport probes (OpenAI, Anthropic, xAI, DeepSeek, Perplexity, Mistral, Reddit, OK, LinkedIn, X, Twitter Legacy, GitHub, GitLab, GitLab API, Steam API, Discord API, YouTube API, Groq API, OpenRouter, Cohere API, ElevenLabs API)
@@ -172,6 +173,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | Google Search Captcha | `GOOGLE_SEARCH_CAPTCHA` |
 | custom | Google Transport | `GOOGLE_TRANSPORT` |
 | custom | Redirect Chain | `REDIRECT_CHAIN` |
+| custom | HTTP/2 | `HTTP2_SUPPORT` |
 | custom | Bing | `BING` |
 | custom | DuckDuckGo | `DUCKDUCKGO` |
 | custom | Brave Search | `BRAVE_SEARCH` |
@@ -370,7 +372,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | dns | Resolver Latency | `RESOLVER_LATENCY` |
 | dns | Rebind Protection | `REBIND_PROTECTION` |
 
-Total: 226 checks.
+Total: 227 checks.
 <!-- ipregion:checks-end -->
 
 ### DNS diagnostics (group dns)
