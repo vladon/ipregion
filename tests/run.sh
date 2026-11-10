@@ -1511,6 +1511,35 @@ REBIND_MODE="dead"
 assert_eq "N/A" "$(lookup_rebind_protection 4)" "rebind protection stays N/A when the canary never answers"
 unset REBIND_MODE
 unset -f system_dns_answers rebind_dns_stub
+assert_true "devinfra registry defines CERT_EXPIRY" test -n "${DEVINFRA_SERVICES[CERT_EXPIRY]:-}"
+cert_tcp_stub() { return 0; }
+tcp_probe() { cert_tcp_stub "$@"; }
+cert_days_remaining() { cert_days_stub "$@"; }
+cert_days_stub() {
+  case "${CERT_DAYS_MODE:-healthy}" in
+  critical) echo 7 ;;
+  warning) echo 21 ;;
+  expired) echo -5 ;;
+  unreachable) return 0 ;;
+  *) echo 90 ;;
+  esac
+}
+JSON_OUTPUT=true
+CERT_DAYS_MODE="healthy"
+assert_eq "90 days" "$(lookup_cert_expiry 4)" "cert expiry maps healthy days to Yes-green"
+CERT_DAYS_MODE="warning"
+assert_eq "21 days" "$(lookup_cert_expiry 4)" "cert expiry warns at 30 days or less"
+CERT_DAYS_MODE="critical"
+assert_eq "7 days" "$(lookup_cert_expiry 4)" "cert expiry flags 14 days or less as red"
+CERT_DAYS_MODE="expired"
+assert_eq "Expired" "$(lookup_cert_expiry 4)" "cert expiry reports Expired for past dates"
+tcp_probe() { return 1; }
+CERT_DAYS_MODE="healthy"
+assert_eq "N/A" "$(lookup_cert_expiry 4)" "cert expiry stays N/A when the host is unreachable"
+CERT_DAYS_MODE="unreachable"
+assert_eq "N/A" "$(lookup_cert_expiry 4)" "cert expiry stays N/A without a parseable end date"
+unset -f cert_days_remaining cert_days_stub cert_tcp_stub tcp_probe
+unset CERT_DAYS_MODE
 rm -f "$rebind_dns_count"
 latency_dns_stub() { echo 42; }
 latency_doh_stub() {
@@ -1550,7 +1579,7 @@ JSON_OUTPUT=false
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
 assert_eq "12" "$(count_group_checks dns)" "count_group_checks counts dns group"
-assert_eq "14" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
+assert_eq "15" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true
 JSON_OUTPUT=true

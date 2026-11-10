@@ -286,7 +286,7 @@ curl_wrapper() {
 # Only the Telegram datacenter answers in this fixture set; WhatsApp edges and
 # the Discord gateway drop the connection.
 tcp_probe() {
-  [[ "$1" == "149.154.167.51" ]]
+  [[ "$1" == "149.154.167.51" || "$1" == "ipregion.vladon.sh" ]]
 }
 
 # Golden verdicts must not depend on the real DNS resolver.
@@ -351,6 +351,7 @@ server_dns_answers() {
 }
 system_dns_latency_ms() { echo 12; }
 doh_dns_latency_ms() { echo 180; }
+cert_days_remaining() { echo 90; }
 server_dns_latency_ms() {
   case "$2" in
   8.8.8.8) echo 12 ;;
@@ -464,6 +465,7 @@ INCLUDED_SERVICES=(
   "PAGES_DEV"
   "HEROKU_APP"
   "HUGGING_FACE"
+  "CERT_EXPIRY"
   "BING"
   "DUCKDUCKGO"
   "BRAVE_SEARCH"

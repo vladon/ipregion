@@ -178,6 +178,7 @@
 [1;32mCrates.io[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mMaven Central[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mHugging Face[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mCert Expiry[0m	[1m[1;32m90 days[0m[0m	[1m[1;32m90 days[0m[0m
 
 [1;36mDNS diagnostics[0m
 
