@@ -746,6 +746,7 @@ declare -A DNS_DIAG_SERVICES=(
   [DNS_JITTER]="DNS Jitter"
   [RESOLVER_LATENCY]="Resolver Latency"
   [RESOLVER_JITTER]="Resolver Jitter"
+  [DOH_PROXY]="DoH via Proxy"
   [REBIND_PROTECTION]="Rebind Protection"
 )
 
@@ -763,6 +764,7 @@ DNS_DIAG_SERVICES_ORDER=(
   "DNS_JITTER"
   "RESOLVER_LATENCY"
   "RESOLVER_JITTER"
+  "DOH_PROXY"
   "REBIND_PROTECTION"
 )
 
@@ -837,6 +839,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_JITTER]="lookup_dns_jitter"
   [RESOLVER_LATENCY]="lookup_resolver_latency"
   [RESOLVER_JITTER]="lookup_resolver_jitter"
+  [DOH_PROXY]="lookup_doh_via_proxy"
   [REBIND_PROTECTION]="lookup_rebind_protection"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
@@ -6200,6 +6203,36 @@ lookup_resolver_jitter() {
   printf '±%d ms' "$worst"
 }
 
+# DoH availability through the configured proxy (--proxy or the standard
+# proxy env vars): both reference DoH JSON endpoints (Google, Cloudflare)
+# must answer a valid DNS query through the proxy. Yes = DoH works
+# through it; No = an endpoint failed or returned garbage through it;
+# N/A = no proxy configured (direct DoH is covered by DNS Integrity's
+# reference lookups).
+lookup_doh_via_proxy() {
+  if [[ -z "$PROXY_ADDR" && -z "${ALL_PROXY:-}" && -z "${HTTPS_PROXY:-}" && -z "${https_proxy:-}" && -z "${HTTP_PROXY:-}" && -z "${http_proxy:-}" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  local -a endpoints=(
+    "https://dns.google/resolve?name=dns.google&type=A"
+    "https://cloudflare-dns.com/dns-query?name=dns.google&type=A"
+  )
+  local endpoint response
+  for endpoint in "${endpoints[@]}"; do
+    response=$(curl_wrapper GET "$endpoint" --header "Accept: application/dns-json")
+    [[ -z "$response" ]] && {
+      print_value_or_colored "No" "HEART"
+      return
+    }
+    [[ "$(process_json "$response" '.Status // empty' 2>/dev/null)" == "0" ]] || {
+      print_value_or_colored "No" "HEART"
+      return
+    }
+  done
+  print_value_or_colored "Yes" "SERVICE"
+}
+
 lookup_site_access() {
   local url="$1"
   local marker="$2"
@@ -7441,6 +7474,7 @@ dns_summary_token() {
   RESOLVER_LATENCY) echo "rlatency" ;;
   DNS_JITTER) echo "jitter" ;;
   RESOLVER_JITTER) echo "rjitter" ;;
+  DOH_PROXY) echo "dohvia" ;;
   REBIND_PROTECTION) echo "rebind" ;;
   *) echo "$1" ;;
   esac

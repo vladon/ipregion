@@ -216,6 +216,9 @@ stub_body() {
   *api.country.is*)
     printf '%s' '{"country":"US"}'
     ;;
+  *dns.google/resolve* | *cloudflare-dns.com/dns-query*)
+    printf '%s' '{"Status":0,"Answer":[{"name":"dns.google.","type":1,"TTL":300,"data":"8.8.8.8"}]}'
+    ;;
   *get.geojs.io*)
     printf '%s' '[{"country":"US"}]'
     ;;
@@ -359,6 +362,10 @@ ttl_dns_count=$(mktemp)
 ttl_doh_count=$(mktemp)
 # The TTL-honesty handler sleeps between its two samples; keep golden fast.
 export DNS_TTL_GAP="0.1"
+# Proxy-gated checks (Proxy Egress, DoH via Proxy) get fixture verdicts:
+# their real behavior depends on the environment's proxy configuration.
+lookup_proxy_egress() { echo "US"; }
+lookup_doh_via_proxy() { echo "Yes"; }
 server_dns_answers() {
   case "$1" in
   dns.google) printf '8.8.8.8\n8.8.4.4\n' ;;
