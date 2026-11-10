@@ -56,18 +56,28 @@ Compare two saved result files without running checks:
 ipregion.sh --compare yesterday.json today.json
 ```
 
+One-line DNS-family summary every cycle, and verdict gating on a monitor:
+
+```bash
+ipregion.sh -g dns --watch 60 --dns-summary --only-changes
+ipregion.sh --watch 300 --fail-on-block dns_integrity cert_expiry
+```
+
 ## Features
 
-- 211 checks in four groups: GeoIP sources (19), popular services (175), dev infra (14) and CDN nodes (3)
-- Availability checks for messengers, social networks, AI services and streaming platforms with Yes/No verdicts
+- 231 checks in five groups: GeoIP sources (19), popular services (178), CDN nodes (3), dev infra (16) and DNS diagnostics (15)
+- Availability checks for messengers, social networks, AI services, streaming platforms and developer infrastructure with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
-- Multiple GeoIP APIs and web services (YouTube, Google, etc.)
+- DNS diagnostics family (`--group dns`): 13 reference-based, token-free checks — answer integrity (NXDOMAIN canary, rewritten/clamped/filtered A+AAAA), port-53 interception, reverse-DNS (PTR) match, DNSSEC validation, DoT transports, private-address leaks, TTL honesty, resolver consensus, latency and jitter (system and DoH), and rebinding protection via a public canary
+- External IP discovery from a pool of 11 identity services with automatic failover (ident.me, ifconfig.me, api64.ipify.org, ip.im, ifconfig.co primary; icanhazip.com, AWS, ipinfo.io, dnsomatic, ipecho, whatismyipaddress fallback)
+- Monitoring mode (`--watch`): re-runs on an interval, prints verdict diffs, optional Telegram push, one-line `--dns-summary`, `--compare` for saved result files, and `--fail-on-block` verdict gating
+- Per-service HTTP/latency metrics (`--metrics`) and consensus country detection
+- TLS certificate expiry monitoring (`CERT_EXPIRY_HOST`) and proxy egress country reporting
+- Result export to JSON/CSV, service include/exclude filters, and `--list` check registry
 - IPv4/IPv6 support with SOCKS5 proxy and custom network interface
-- JSON output and color-coded tables
-- Parallel checks by default (auto-detected)
-- Per-service HTTP/latency metrics and consensus country detection
-- Result export to JSON/CSV and service include/exclude filters
+- IP address caching with TTL (auto-cleared when the proxy changes)
+- JSON output and color-coded tables; parallel checks by default (auto-detected)
 - Runs on Linux and macOS (Homebrew bash; missing dependencies are offered via brew)
 
 ## Dependencies
@@ -97,6 +107,8 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --parallel 6 # Run checks in parallel
 ./ipregion.sh --progress-log # Progress lines instead of spinner
 ./ipregion.sh --metrics # Show per-service metrics table
+./ipregion.sh --fail-on-block dns_integrity # Exit 1 if the check is not Yes
+./ipregion.sh --list # Print the check registry (group, key, display)
 ./ipregion.sh --youtube-lang en # Viewer language for the YouTube No Ads check
 ./ipregion.sh --include-service MAXMIND --include-service GOOGLE
 ./ipregion.sh --exclude-service YOUTUBE
@@ -110,6 +122,10 @@ Missing commands are detected on start and can be installed automatically (apt/p
 All options can be combined.
 
 ## Checks
+
+### External IP discovery
+
+Before the checks run, the script discovers your external IPv4/IPv6 addresses through a pool of 11 identity services with automatic failover — the first valid answer wins and is cached: ident.me, ifconfig.me, api64.ipify.org, **ip.im**, ifconfig.co (primary); icanhazip.com, checkip.amazonaws.com, ipinfo.io/ip, api.ipify.org, myip.dnsomatic.com, ipecho.net/plain, whatismyipaddress.com/plain (fallback).
 
 ### GeoIP (primary)
 
@@ -373,9 +389,10 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | dns | DNS Jitter | `DNS_JITTER` |
 | dns | Resolver Latency | `RESOLVER_LATENCY` |
 | dns | Resolver Jitter | `RESOLVER_JITTER` |
+| dns | DoH via Proxy | `DOH_PROXY` |
 | dns | Rebind Protection | `REBIND_PROTECTION` |
 
-Total: 230 checks.
+Total: 231 checks.
 <!-- ipregion:checks-end -->
 
 ### DNS diagnostics (group dns)
@@ -396,6 +413,7 @@ The whole family runs with `--group dns` and is reference-based and token-free: 
 | DNS Jitter | Informational: spread (max − min) of three timed system-resolver and three DoH lookups ("±local/±doh ms") for a stable canary; `--metrics` reports the median of each side | milliseconds; **N/A** = bash < 5 or lookup failure |
 | Resolver Jitter | Informational: worst per-resolver spread (two direct `dns.google` queries to Google/Cloudflare/Quad9, "±N ms") | milliseconds; **N/A** = bash < 5 or fewer than two resolvers answer |
 | Resolver Latency | Informational: direct `dns.google` query round-trip to Google/Cloudflare/Quad9 ("G/C/Q ms"); "-" = silent resolver | milliseconds; **N/A** = bash < 5 or none answered |
+| DoH via Proxy | Both DoH JSON endpoints (Google, Cloudflare) must answer a valid DNS query through the configured proxy | **Yes** = DoH works through the proxy; **No** = an endpoint fails through it; **N/A** = no proxy configured |
 | Rebind Protection | Public 1u.ms rebinding canary: a fresh name resolves to a public IP first and to 127.0.0.1 on follow-up queries (TTL 0) | **Yes** = protected (loopback never served); **No** = vulnerable (serves the flip); **N/A** = canary unreachable |
 
 Example output from a VPS behind systemd-resolved (`--group dns`, IPv4+IPv6):
