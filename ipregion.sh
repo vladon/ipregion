@@ -5439,9 +5439,11 @@ host_resolves() {
   if command -v getent >/dev/null 2>&1; then
     addr=$(getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1; exit}')
   elif command -v nslookup >/dev/null 2>&1; then
-    addr=$(nslookup "$host" 2>/dev/null | awk '/^Address/ {print $NF}' | grep -v '#' | tail -n 1)
+    # Bound the resolver: some networks silently DROP queries (filtered
+    # zones), and default retries then stall each lookup for minutes.
+    addr=$(nslookup -timeout=2 -retry=1 "$host" 2>/dev/null | awk '/^Address/ {print $NF}' | grep -v '#' | tail -n 1)
   elif command -v host >/dev/null 2>&1; then
-    addr=$(host "$host" 2>/dev/null | awk '/has address/{print $NF; exit}')
+    addr=$(host -W 2 "$host" 2>/dev/null | awk '/has address/{print $NF; exit}')
   else
     return 1
   fi
@@ -7050,6 +7052,38 @@ lookup_heroku_app() {
 # the host is unreachable, or the dates cannot be parsed. The target is
 # CERT_EXPIRY_HOST (default: this project's site) - point it at your own
 # domain to monitor your certificates.
+# Certificate notAfter line, with the TLS session bounded to ~10 s. A
+# TCP-accepting endpoint that never completes the handshake (tarpit,
+# middlebox) otherwise blocks openssl s_client forever - it honors no
+# proxy env and has no built-in timeout.
+tls_notafter() {
+  local host="$1"
+  local port="$2"
+  local cert_tmp cert_pid waited=0
+  command -v openssl >/dev/null 2>&1 || return 1
+  cert_tmp=$(mktemp)
+  (
+    echo | openssl s_client -servername "$host" -connect "$host:$port" >"$cert_tmp" 2>/dev/null &
+    child=$!
+    trap 'kill -TERM "$child" 2>/dev/null' TERM
+    wait "$child"
+  ) &
+  cert_pid=$!
+  while kill -0 "$cert_pid" 2>/dev/null && ((waited < 100)); do
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+  if kill -0 "$cert_pid" 2>/dev/null; then
+    kill -TERM "$cert_pid" 2>/dev/null
+    wait "$cert_pid" 2>/dev/null
+    rm -f "$cert_tmp"
+    return 1
+  fi
+  wait "$cert_pid" 2>/dev/null
+  openssl x509 -noout -enddate 2>/dev/null <"$cert_tmp"
+  rm -f "$cert_tmp"
+}
+
 cert_days_remaining() {
   local host="$1"
   local end_line end_date end_s now days
@@ -7057,7 +7091,7 @@ cert_days_remaining() {
     echo ""
     return
   }
-  end_line=$(echo | openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null)
+  end_line=$(tls_notafter "$host" 443)
   end_date="${end_line#notAfter=}"
   [[ -z "$end_date" || "$end_date" == "$end_line" ]] && {
     echo ""
