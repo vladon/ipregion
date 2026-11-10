@@ -289,12 +289,19 @@ tcp_probe() {
   [[ "$1" == "149.154.167.51" || "$1" == "ipregion.vladon.sh" ]]
 }
 
-# Redirect-chain canaries serve 200 directly, no redirects.
+# Redirect-chain canaries serve 200 directly, no redirects; the
+# HTTP/2 check reads the negotiated protocol version.
 curl_wrapper() {
   case "$1" in
-  *www.google.com* | *www.cloudflare.com*) echo "200||0" && return ;;
+  *www.google.com* | *www.cloudflare.com*)
+    if [[ "${*: -1}" == *http_version* ]]; then
+      echo "2"
+      return
+    fi
+    echo "200||0"
+    return
+    ;;
   esac
-  # (other URLs fall through to the body fixtures below)
   original_curl_stub "$@"
 }
 
@@ -425,6 +432,7 @@ INCLUDED_SERVICES=(
   "PEACOCK_ACCESS"
   "GOOGLE_TRANSPORT"
   "REDIRECT_CHAIN"
+  "HTTP2_SUPPORT"
   "YOUTUBE_TRANSPORT"
   "YOUTUBE_API"
   "OPENAI_API"

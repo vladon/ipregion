@@ -1520,6 +1520,25 @@ REDIRECT_MODE="down"
 assert_eq "N/A" "$(lookup_redirect_chain 4)" "redirect chain stays N/A when nothing is reachable"
 unset REDIRECT_MODE
 unset -f curl_wrapper redirect_curl_stub
+http2_curl_stub() {
+  local url="$2"
+  case "${HTTP2_MODE:-h2}" in
+  no_h2) case "$url" in *google*) echo "1.1" ;; *) echo "2" ;; esac ;;
+  down) return 1 ;;
+  *) echo "2" ;;
+  esac
+}
+curl_wrapper() { http2_curl_stub "$@"; }
+assert_true "custom registry defines HTTP2_SUPPORT" test -n "${CUSTOM_SERVICES[HTTP2_SUPPORT]:-}"
+JSON_OUTPUT=true
+HTTP2_MODE="h2"
+assert_eq "h2" "$(lookup_http2_support 4)" "http2 support maps negotiated h2 to h2"
+HTTP2_MODE="no_h2"
+assert_eq "no h2" "$(lookup_http2_support 4)" "http2 support flags http/1 fallback"
+HTTP2_MODE="down"
+assert_eq "N/A" "$(lookup_http2_support 4)" "http2 support stays N/A when nothing is reachable"
+unset HTTP2_MODE
+unset -f curl_wrapper http2_curl_stub
 REBIND_MODE="vulnerable"
 assert_eq "No" "$(lookup_rebind_protection 4)" "rebind protection flags resolvers serving the loopback flip"
 rebind_dns_reset
