@@ -743,6 +743,7 @@ declare -A DNS_DIAG_SERVICES=(
   [DNS_TTL]="TTL Honesty"
   [RESOLVER_CONSENSUS]="Resolver Consensus"
   [DNS_LATENCY]="DNS Latency"
+  [DNS_JITTER]="DNS Jitter"
   [RESOLVER_LATENCY]="Resolver Latency"
   [REBIND_PROTECTION]="Rebind Protection"
 )
@@ -758,6 +759,7 @@ DNS_DIAG_SERVICES_ORDER=(
   "DNS_TTL"
   "RESOLVER_CONSENSUS"
   "DNS_LATENCY"
+  "DNS_JITTER"
   "RESOLVER_LATENCY"
   "REBIND_PROTECTION"
 )
@@ -830,6 +832,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_TTL]="lookup_dns_ttl"
   [RESOLVER_CONSENSUS]="lookup_resolver_consensus"
   [DNS_LATENCY]="lookup_dns_latency"
+  [DNS_JITTER]="lookup_dns_jitter"
   [RESOLVER_LATENCY]="lookup_resolver_latency"
   [REBIND_PROTECTION]="lookup_rebind_protection"
   [GMAIL]="lookup_gmail"
@@ -5998,6 +6001,41 @@ lookup_dns_latency() {
     fi
   fi
   printf '%d/%d ms' "$local_ms" "$doh_ms"
+}
+
+# DNS jitter diagnostic: three timed system-resolver lookups for a
+# stable canary; the spread (max - min) shows whether the resolver
+# answers with consistent latency or fluctuates. Verdict "±N ms";
+# N/A when the platform cannot measure (bash < 5) or a lookup fails.
+lookup_dns_jitter() {
+  local ip_version="$1"
+  local canary="dns.google"
+  local gap="${DNS_JITTER_GAP:-1}"
+  local -a samples=()
+  local s i a b c min max
+  [[ -n "${EPOCHREALTIME:-}" ]] || {
+    echo "$STATUS_NA"
+    return
+  }
+  for i in 1 2 3; do
+    s=$(system_dns_latency_ms "$canary")
+    [[ -z "$s" ]] && {
+      echo "$STATUS_NA"
+      return
+    }
+    samples+=("$s")
+    [[ "$i" -lt 3 ]] && sleep "$gap"
+  done
+  a=${samples[0]}
+  b=${samples[1]}
+  c=${samples[2]}
+  min=$a
+  max=$a
+  ((b < min)) && min=$b
+  ((b > max)) && max=$b
+  ((c < min)) && min=$c
+  ((c > max)) && max=$c
+  printf '±%d ms' $((max - min))
 }
 
 # DNS rebinding diagnostic through the public 1u.ms canary: the first

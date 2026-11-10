@@ -3385,6 +3385,25 @@
         "service": "DNS Latency"
       },
       {
+        "ipv4": "±0 ms",
+        "ipv6": "±0 ms",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": null,
+            "latency_ms": null,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "DNS Jitter"
+      },
+      {
         "ipv4": "12/8/45 ms",
         "ipv6": "12/8/45 ms",
         "metrics": {
