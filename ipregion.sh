@@ -7390,11 +7390,13 @@ fail_on_block_check() {
       --arg denied "$STATUS_DENIED" \
       --arg server "$STATUS_SERVER_ERROR" \
       --arg rate "$STATUS_RATE_LIMIT" \
-      --arg region "$STATUS_REGION_BLOCKED" '
+      --arg region "$STATUS_REGION_BLOCKED" \
+      --arg expired "Expired" \
+      --arg ipblock "IP block" '
       [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[], .results.dns[]? ]
       | map(select(.service == $k))
       | if length == 0 then "absent"
-        elif any(.[]; .ipv4 == $no or .ipv4 == $denied or .ipv4 == $server or .ipv4 == $rate or .ipv4 == $region or .ipv6 == $no or .ipv6 == $denied or .ipv6 == $server or .ipv6 == $rate or .ipv6 == $region) then "failed"
+        elif any(.[]; .ipv4 == $no or .ipv4 == $denied or .ipv4 == $server or .ipv4 == $rate or .ipv4 == $region or .ipv4 == $expired or .ipv4 == $ipblock or .ipv6 == $no or .ipv6 == $denied or .ipv6 == $server or .ipv6 == $rate or .ipv6 == $region or .ipv6 == $expired or .ipv6 == $ipblock) then "failed"
         else "ok"
         end
     ' <<<"$RESULT_JSON" 2>/dev/null)
