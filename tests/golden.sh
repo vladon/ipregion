@@ -255,7 +255,7 @@ stub_body() {
   esac
 }
 
-curl_wrapper() {
+original_curl_stub() {
   local url="$2"
   local response http_code error_type
 
@@ -287,6 +287,15 @@ curl_wrapper() {
 # the Discord gateway drop the connection.
 tcp_probe() {
   [[ "$1" == "149.154.167.51" || "$1" == "ipregion.vladon.sh" ]]
+}
+
+# Redirect-chain canaries serve 200 directly, no redirects.
+curl_wrapper() {
+  case "$1" in
+  *www.google.com* | *www.cloudflare.com*) echo "200||0" && return ;;
+  esac
+  # (other URLs fall through to the body fixtures below)
+  original_curl_stub "$@"
 }
 
 # Golden verdicts must not depend on the real DNS resolver.
@@ -415,6 +424,7 @@ INCLUDED_SERVICES=(
   "QWEN_WEB"
   "PEACOCK_ACCESS"
   "GOOGLE_TRANSPORT"
+  "REDIRECT_CHAIN"
   "YOUTUBE_TRANSPORT"
   "YOUTUBE_API"
   "OPENAI_API"

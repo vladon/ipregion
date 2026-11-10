@@ -362,6 +362,7 @@ declare -A CUSTOM_SERVICES=(
   [YOUTUBE_MUSIC]="YouTube Music"
   [GOOGLE_SEARCH_CAPTCHA]="Google Search Captcha"
   [GOOGLE_TRANSPORT]="Google Transport"
+  [REDIRECT_CHAIN]="Redirect Chain"
   [BING]="Bing"
   [DUCKDUCKGO]="DuckDuckGo"
   [BRAVE_SEARCH]="Brave Search"
@@ -541,6 +542,7 @@ CUSTOM_SERVICES_ORDER=(
   "YOUTUBE_MUSIC"
   "GOOGLE_SEARCH_CAPTCHA"
   "GOOGLE_TRANSPORT"
+  "REDIRECT_CHAIN"
   "BING"
   "DUCKDUCKGO"
   "BRAVE_SEARCH"
@@ -807,6 +809,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [YOUTUBE_MUSIC]="lookup_youtube_music"
   [GOOGLE_SEARCH_CAPTCHA]="lookup_google_search_captcha"
   [GOOGLE_TRANSPORT]="lookup_google_transport"
+  [REDIRECT_CHAIN]="lookup_redirect_chain"
   [BING]="lookup_bing"
   [DUCKDUCKGO]="lookup_duckduckgo"
   [BRAVE_SEARCH]="lookup_brave_search"
@@ -6895,6 +6898,35 @@ lookup_tiktok_transport() {
 
 lookup_google_transport() {
   lookup_tcp_targets GOOGLE_PROBE_TARGETS
+}
+
+# Redirect-chain sanity for two stable public names (both serve 200
+# directly, zero redirects, verified from both vantages): a followed
+# redirect on either is an unexpected chain - captive portal, ISP
+# injection, or a hijacked upstream. Non-200 codes are not judged here
+# (availability is a different family). Yes = no redirects, No = an
+# unexpected redirect chain, N/A = nothing reachable.
+lookup_redirect_chain() {
+  local -a canaries=("https://www.google.com/" "https://www.cloudflare.com/")
+  local url meta code redirects any=0
+
+  for url in "${canaries[@]}"; do
+    meta=$(curl_wrapper GET "$url" -o /dev/null \
+      -w '%{http_code}|%{redirect_url}|%{num_redirects}')
+    [[ -z "$meta" ]] && continue
+    any=1
+    code="${meta%%|*}"
+    redirects="${meta##*|}"
+    if [[ "$code" == "200" && "$redirects" != "0" ]]; then
+      print_value_or_colored "No" "HEART"
+      return
+    fi
+  done
+  if [[ "$any" != 1 ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  print_value_or_colored "Yes" "SERVICE"
 }
 
 lookup_youtube_transport() {

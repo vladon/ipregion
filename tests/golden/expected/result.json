@@ -113,6 +113,25 @@
         "service": "Google Transport"
       },
       {
+        "ipv4": "N/A",
+        "ipv6": "N/A",
+        "metrics": {
+          "ipv4": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": "curl_error",
+            "http_code": null,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Redirect Chain"
+      },
+      {
         "ipv4": "\u001b[1;32mYes\u001b[0m",
         "ipv6": "\u001b[1;32mYes\u001b[0m",
         "metrics": {
