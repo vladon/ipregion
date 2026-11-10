@@ -1042,7 +1042,6 @@ IDENTITY_SERVICES=(
   "ident.me"
   "ifconfig.me"
   "api64.ipify.org"
-  "ip.im"
   "ifconfig.co"
   # Secondary services (fallback pool)
   "icanhazip.com"

@@ -1634,11 +1634,6 @@ proxy_egress_curl_stub() {
 }
 curl_wrapper() { proxy_egress_curl_stub "$@"; }
 assert_true "devinfra registry defines PROXY_EGRESS" test -n "${DEVINFRA_SERVICES[PROXY_EGRESS]:-}"
-identity_has_ipim=false
-for s in "${IDENTITY_SERVICES[@]}"; do
-  [[ "$s" == "ip.im" ]] && identity_has_ipim=true
-done
-assert_true "identity pool contains ip.im" test "$identity_has_ipim" = true
 PROXY_ADDR="127.0.0.1:2080"
 PROXY_EGRESS_MODE="country"
 assert_eq "DE" "$(lookup_proxy_egress 4)" "proxy egress reports the egress country"
