@@ -740,6 +740,215 @@
         "service": "OpenAI API"
       },
       {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Hulu"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Paramount+"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Apple TV+"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Pluto TV"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "discovery+"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Tubi"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "MUBI"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Rakuten Viki"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "iQIYI"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Plex"
+      },
+      {
+        "ipv4": "\u001b[1;32mYes\u001b[0m",
+        "ipv6": "\u001b[1;32mYes\u001b[0m",
+        "metrics": {
+          "ipv4": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 4
+          },
+          "ipv6": {
+            "error_type": null,
+            "http_code": 200,
+            "latency_ms": 100,
+            "transport_ip_version": 6
+          }
+        },
+        "service": "Kick"
+      },
+      {
         "ipv4": "\u001b[1;31mNo\u001b[0m",
         "ipv6": "\u001b[1;31mNo\u001b[0m",
         "metrics": {
