@@ -776,6 +776,7 @@ declare -A DEVINFRA_SERVICES=(
   [CRATES_IO]="Crates.io"
   [MAVEN_CENTRAL]="Maven Central"
   [HUGGING_FACE]="Hugging Face"
+  [CERT_EXPIRY]="Cert Expiry"
 )
 
 DEVINFRA_SERVICES_ORDER=(
@@ -793,6 +794,7 @@ DEVINFRA_SERVICES_ORDER=(
   "CRATES_IO"
   "MAVEN_CENTRAL"
   "HUGGING_FACE"
+  "CERT_EXPIRY"
 )
 
 declare -A CUSTOM_SERVICES_HANDLERS=(
@@ -990,6 +992,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [CRATES_IO]="lookup_crates_io"
   [MAVEN_CENTRAL]="lookup_maven_central"
   [HUGGING_FACE]="lookup_hugging_face"
+  [CERT_EXPIRY]="lookup_cert_expiry"
   [NOTION]="lookup_notion"
   [FIGMA]="lookup_figma"
   [MIRO]="lookup_miro"
@@ -6793,6 +6796,69 @@ lookup_pages_dev() {
 
 lookup_heroku_app() {
   lookup_tcp_targets HEROKU_APP_PROBE_TARGETS
+}
+
+# Days remaining until the TLS certificate of a host expires (integer,
+# floor; negative when already expired); empty when openssl is missing,
+# the host is unreachable, or the dates cannot be parsed. The target is
+# CERT_EXPIRY_HOST (default: this project's site) - point it at your own
+# domain to monitor your certificates.
+cert_days_remaining() {
+  local host="$1"
+  local end_line end_date end_s now days
+  command -v openssl >/dev/null 2>&1 || {
+    echo ""
+    return
+  }
+  end_line=$(echo | openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null)
+  end_date="${end_line#notAfter=}"
+  [[ -z "$end_date" || "$end_date" == "$end_line" ]] && {
+    echo ""
+    return
+  }
+  # notAfter is "Mmm D HH:MM:SS YYYY GMT"; parse it as UTC. macOS BSD
+  # date needs -j -u and rejects %Z, GNU date takes -d directly.
+  end_s=$(date -ju -f "%b %e %T %Y" "${end_date% GMT}" "+%s" 2>/dev/null)
+  [[ -z "$end_s" ]] && end_s=$(date -ud "$end_date" "+%s" 2>/dev/null)
+  [[ -z "$end_s" ]] && {
+    echo ""
+    return
+  }
+  now=$(date -u "+%s")
+  echo $(((end_s - now) / 86400))
+}
+
+# TLS certificate expiry for CERT_EXPIRY_HOST (env-configurable target,
+# default: this project's site - point CERT_EXPIRY_HOST at your own
+# domain to monitor it). Verdict thresholds: Expired / <=14 days (red),
+# <=30 days (yellow), otherwise green days remaining. N/A when openssl
+# is missing, the host is unreachable, or the dates cannot be parsed.
+lookup_cert_expiry() {
+  local host="${CERT_EXPIRY_HOST:-ipregion.vladon.sh}"
+  local days
+
+  tcp_probe "$host" 443 || {
+    echo "$STATUS_NA"
+    return
+  }
+  days=$(cert_days_remaining "$host")
+  if [[ -z "$days" ]]; then
+    echo "$STATUS_NA"
+    return
+  fi
+  if ((days < 0)); then
+    print_value_or_colored "Expired" "HEART"
+    return
+  fi
+  if ((days <= 14)); then
+    print_value_or_colored "$days days" "HEART"
+    return
+  fi
+  if ((days <= 30)); then
+    print_value_or_colored "$days days" "WARN"
+    return
+  fi
+  print_value_or_colored "$days days" "SERVICE"
 }
 
 lookup_github_api() {
