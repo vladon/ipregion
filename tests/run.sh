@@ -1550,6 +1550,27 @@ assert_eq "N/A" "$(lookup_rebind_protection 4)" "rebind protection stays N/A whe
 unset REBIND_MODE
 unset -f system_dns_answers rebind_dns_stub
 assert_true "devinfra registry defines CERT_EXPIRY" test -n "${DEVINFRA_SERVICES[CERT_EXPIRY]:-}"
+proxy_egress_curl_stub() {
+  case "${PROXY_EGRESS_MODE:-country}" in
+  dead) return 1 ;;
+  garbage) echo "not-json" ;;
+  *) echo '{"country":"DE"}' ;;
+  esac
+}
+curl_wrapper() { proxy_egress_curl_stub "$@"; }
+assert_true "devinfra registry defines PROXY_EGRESS" test -n "${DEVINFRA_SERVICES[PROXY_EGRESS]:-}"
+PROXY_ADDR="127.0.0.1:2080"
+PROXY_EGRESS_MODE="country"
+assert_eq "DE" "$(lookup_proxy_egress 4)" "proxy egress reports the egress country"
+PROXY_EGRESS_MODE="dead"
+assert_eq "No" "$(lookup_proxy_egress 4)" "proxy egress flags a silent proxy as No"
+PROXY_EGRESS_MODE="garbage"
+assert_eq "No" "$(lookup_proxy_egress 4)" "proxy egress flags unparseable answers as No"
+PROXY_ADDR=""
+unset ALL_PROXY HTTPS_PROXY https_proxy HTTP_PROXY http_proxy
+assert_eq "N/A" "$(lookup_proxy_egress 4)" "proxy egress stays N/A without a proxy"
+unset -f curl_wrapper proxy_egress_curl_stub
+unset PROXY_EGRESS_MODE
 cert_tcp_stub() { return 0; }
 tcp_probe() { cert_tcp_stub "$@"; }
 cert_days_remaining() { cert_days_stub "$@"; }
@@ -1617,7 +1638,7 @@ JSON_OUTPUT=false
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
 assert_eq "12" "$(count_group_checks dns)" "count_group_checks counts dns group"
-assert_eq "15" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
+assert_eq "16" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true
 JSON_OUTPUT=true

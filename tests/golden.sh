@@ -368,6 +368,8 @@ server_dns_answers() {
 system_dns_latency_ms() { echo 12; }
 doh_dns_latency_ms() { echo 180; }
 cert_days_remaining() { echo 90; }
+# Proxy egress: fixed verdict regardless of the environment's proxy vars.
+lookup_proxy_egress() { echo "US"; }
 server_dns_latency_ms() {
   case "$2" in
   8.8.8.8) echo 12 ;;
@@ -484,6 +486,7 @@ INCLUDED_SERVICES=(
   "HEROKU_APP"
   "HUGGING_FACE"
   "CERT_EXPIRY"
+  "PROXY_EGRESS"
   "BING"
   "DUCKDUCKGO"
   "BRAVE_SEARCH"
