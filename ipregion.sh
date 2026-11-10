@@ -407,6 +407,17 @@ declare -A CUSTOM_SERVICES=(
   [OPENAI_API]="OpenAI API"
   [DISNEY_PLUS]="Disney+"
   [DISNEY_PLUS_ACCESS]="Disney+ Access"
+  [HULU]="Hulu"
+  [PARAMOUNT_PLUS]="Paramount+"
+  [APPLE_TV_PLUS]="Apple TV+"
+  [PLUTO_TV]="Pluto TV"
+  [DISCOVERY_PLUS]="discovery+"
+  [TUBI]="Tubi"
+  [MUBI]="MUBI"
+  [VIKI]="Rakuten Viki"
+  [IQIYI]="iQIYI"
+  [PLEX]="Plex"
+  [KICK]="Kick"
   [REDDIT_GUEST_ACCESS]="Reddit Guest Access"
   [REDDIT_API]="Reddit API"
   [CLAUDE]="Claude"
@@ -588,6 +599,17 @@ CUSTOM_SERVICES_ORDER=(
   "OPENAI_API"
   "DISNEY_PLUS"
   "DISNEY_PLUS_ACCESS"
+  "HULU"
+  "PARAMOUNT_PLUS"
+  "APPLE_TV_PLUS"
+  "PLUTO_TV"
+  "DISCOVERY_PLUS"
+  "TUBI"
+  "MUBI"
+  "VIKI"
+  "IQIYI"
+  "PLEX"
+  "KICK"
   "REDDIT_GUEST_ACCESS"
   "REDDIT_API"
   "CLAUDE"
@@ -879,6 +901,17 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [OPENAI_API]="lookup_openai_api"
   [DISNEY_PLUS]="lookup_disney_plus"
   [DISNEY_PLUS_ACCESS]="lookup_disney_plus_access"
+  [HULU]="lookup_hulu"
+  [PARAMOUNT_PLUS]="lookup_paramount_plus"
+  [APPLE_TV_PLUS]="lookup_apple_tv_plus"
+  [PLUTO_TV]="lookup_pluto_tv"
+  [DISCOVERY_PLUS]="lookup_discovery_plus"
+  [TUBI]="lookup_tubi"
+  [MUBI]="lookup_mubi"
+  [VIKI]="lookup_viki"
+  [IQIYI]="lookup_iqiyi"
+  [PLEX]="lookup_plex"
+  [KICK]="lookup_kick"
   [YOUTUBE_CDN]="lookup_youtube_cdn"
   [CLOUDFLARE_CDN]="lookup_cloudflare_cdn"
   [REDDIT_GUEST_ACCESS]="lookup_reddit_guest_access"
@@ -6479,6 +6512,53 @@ lookup_qwen_web() {
 
 lookup_peacock_access() {
   lookup_region_gate_access "https://www.peacocktv.com/" "Unavailable In Your Region" "peacock" "$1"
+}
+
+# Streaming family: Hulu is a redirect gate (non-covered regions land on a
+# Disney+ "not available in your region" page); the rest are reachability
+# pages. Viki reports No from regions where Rakuten suspended service.
+lookup_hulu() {
+  lookup_region_gate_access "https://www.hulu.com/" "not available in your region" "hulu" "$1"
+}
+
+lookup_paramount_plus() {
+  lookup_site_access "https://www.paramountplus.com/" "paramount" "$1"
+}
+
+lookup_apple_tv_plus() {
+  lookup_site_access "https://tv.apple.com/" "apple tv" "$1"
+}
+
+lookup_pluto_tv() {
+  lookup_site_access "https://pluto.tv/" "pluto" "$1"
+}
+
+lookup_discovery_plus() {
+  lookup_site_access "https://www.discoveryplus.com/" "discovery" "$1"
+}
+
+lookup_tubi() {
+  lookup_site_access "https://tubitv.com/" "tubi" "$1"
+}
+
+lookup_mubi() {
+  lookup_site_access "https://mubi.com/" "mubi" "$1"
+}
+
+lookup_viki() {
+  lookup_site_access "https://www.viki.com/" "rakuten viki" "$1"
+}
+
+lookup_iqiyi() {
+  lookup_site_access "https://www.iq.com/" "iqiyi" "$1"
+}
+
+lookup_plex() {
+  lookup_site_access "https://watch.plex.tv/" "plex" "$1"
+}
+
+lookup_kick() {
+  lookup_site_access "https://kick.com/" "kick" "$1"
 }
 
 lookup_bluesky() {

@@ -45,6 +45,17 @@
 [1;32mAzure Portal[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOneDrive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mOpenAI API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mHulu[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mParamount+[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mApple TV+[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mPluto TV[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mdiscovery+[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mTubi[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mMUBI[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mRakuten Viki[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32miQIYI[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mPlex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
+[1;32mKick[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mReddit API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mAnthropic API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mNetflix Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m

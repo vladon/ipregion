@@ -252,6 +252,39 @@ stub_body() {
   *iplocation.com*)
     printf '%s' '{"country_code":"CY"}'
     ;;
+  *hulu.com*)
+    printf '%s' '<!doctype html><html><head><title>hulu</title></head><body>hulu welcome page</body></html>'
+    ;;
+  *paramountplus.com*)
+    printf '%s' '<!doctype html><html><head><title>Paramount Plus: Stream Movies, Shows &amp; Live TV</title></head><body>paramount plus streaming</body></html>'
+    ;;
+  *tv.apple.com*)
+    printf '%s' '<!doctype html><html><head><title>Apple TV</title></head><body>apple tv plus catalog</body></html>'
+    ;;
+  *pluto.tv*)
+    printf '%s' '<!doctype html><html><head><title>Pluto TV: Watch Free Movies, TV Shows &amp; Live TV Online</title></head><body>pluto tv free streaming</body></html>'
+    ;;
+  *discoveryplus.com*)
+    printf '%s' '<!doctype html><html><head><title>discovery+ | Stream Real-Life TV Episodes</title></head><body>discovery plus streaming</body></html>'
+    ;;
+  *tubitv.com*)
+    printf '%s' '<!doctype html><html><head><title>Tubi - Free Movies &amp; TV</title></head><body>tubi free streaming</body></html>'
+    ;;
+  *mubi.com*)
+    printf '%s' '<!doctype html><html><head><title>MUBI: Watch and Discover Movies</title></head><body>mubi curated films</body></html>'
+    ;;
+  *viki.com*)
+    printf '%s' '<!doctype html><html><head><title>Rakuten Viki</title></head><body>rakuten viki kdramas</body></html>'
+    ;;
+  *iq.com*)
+    printf '%s' '<!doctype html><html><head><title>iQIYI</title></head><body>iqiyi streaming</body></html>'
+    ;;
+  *plex.tv*)
+    printf '%s' '<!doctype html><html><head><title>Watch Movies and TV Shows Free Online - Plex</title></head><body>plex watch free</body></html>'
+    ;;
+  *kick.com*)
+    printf '%s' '<!doctype html><html><head><title>KICK</title></head><body>kick live streaming</body></html>'
+    ;;
   *)
     printf '%s' ''
     ;;
@@ -423,6 +456,17 @@ INCLUDED_SERVICES=(
   "SIGNAL_ACCESS"
   "SIGNAL_SERVICE"
   "STEAM_TRANSPORT"
+  "HULU"
+  "PARAMOUNT_PLUS"
+  "APPLE_TV_PLUS"
+  "PLUTO_TV"
+  "DISCOVERY_PLUS"
+  "TUBI"
+  "MUBI"
+  "VIKI"
+  "IQIYI"
+  "PLEX"
+  "KICK"
   "NETFLIX_TRANSPORT"
   "APPLE_TRANSPORT"
   "MICROSOFT_TRANSPORT"

@@ -65,7 +65,7 @@ ipregion.sh --watch 300 --fail-on-block dns_integrity cert_expiry
 
 ## Features
 
-- 231 checks in five groups: GeoIP sources (19), popular services (178), CDN nodes (3), dev infra (16) and DNS diagnostics (15)
+- 242 checks in five groups: GeoIP sources (19), popular services (189), CDN nodes (3), dev infra (16) and DNS diagnostics (15)
 - Availability checks for messengers, social networks, AI services, streaming platforms and developer infrastructure with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
 - Region-gate detection: pages that serve a "not available in your region" stub to foreign egress (e.g. Douyin, Peacock) report No instead of a false Yes
@@ -233,6 +233,17 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | OpenAI API | `OPENAI_API` |
 | custom | Disney+ | `DISNEY_PLUS` |
 | custom | Disney+ Access | `DISNEY_PLUS_ACCESS` |
+| custom | Hulu | `HULU` |
+| custom | Paramount+ | `PARAMOUNT_PLUS` |
+| custom | Apple TV+ | `APPLE_TV_PLUS` |
+| custom | Pluto TV | `PLUTO_TV` |
+| custom | discovery+ | `DISCOVERY_PLUS` |
+| custom | Tubi | `TUBI` |
+| custom | MUBI | `MUBI` |
+| custom | Rakuten Viki | `VIKI` |
+| custom | iQIYI | `IQIYI` |
+| custom | Plex | `PLEX` |
+| custom | Kick | `KICK` |
 | custom | Reddit Guest Access | `REDDIT_GUEST_ACCESS` |
 | custom | Reddit API | `REDDIT_API` |
 | custom | Claude | `CLAUDE` |
@@ -392,7 +403,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | dns | DoH via Proxy | `DOH_PROXY` |
 | dns | Rebind Protection | `REBIND_PROTECTION` |
 
-Total: 231 checks.
+Total: 242 checks.
 <!-- ipregion:checks-end -->
 
 ### DNS diagnostics (group dns)
