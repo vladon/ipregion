@@ -13,7 +13,7 @@ _ipregion_completions() {
     COMPREPLY=($(compgen -W "primary custom cdn devinfra dns all" -- "$cur"))
     return
     ;;
-  --include-service | --exclude-service)
+  --include-service | --exclude-service | --fail-on-block)
     # The command is often invoked as ./ipregion.sh (not on PATH) - fall
     # back to the local file when the PATH lookup produces nothing. The
     # trailing || true keeps set -e from exiting on the 127 lookup miss.
@@ -31,7 +31,7 @@ _ipregion_completions() {
   esac
 
   if [[ "$cur" == -* ]]; then
-    COMPREPLY=($(compgen -W "--help --verbose --debug --json --group --timeout --parallel --watch --only-changes --compare --list --progress-log --ipv4 --ipv6 --proxy --interface --no-cache --cache-ttl --clear-cache --show-cache --include-service --exclude-service --metrics --youtube-lang --output" -- "$cur"))
+    COMPREPLY=($(compgen -W "--help --verbose --debug --json --group --timeout --parallel --watch --only-changes --dns-summary --compare --list --progress-log --ipv4 --ipv6 --proxy --interface --no-cache --cache-ttl --clear-cache --show-cache --include-service --exclude-service --fail-on-block --metrics --youtube-lang --output" -- "$cur"))
   fi
 }
 complete -F _ipregion_completions ipregion.sh ipregion
