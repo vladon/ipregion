@@ -961,6 +961,9 @@ unset -f curl_wrapper peacock_stub_wrapper
 unset PEACOCK_STUB_RESPONSE
 JSON_OUTPUT=false
 
+assert_true "host_resolves passes IPv4 literals" host_resolves 149.154.167.51
+assert_true "host_resolves passes IPv6 literals" host_resolves 2001:4860:4860::8888
+
 # Telegram DC probe: tcp_probe against a closed local port (deterministic)
 assert_false "tcp_probe reports closed port" tcp_probe 127.0.0.1 9
 
@@ -1781,14 +1784,16 @@ PY
   tarpit_pid=$!
   sleep 0.5
   tarpit_start=$SECONDS
-  tarpit_out=$(tls_notafter 127.0.0.1 4430)
-  assert_empty "tls_notafter returns nothing against a TLS tarpit" "$tarpit_out"
-  ((SECONDS - tarpit_start <= 20)) || {
+  # tls_notafter returns nonzero on the timeout path; under set -e the
+  # assignment and the waits must not terminate the whole suite.
+  tarpit_out=$(tls_notafter 127.0.0.1 4430) || true
+  assert_empty "$tarpit_out" "tls_notafter returns nothing against a TLS tarpit"
+  if ((SECONDS - tarpit_start > 20)); then
     failures=$((failures + 1))
     echo "tls_notafter exceeded the 20s test bound against a tarpit"
-  }
-  kill "$tarpit_pid" 2>/dev/null
-  wait "$tarpit_pid" 2>/dev/null
+  fi
+  kill "$tarpit_pid" 2>/dev/null || true
+  wait "$tarpit_pid" 2>/dev/null || true
 fi
 
 rm -f "$rebind_dns_count"
@@ -1993,6 +1998,33 @@ assert_contains "$(printf '%s\n' "${COMPREPLY[@]}")" "gemini_notebook" "completi
 unfunction _ipregion_completions 2>/dev/null || unset -f _ipregion_completions
 COMP_WORDS=()
 COMPREPLY=()
+
+# Default profile (bare `ipregion.sh` run)
+assert_eq "default" "$GROUPS_TO_SHOW" "bare run selects the default profile"
+parse_arguments --full
+assert_eq "all" "$GROUPS_TO_SHOW" "--full selects every group"
+parse_arguments -g default
+assert_eq "default" "$GROUPS_TO_SHOW" "-g default is accepted"
+parse_arguments -g all
+assert_eq "all" "$GROUPS_TO_SHOW" "-g all is accepted"
+GROUPS_TO_SHOW="default"
+
+DEFAULT_PROFILE=true
+assert_true "default profile skips non-essential custom checks" should_skip_service NETFLIX
+assert_false "default profile runs messenger checks" should_skip_service TELEGRAM_ACCESS
+assert_false "default profile runs dns trio checks" should_skip_service DNS_LATENCY
+assert_false "default profile runs primary checks" should_skip_service MAXMIND
+INCLUDED_SERVICES=("NETFLIX")
+assert_false "include-service wins over the default profile" should_skip_service NETFLIX
+INCLUDED_SERVICES=()
+DEFAULT_PROFILE=false
+
+for service_key in "${DEFAULT_PROFILE_SERVICES[@]}"; do
+  if [[ -n "${PRIMARY_SERVICES[$service_key]:-}" ]]; then
+    continue
+  fi
+  assert_true "default profile defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}${CDN_SERVICES[$service_key]:-}${DEVINFRA_SERVICES[$service_key]:-}${DNS_DIAG_SERVICES[$service_key]:-}"
+done
 
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
