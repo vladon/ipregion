@@ -1634,6 +1634,12 @@ proxy_egress_curl_stub() {
 }
 curl_wrapper() { proxy_egress_curl_stub "$@"; }
 assert_true "devinfra registry defines PROXY_EGRESS" test -n "${DEVINFRA_SERVICES[PROXY_EGRESS]:-}"
+RESULT_JSON='{"results":{"primary":[],"custom":[{"service":"Cert Expiry","ipv4":"Expired","ipv6":"N/A"}],"cdn":[],"devinfra":[],"dns":[]}}'
+FAIL_ON_BLOCK_KEYS=("CERT_EXPIRY")
+fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block flags Expired cert" || echo "OK: fail-on-block flags Expired cert"
+RESULT_JSON='{"results":{"primary":[],"custom":[{"service":"Google Search Captcha","ipv4":"IP block","ipv6":"N/A"}],"cdn":[],"devinfra":[],"dns":[]}}'
+FAIL_ON_BLOCK_KEYS=("GOOGLE_SEARCH_CAPTCHA")
+fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block flags IP block verdict" || echo "OK: fail-on-block flags IP block verdict"
 identity_has_ipim=false
 for s in "${IDENTITY_SERVICES[@]}"; do
   [[ "$s" == "ip.im" ]] && identity_has_ipim=true
