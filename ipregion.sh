@@ -1141,7 +1141,7 @@ Options:
   -v, --verbose        Enable verbose logging
   -d, --debug          Enable debug trace; log may contain sensitive data (uploads use redacted copy)
   -j, --json           Output results in JSON format
-  -g, --group GROUP    Run only one group: 'primary', 'custom', 'cdn', 'devinfra', or 'all' (default: all)
+  -g, --group GROUP    Run only one group: primary, custom, cdn, devinfra, dns, or all (default: all)
   -t, --timeout SEC    Set curl request timeout in seconds (default: $CURL_TIMEOUT)
   -P, --parallel N     Run up to N services in parallel (default: auto)
   --watch N            Monitoring mode: re-run checks every N seconds and report verdict changes
