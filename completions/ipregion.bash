@@ -10,7 +10,7 @@ _ipregion_completions() {
 
   case "$prev" in
   -g | --group)
-    COMPREPLY=($(compgen -W "primary custom cdn devinfra dns all" -- "$cur"))
+    COMPREPLY=($(compgen -W "primary custom cdn devinfra dns default all" -- "$cur"))
     return
     ;;
   --include-service | --exclude-service | --fail-on-block)
@@ -31,7 +31,7 @@ _ipregion_completions() {
   esac
 
   if [[ "$cur" == -* ]]; then
-    COMPREPLY=($(compgen -W "--help --verbose --debug --json --group --timeout --parallel --watch --only-changes --dns-summary --compare --list --progress-log --ipv4 --ipv6 --proxy --interface --no-cache --cache-ttl --clear-cache --show-cache --include-service --exclude-service --fail-on-block --metrics --youtube-lang --output" -- "$cur"))
+    COMPREPLY=($(compgen -W "--help --verbose --debug --json --group --full --timeout --parallel --watch --only-changes --dns-summary --compare --list --progress-log --ipv4 --ipv6 --proxy --interface --no-cache --cache-ttl --clear-cache --show-cache --include-service --exclude-service --fail-on-block --metrics --youtube-lang --output" -- "$cur"))
   fi
 }
 complete -F _ipregion_completions ipregion.sh ipregion

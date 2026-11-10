@@ -65,6 +65,7 @@ ipregion.sh --watch 300 --fail-on-block dns_integrity cert_expiry
 
 ## Features
 
+- Default run is a curated profile: GeoIP consensus (19 providers), messenger transports (Telegram, WhatsApp, Signal) and fast DNS health checks; `--full` or `-g all` runs everything
 - 242 checks in five groups: GeoIP sources (19), popular services (189), CDN nodes (3), dev infra (16) and DNS diagnostics (15)
 - Availability checks for messengers, social networks, AI services, streaming platforms and developer infrastructure with Yes/No verdicts
 - Transport probes distinguish a working service from an open landing page: Telegram MTProto datacenters, WhatsApp edges, Discord gateway (raw TCP connect)
@@ -93,6 +94,7 @@ Missing commands are detected on start and can be installed automatically (apt/p
 
 ```bash
 ./ipregion.sh --help # Show all options
+./ipregion.sh --full # Run every check in all five groups
 ./ipregion.sh --group primary # GeoIP services only
 ./ipregion.sh --group custom # Popular websites only
 ./ipregion.sh --group cdn # CDN node checks only

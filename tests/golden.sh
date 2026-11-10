@@ -24,6 +24,10 @@ fi
 # shellcheck source=/dev/null
 source "$ROOT_DIR/ipregion.sh"
 
+# Golden renders the full multi-group fixture set; keep print_results on
+# the all-groups branch regardless of the script's default profile.
+GROUPS_TO_SHOW="all"
+
 # Deterministic network stubs ----------------------------------------------
 
 # print_results pipes rows through the external column(1); BSD and util-linux

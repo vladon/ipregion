@@ -178,7 +178,22 @@ DEBUG_LOG_FILE=""
 
 VERBOSE=false
 JSON_OUTPUT=false
-GROUPS_TO_SHOW="all"
+GROUPS_TO_SHOW="default"
+# Curated default profile (bare `ipregion.sh` run): GeoIP group plus the
+# messenger transports and the fast DNS health trio. --full / -g all runs
+# everything.
+DEFAULT_PROFILE=false
+DEFAULT_PROFILE_SERVICES=(
+  TELEGRAM_ACCESS
+  TELEGRAM_DC
+  WHATSAPP
+  WHATSAPP_DC
+  SIGNAL_ACCESS
+  SIGNAL_SERVICE
+  DNS_INTEGRITY
+  DNS_INTERCEPT
+  DNS_LATENCY
+)
 CURL_TIMEOUT=5
 CURL_RETRIES=1
 
@@ -1063,6 +1078,7 @@ declare -A SERVICE_GROUPS=(
   [cdn]="${CDN_SERVICES_ORDER[*]}"
   [dns]="${DNS_DIAG_SERVICES_ORDER[*]}"
   [devinfra]="${DEVINFRA_SERVICES_ORDER[*]}"
+  [default]="${PRIMARY_SERVICES_ORDER[*]} TELEGRAM_ACCESS TELEGRAM_DC WHATSAPP WHATSAPP_DC SIGNAL_ACCESS SIGNAL_SERVICE DNS_INTEGRITY DNS_INTERCEPT DNS_LATENCY"
 )
 
 EXCLUDED_SERVICES=(
@@ -1174,7 +1190,8 @@ Options:
   -v, --verbose        Enable verbose logging
   -d, --debug          Enable debug trace; log may contain sensitive data (uploads use redacted copy)
   -j, --json           Output results in JSON format
-  -g, --group GROUP    Run only one group: primary, custom, cdn, devinfra, dns, or all (default: all)
+  -g, --group GROUP    Run only one group: primary, custom, cdn, devinfra, dns, default, or all (default: default)
+  --full               Run every check in all five groups
   -t, --timeout SEC    Set curl request timeout in seconds (default: $CURL_TIMEOUT)
   -P, --parallel N     Run up to N services in parallel (default: auto)
   --watch N            Monitoring mode: re-run checks every N seconds and report verdict changes
@@ -1199,7 +1216,8 @@ Options:
   -o, --output FILE    Save results to file (.json or .csv)
 
 Examples:
-  $SCRIPT_NAME                       # Check all services with default settings
+  $SCRIPT_NAME                       # Curated default: GeoIP, messengers, DNS health
+  $SCRIPT_NAME --full                # Every check in all groups
   $SCRIPT_NAME -g primary            # Check only GeoIP services
   $SCRIPT_NAME -g custom             # Check only popular websites
   $SCRIPT_NAME -g cdn                # Check only CDN nodes
@@ -2093,6 +2111,13 @@ should_skip_service() {
     return 0
   fi
 
+  # Curated default profile: outside -g default nothing is filtered.
+  if [[ "$DEFAULT_PROFILE" == true ]]; then
+    if [[ -z "${PRIMARY_SERVICES[$service_name]:-}" ]] && ! is_service_in_list "$service_name" "${DEFAULT_PROFILE_SERVICES[@]}"; then
+      return 0
+    fi
+  fi
+
   if is_service_in_list "$service_name" "${EXCLUDED_SERVICES[@]}" || is_service_in_list "$service_name" "${EXCLUDED_SERVICES_CLI[@]}"; then
     return 0
   fi
@@ -2142,17 +2167,21 @@ parse_arguments() {
       ;;
     -g | --group)
       case "$2" in
-      primary | custom | cdn | devinfra | dns | all)
+      primary | custom | cdn | devinfra | dns | default | all)
         GROUPS_TO_SHOW="$2"
         ;;
       "")
-        error_exit "Missing value for --group. Expected: primary, custom, cdn, devinfra, dns, or all"
+        error_exit "Missing value for --group. Expected: primary, custom, cdn, devinfra, dns, default, or all"
         ;;
       *)
-        error_exit "Invalid group: $2. Expected: primary, custom, cdn, devinfra, dns, or all"
+        error_exit "Invalid group: $2. Expected: primary, custom, cdn, devinfra, dns, default, or all"
         ;;
       esac
       shift 2
+      ;;
+    --full)
+      GROUPS_TO_SHOW="all"
+      shift
       ;;
     -t | --timeout)
       if [[ "$2" =~ ^[0-9]+$ ]]; then
@@ -3838,7 +3867,6 @@ process_custom_service() {
 run_service_group() {
   local group="$1"
   local services_string="${SERVICE_GROUPS[$group]}"
-  local is_custom=false
   local services_array service_name handler_func display_name result
 
   [[ -n "${CHECKS_GROUP_FILE:-}" ]] && printf '%s' "$group" >"$CHECKS_GROUP_FILE"
@@ -3853,13 +3881,8 @@ run_service_group() {
       continue
     fi
 
-    case "$group" in
-    custom | cdn | devinfra | dns)
-      is_custom=true
-      ;;
-    esac
-
-    if [[ "$is_custom" == true ]]; then
+    # Route per key, not per group: the default profile mixes registries.
+    if [[ -n "${CUSTOM_SERVICES[$service_name]:-}${CDN_SERVICES[$service_name]:-}${DEVINFRA_SERVICES[$service_name]:-}${DNS_DIAG_SERVICES[$service_name]:-}" ]]; then
       process_service "$service_name" true
     else
       process_service "$service_name"
@@ -3870,16 +3893,11 @@ run_service_group() {
 run_service_group_parallel() {
   local group="$1"
   local services_string="${SERVICE_GROUPS[$group]}"
-  local is_custom=false
   local services_array service_name temp_dir result_file
 
   [[ -n "${CHECKS_GROUP_FILE:-}" ]] && printf '%s' "$group" >"$CHECKS_GROUP_FILE"
 
   read -ra services_array <<<"$services_string"
-
-  if [[ "$group" == "custom" || "$group" == "cdn" || "$group" == "devinfra" || "$group" == "dns" ]]; then
-    is_custom=true
-  fi
 
   temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/ipregion_parallel_XXXXXX")
 
@@ -3892,7 +3910,8 @@ run_service_group_parallel() {
     result_file="$temp_dir/$service_name"
     (
       RESULT_FILE="$result_file"
-      if [[ "$is_custom" == true ]]; then
+      # Route per key, not per group: the default profile mixes registries.
+      if [[ -n "${CUSTOM_SERVICES[$service_name]:-}${CDN_SERVICES[$service_name]:-}${DEVINFRA_SERVICES[$service_name]:-}${DNS_DIAG_SERVICES[$service_name]:-}" ]]; then
         process_service "$service_name" true
       else
         process_service "$service_name"
@@ -4590,6 +4609,16 @@ print_results() {
     print_metrics_group "devinfra" "Dev Infra metrics"
     ;;
   dns)
+    print_table_group "dns" "DNS diagnostics"
+    print_metrics_group "dns" "DNS diagnostics metrics"
+    ;;
+  default)
+    print_table_group "primary" "GeoIP services"
+    print_metrics_group "primary" "GeoIP service metrics"
+    printf "\n"
+    print_table_group "custom" "Popular services"
+    print_metrics_group "custom" "Popular service metrics"
+    printf "\n"
     print_table_group "dns" "DNS diagnostics"
     print_metrics_group "dns" "DNS diagnostics metrics"
     ;;
@@ -5435,6 +5464,12 @@ lookup_spotify_signup() {
 host_resolves() {
   local host="$1"
   local addr=""
+
+  # IP literals need no resolution: asking a resolver for an address
+  # yields PTR data or nothing, which would fake a DNS block verdict.
+  if [[ "$host" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ || "$host" == *:* ]]; then
+    return 0
+  fi
 
   if command -v getent >/dev/null 2>&1; then
     addr=$(getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1; exit}')
@@ -7410,6 +7445,7 @@ run_selected_groups() {
     cdn) selected_groups=(cdn) ;;
     dns) selected_groups=(dns) ;;
     devinfra) selected_groups=(devinfra) ;;
+    default) selected_groups=(default) ;;
     *) selected_groups=(primary custom cdn devinfra dns) ;;
     esac
     CHECKS_TOTAL=0
@@ -7425,6 +7461,13 @@ run_selected_groups() {
       run_service_group_parallel "primary"
     else
       run_service_group "primary"
+    fi
+    ;;
+  default)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "default"
+    else
+      run_service_group "default"
     fi
     ;;
   custom)
@@ -7704,6 +7747,12 @@ run_monitor_loop() {
 
 main() {
   parse_arguments "$@"
+
+  # The curated default profile only filters when actually selected;
+  # tests and golden runs source the script and call the runners directly.
+  if [[ "$GROUPS_TO_SHOW" == "default" ]]; then
+    DEFAULT_PROFILE=true
+  fi
 
   if [[ "$LIST_ONLY" == true ]]; then
     print_check_registry
