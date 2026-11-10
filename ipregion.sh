@@ -6049,10 +6049,6 @@ lookup_dns_jitter() {
   local gap="${DNS_JITTER_GAP:-1}"
   local -a sys=() doh=()
   local i s d j_l j_d median
-  [[ -n "${EPOCHREALTIME:-}" ]] || {
-    echo "$STATUS_NA"
-    return
-  }
   for i in 1 2 3; do
     s=$(system_dns_latency_ms "$canary")
     d=$(doh_dns_latency_ms "$canary" "$ip_version")
@@ -6188,10 +6184,6 @@ lookup_resolver_latency() {
 lookup_resolver_jitter() {
   local -a resolvers=("8.8.8.8" "1.1.1.1" "9.9.9.9")
   local resolver worst=0 pairs=0 j s1 s2
-  [[ -n "${EPOCHREALTIME:-}" ]] || {
-    echo "$STATUS_NA"
-    return
-  }
   for resolver in "${resolvers[@]}"; do
     s1=$(server_dns_latency_ms "dns.google" "$resolver")
     s2=$(server_dns_latency_ms "dns.google" "$resolver")
