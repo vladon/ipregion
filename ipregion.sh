@@ -6013,6 +6013,10 @@ lookup_dns_jitter() {
   local gap="${DNS_JITTER_GAP:-1}"
   local -a samples=()
   local s i a b c min max
+  [[ -n "${EPOCHREALTIME:-}" ]] || {
+    echo "$STATUS_NA"
+    return
+  }
   for i in 1 2 3; do
     s=$(system_dns_latency_ms "$canary")
     [[ -z "$s" ]] && {
