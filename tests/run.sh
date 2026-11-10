@@ -1486,29 +1486,80 @@ unset RESOLVER_LATENCY_MODE
 unset -f server_dns_latency_ms server_latency_reset
 rm -f "$server_latency_dns_count"
 jitter_dns_count=$(mktemp)
+jitter_doh_count=$(mktemp)
+jitter_reset() {
+  echo 1 >"$jitter_dns_count"
+  echo 1 >"$jitter_doh_count"
+}
 jitter_dns_stub() {
   local n
   n=$(cat "$jitter_dns_count")
   printf '%s\n' "$((n + 1))" >"$jitter_dns_count"
-  case "${JITTER_MODE:-spread}" in
-  constant) echo 42 ;;
-  silent) return 0 ;;
-  *) case "$n" in 1) echo 40 ;; 2) echo 45 ;; *) echo 38 ;; esac ;;
-  esac
+  if [[ "${JITTER_SYS_SILENT:-0}" == 1 ]]; then
+    return 0
+  fi
+  case "$n" in 1) echo 40 ;; 2) echo 45 ;; *) echo 38 ;; esac
+}
+jitter_doh_stub() {
+  local n
+  n=$(cat "$jitter_doh_count")
+  printf '%s\n' "$((n + 1))" >"$jitter_doh_count"
+  if [[ "${JITTER_DOH_SILENT:-0}" == 1 ]]; then
+    return 0
+  fi
+  case "$n" in 1) echo 180 ;; 2) echo 190 ;; *) echo 170 ;; esac
 }
 system_dns_latency_ms() { jitter_dns_stub; }
+doh_dns_latency_ms() { jitter_doh_stub "$@"; }
 assert_true "dns registry defines DNS_JITTER" test -n "${DNS_DIAG_SERVICES[DNS_JITTER]:-}"
-JSON_OUTPUT=true
+CURL_META_FILE=$(mktemp)
+jitter_reset
 DNS_JITTER_GAP="0.1"
-JITTER_MODE="spread"
-assert_eq "±7 ms" "$(lookup_dns_jitter 4)" "dns jitter reports the sample spread"
-JITTER_MODE="constant"
-assert_eq "±0 ms" "$(lookup_dns_jitter 4)" "dns jitter reports zero spread for stable answers"
-JITTER_MODE="silent"
-assert_eq "N/A" "$(lookup_dns_jitter 4)" "dns jitter stays N/A when lookups fail"
-unset JITTER_MODE DNS_JITTER_GAP
-unset -f system_dns_latency_ms jitter_dns_stub
-rm -f "$jitter_dns_count"
+assert_eq "±7/±20 ms" "$(lookup_dns_jitter 4)" "dns jitter reports local and doh spreads"
+grep -q "latency_ms=40" "$CURL_META_FILE" && echo "OK: dns latency v4 pass writes median system metric" || echo "FAIL: dns latency v4 pass writes median system metric"
+jitter_reset
+lookup_dns_jitter 6 >/dev/null
+grep -q "latency_ms=180" "$CURL_META_FILE" && echo "OK: dns jitter v6 pass writes median doh metric" || echo "FAIL: dns jitter v6 pass writes median doh metric"
+JITTER_SYS_SILENT=1
+jitter_reset
+assert_eq "N/A" "$(lookup_dns_jitter 4)" "dns jitter stays N/A when the system side fails"
+JITTER_SYS_SILENT=0
+JITTER_DOH_SILENT=1
+jitter_reset
+assert_eq "N/A" "$(lookup_dns_jitter 4)" "dns jitter stays N/A when the doh side fails"
+unset JITTER_SYS_SILENT JITTER_DOH_SILENT
+rm -f "$CURL_META_FILE"
+CURL_META_FILE=""
+unset -f system_dns_latency_ms doh_dns_latency_ms jitter_dns_stub jitter_doh_stub
+rm -f "$jitter_dns_count" "$jitter_doh_count"
+rj_server_count=$(mktemp)
+rj_server_stub() {
+  local n
+  n=$(cat "$rj_server_count")
+  printf '%s\n' "$((n + 1))" >"$rj_server_count"
+  case "${RJ_MODE:-stable}" in
+  alternating)
+    if ((n % 2 == 1)); then echo 40; else echo 13; fi
+    return
+    ;;
+  silent) return 0 ;;
+  half) case "$2" in 8.8.8.8) echo 40 ;; *) return 0 ;; esac ;;
+  *) echo 40 ;;
+  esac
+}
+server_dns_latency_ms() { rj_server_stub "$@"; }
+assert_true "dns registry defines RESOLVER_JITTER" test -n "${DNS_DIAG_SERVICES[RESOLVER_JITTER]:-}"
+RJ_MODE="stable"
+assert_eq "±0 ms" "$(lookup_resolver_jitter 4)" "resolver jitter reports zero spread for stable resolvers"
+RJ_MODE="alternating"
+assert_eq "±27 ms" "$(lookup_resolver_jitter 4)" "resolver jitter reports the worst per-resolver spread"
+RJ_MODE="half"
+assert_eq "N/A" "$(lookup_resolver_jitter 4)" "resolver jitter stays N/A with one reachable resolver"
+RJ_MODE="silent"
+assert_eq "N/A" "$(lookup_resolver_jitter 4)" "resolver jitter stays N/A when no resolver answers"
+unset RJ_MODE
+unset -f server_dns_latency_ms rj_server_stub
+rm -f "$rj_server_count"
 rebind_dns_count=$(mktemp)
 rebind_dns_reset() {
   echo 1 >"$rebind_dns_count"
@@ -1661,7 +1712,7 @@ JSON_OUTPUT=false
 
 # Spinner counter and instant result lines
 assert_eq "3" "$(count_group_checks cdn)" "count_group_checks counts cdn group"
-assert_eq "13" "$(count_group_checks dns)" "count_group_checks counts dns group"
+assert_eq "14" "$(count_group_checks dns)" "count_group_checks counts dns group"
 assert_eq "16" "$(count_group_checks devinfra)" "count_group_checks counts devinfra group"
 CHECKS_DONE_FILE=$(mktemp)
 spinner_running=true

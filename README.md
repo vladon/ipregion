@@ -372,9 +372,10 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | dns | DNS Latency | `DNS_LATENCY` |
 | dns | DNS Jitter | `DNS_JITTER` |
 | dns | Resolver Latency | `RESOLVER_LATENCY` |
+| dns | Resolver Jitter | `RESOLVER_JITTER` |
 | dns | Rebind Protection | `REBIND_PROTECTION` |
 
-Total: 229 checks.
+Total: 230 checks.
 <!-- ipregion:checks-end -->
 
 ### DNS diagnostics (group dns)
@@ -392,7 +393,8 @@ The whole family runs with `--group dns` and is reference-based and token-free: 
 | TTL Honesty | Cache behavior: the served TTL must decrement between samples | **Yes** = decrementing (honest cache); **No** = constant (substituted or non-caching forwarder); **N/A** = ambiguous |
 | Resolver Consensus | `dns.google` and `one.one.one.one` asked directly at 8.8.8.8 / 1.1.1.1 / 9.9.9.9 must all match the DoH reference | **Yes** = consensus; **No** = divergence; **N/A** = fewer than two reachable |
 | DNS Latency | Informational: system-resolver vs DoH-JSON resolution time ("local/doh ms") for a stable canary | milliseconds; **N/A** = bash < 5 or lookup failure |
-| DNS Jitter | Informational: spread (max − min) of three timed system-resolver lookups ("±N ms") for a stable canary | milliseconds; **N/A** = bash < 5 or lookup failure |
+| DNS Jitter | Informational: spread (max − min) of three timed system-resolver and three DoH lookups ("±local/±doh ms") for a stable canary; `--metrics` reports the median of each side | milliseconds; **N/A** = bash < 5 or lookup failure |
+| Resolver Jitter | Informational: worst per-resolver spread (two direct `dns.google` queries to Google/Cloudflare/Quad9, "±N ms") | milliseconds; **N/A** = bash < 5 or fewer than two resolvers answer |
 | Resolver Latency | Informational: direct `dns.google` query round-trip to Google/Cloudflare/Quad9 ("G/C/Q ms"); "-" = silent resolver | milliseconds; **N/A** = bash < 5 or none answered |
 | Rebind Protection | Public 1u.ms rebinding canary: a fresh name resolves to a public IP first and to 127.0.0.1 on follow-up queries (TTL 0) | **Yes** = protected (loopback never served); **No** = vulnerable (serves the flip); **N/A** = canary unreachable |
 

@@ -3385,19 +3385,19 @@
         "service": "DNS Latency"
       },
       {
-        "ipv4": "±0 ms",
-        "ipv6": "±0 ms",
+        "ipv4": "±0/±0 ms",
+        "ipv6": "±0/±0 ms",
         "metrics": {
           "ipv4": {
             "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
+            "http_code": 200,
+            "latency_ms": 12,
             "transport_ip_version": 4
           },
           "ipv6": {
             "error_type": null,
-            "http_code": null,
-            "latency_ms": null,
+            "http_code": 200,
+            "latency_ms": 180,
             "transport_ip_version": 6
           }
         },
