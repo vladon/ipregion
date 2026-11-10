@@ -745,6 +745,7 @@ declare -A DNS_DIAG_SERVICES=(
   [DNS_LATENCY]="DNS Latency"
   [DNS_JITTER]="DNS Jitter"
   [RESOLVER_LATENCY]="Resolver Latency"
+  [RESOLVER_JITTER]="Resolver Jitter"
   [REBIND_PROTECTION]="Rebind Protection"
 )
 
@@ -761,6 +762,7 @@ DNS_DIAG_SERVICES_ORDER=(
   "DNS_LATENCY"
   "DNS_JITTER"
   "RESOLVER_LATENCY"
+  "RESOLVER_JITTER"
   "REBIND_PROTECTION"
 )
 
@@ -834,6 +836,7 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [DNS_LATENCY]="lookup_dns_latency"
   [DNS_JITTER]="lookup_dns_jitter"
   [RESOLVER_LATENCY]="lookup_resolver_latency"
+  [RESOLVER_JITTER]="lookup_resolver_jitter"
   [REBIND_PROTECTION]="lookup_rebind_protection"
   [GMAIL]="lookup_gmail"
   [GOOGLE_DRIVE]="lookup_google_drive"
@@ -5666,6 +5669,39 @@ doh_dns_latency_ms() {
   awk -v s="$start" -v e="$end" 'BEGIN { printf "%d", (e - s) * 1000 }'
 }
 
+# Spread (max - min) of exactly three integers.
+spread3() {
+  local a=$1 b=$2 c=$3
+  local min=$a max=$a
+  ((b < min)) && min=$b
+  ((b > max)) && max=$b
+  ((c < min)) && min=$c
+  ((c > max)) && max=$c
+  echo $((max - min))
+}
+
+# Median of exactly three integers.
+median3() {
+  local a=$1 b=$2 c=$3
+  local min=$a mid=$b max=$c t
+  ((min > mid)) && {
+    t=$min
+    min=$mid
+    mid=$t
+  }
+  ((mid > max)) && {
+    t=$mid
+    mid=$max
+    max=$t
+  }
+  ((min > mid)) && {
+    t=$min
+    min=$mid
+    mid=$t
+  }
+  echo "$mid"
+}
+
 # Resolution time in milliseconds for one direct query to an explicitly
 # addressed resolver, measured like the other latency helpers.
 server_dns_latency_ms() {
@@ -6011,27 +6047,36 @@ lookup_dns_jitter() {
   local ip_version="$1"
   local canary="dns.google"
   local gap="${DNS_JITTER_GAP:-1}"
-  local -a samples=()
-  local s i a b c min max
+  local -a sys=() doh=()
+  local i s d j_l j_d median
+  [[ -n "${EPOCHREALTIME:-}" ]] || {
+    echo "$STATUS_NA"
+    return
+  }
   for i in 1 2 3; do
     s=$(system_dns_latency_ms "$canary")
-    [[ -z "$s" ]] && {
+    d=$(doh_dns_latency_ms "$canary" "$ip_version")
+    [[ -z "$s" || -z "$d" ]] && {
       echo "$STATUS_NA"
       return
     }
-    samples+=("$s")
+    sys+=("$s")
+    doh+=("$d")
     [[ "$i" -lt 3 ]] && sleep "$gap"
   done
-  a=${samples[0]}
-  b=${samples[1]}
-  c=${samples[2]}
-  min=$a
-  max=$a
-  ((b < min)) && min=$b
-  ((b > max)) && max=$b
-  ((c < min)) && min=$c
-  ((c > max)) && max=$c
-  printf '±%d ms' $((max - min))
+  j_l=$(spread3 "${sys[0]}" "${sys[1]}" "${sys[2]}")
+  j_d=$(spread3 "${doh[0]}" "${doh[1]}" "${doh[2]}")
+  # --metrics integration: the IPv4 pass reports the median system
+  # sample, the IPv6 pass the median DoH sample.
+  if [[ -n "${CURL_META_FILE:-}" ]]; then
+    if [[ "$ip_version" == "6" ]]; then
+      median=$(median3 "${doh[0]}" "${doh[1]}" "${doh[2]}")
+    else
+      median=$(median3 "${sys[0]}" "${sys[1]}" "${sys[2]}")
+    fi
+    printf 'http_code=200;latency_ms=%d;transport_ip_version=%s;error_type=none\n' "$median" "$ip_version" >"$CURL_META_FILE"
+  fi
+  printf '±%d/±%d ms' "$j_l" "$j_d"
 }
 
 # DNS rebinding diagnostic through the public 1u.ms canary: the first
@@ -6132,6 +6177,34 @@ lookup_resolver_latency() {
     printf 'http_code=200;latency_ms=%d;transport_ip_version=%s;error_type=none\n' "$((total / answered))" "$ip_version" >"$CURL_META_FILE"
   fi
   printf '%s' "$out"
+}
+
+# Resolver jitter diagnostic: each of the three independent public
+# resolvers is sampled twice with a direct dns.google query; the worst
+# per-resolver spread (|first - second|) is reported as "±N ms". A
+# tight spread means the resolver answers consistently; a wide spread
+# means it fluctuates. N/A when fewer than two resolvers answer or the
+# platform cannot measure.
+lookup_resolver_jitter() {
+  local -a resolvers=("8.8.8.8" "1.1.1.1" "9.9.9.9")
+  local resolver worst=0 pairs=0 j s1 s2
+  [[ -n "${EPOCHREALTIME:-}" ]] || {
+    echo "$STATUS_NA"
+    return
+  }
+  for resolver in "${resolvers[@]}"; do
+    s1=$(server_dns_latency_ms "dns.google" "$resolver")
+    s2=$(server_dns_latency_ms "dns.google" "$resolver")
+    [[ -z "$s1" || -z "$s2" ]] && continue
+    pairs=$((pairs + 1))
+    j=$(((s1 > s2) ? s1 - s2 : s2 - s1))
+    ((j > worst)) && worst=$j
+  done
+  if ((pairs < 2)); then
+    echo "$STATUS_NA"
+    return
+  fi
+  printf '±%d ms' "$worst"
 }
 
 lookup_site_access() {
@@ -7371,6 +7444,8 @@ dns_summary_token() {
   RESOLVER_CONSENSUS) echo "consensus" ;;
   DNS_LATENCY) echo "latency" ;;
   RESOLVER_LATENCY) echo "rlatency" ;;
+  DNS_JITTER) echo "jitter" ;;
+  RESOLVER_JITTER) echo "rjitter" ;;
   REBIND_PROTECTION) echo "rebind" ;;
   *) echo "$1" ;;
   esac
