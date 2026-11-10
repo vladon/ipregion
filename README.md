@@ -171,6 +171,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | custom | YouTube Music | `YOUTUBE_MUSIC` |
 | custom | Google Search Captcha | `GOOGLE_SEARCH_CAPTCHA` |
 | custom | Google Transport | `GOOGLE_TRANSPORT` |
+| custom | Redirect Chain | `REDIRECT_CHAIN` |
 | custom | Bing | `BING` |
 | custom | DuckDuckGo | `DUCKDUCKGO` |
 | custom | Brave Search | `BRAVE_SEARCH` |
@@ -369,7 +370,7 @@ MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iploca
 | dns | Resolver Latency | `RESOLVER_LATENCY` |
 | dns | Rebind Protection | `REBIND_PROTECTION` |
 
-Total: 225 checks.
+Total: 226 checks.
 <!-- ipregion:checks-end -->
 
 ### DNS diagnostics (group dns)

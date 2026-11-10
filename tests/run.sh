@@ -1500,7 +1500,26 @@ rebind_dns_stub() {
   esac
 }
 system_dns_answers() { rebind_dns_stub "$@"; }
-assert_true "custom registry defines REBIND_PROTECTION" test -n "${DNS_DIAG_SERVICES[REBIND_PROTECTION]:-}"
+assert_true "dns registry defines REBIND_PROTECTION" test -n "${DNS_DIAG_SERVICES[REBIND_PROTECTION]:-}"
+redirect_curl_stub() {
+  local url="$2"
+  case "${REDIRECT_MODE:-clean}" in
+  injected) case "$url" in *google*) echo "200|https://portal.example/|2" ;; *) echo "200||0" ;; esac ;;
+  down) return 1 ;;
+  *) case "$url" in *google* | *cloudflare*) echo "200||0" ;; esac ;;
+  esac
+}
+curl_wrapper() { redirect_curl_stub "$@"; }
+assert_true "custom registry defines REDIRECT_CHAIN" test -n "${CUSTOM_SERVICES[REDIRECT_CHAIN]:-}"
+JSON_OUTPUT=true
+REDIRECT_MODE="clean"
+assert_eq "Yes" "$(lookup_redirect_chain 4)" "redirect chain maps clean 200 answers to Yes"
+REDIRECT_MODE="injected"
+assert_eq "No" "$(lookup_redirect_chain 4)" "redirect chain flags unexpected redirect chains"
+REDIRECT_MODE="down"
+assert_eq "N/A" "$(lookup_redirect_chain 4)" "redirect chain stays N/A when nothing is reachable"
+unset REDIRECT_MODE
+unset -f curl_wrapper redirect_curl_stub
 REBIND_MODE="vulnerable"
 assert_eq "No" "$(lookup_rebind_protection 4)" "rebind protection flags resolvers serving the loopback flip"
 rebind_dns_reset

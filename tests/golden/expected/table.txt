@@ -12,6 +12,7 @@
 [1;32mYouTube Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mYouTube Music[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
 [1;32mGoogle Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+[1;32mRedirect Chain[0m	[0;90mN/A[0m	[0;90mN/A[0m
 [1;32mBing[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mDuckDuckGo[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
 [1;32mBrave Search[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
