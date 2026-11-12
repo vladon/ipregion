@@ -126,6 +126,69 @@ Missing commands are detected on start and can be installed automatically (apt/p
 
 All options can be combined.
 
+## JSON
+
+`--json` prints a report described by the schema [`schema/ipregion-v1.schema.json`](schema/ipregion-v1.schema.json) (the `$schema` key inside the output points at it, so `check-jsonschema` and friends can validate directly):
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/vladon/ipregion/master/schema/ipregion-v1.schema.json",
+  "version": 1,
+  "ip": {
+    "ipv4": {
+      "address": "203.0.113.10",
+      "source": "ident.me",
+      "cache_hit": false,
+      "timestamp": null,
+      "registered_country": "NL"
+    },
+    "ipv6": {
+      "address": null,
+      "source": null,
+      "cache_hit": false,
+      "timestamp": null,
+      "registered_country": null
+    }
+  },
+  "asn": { "number": 64496, "name": "Example Hosting" },
+  "consensus": {
+    "ipv4": { "country": "NL", "count": 17, "total": 19, "confidence": 89 },
+    "ipv6": null
+  },
+  "results": {
+    "primary": [
+      {
+        "service": "maxmind.com",
+        "ipv4": "NL",
+        "ipv6": null,
+        "metrics": { "ipv4": { "http_code": 200, "latency_ms": 45, "transport_ip_version": 4, "error_type": null }, "ipv6": null }
+      }
+    ],
+    "custom": [],
+    "cdn": [],
+    "devinfra": [],
+    "dns": []
+  }
+}
+```
+
+- `ip.ipv4` / `ip.ipv6` — discovered external address, which identity service answered, cache metadata and the registration country; the protocol object stays present with `null` fields when a protocol is unavailable
+- `consensus.ipv4` / `consensus.ipv6` — the country most GeoIP services agree on, `null` when none answer
+- `results.*` — one array per group (`primary`, `custom`, `cdn`, `devinfra`, `dns`); each cell is a country code, a Yes/No verdict, a status string (`Denied`, `Rate-limit`, `N/A`, ...) or `null` when the protocol was not checked; `metrics` mirror curl codes/latency per protocol
+
+## Docker
+
+```bash
+docker run --rm ghcr.io/vladon/ipregion:latest
+docker run --rm ghcr.io/vladon/ipregion:latest --group dns --ipv4
+```
+
+Options go after the image name. The container image is built by CI on every master push and release (`ghcr.io/vladon/ipregion`, `latest` + short SHA + release tags). Use `--network=host` for IPv6 and interface checks — the default bridge network may not expose either:
+
+```bash
+docker run --rm --network=host ghcr.io/vladon/ipregion:latest --interface eth1
+```
+
 ## Checks
 
 ### External IP discovery

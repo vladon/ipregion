@@ -166,6 +166,8 @@ assert_eq "United States" "$(process_json "$RESULT_JSON" ".ip.ipv4.registered_co
 assert_eq "15169" "$(process_json "$RESULT_JSON" ".asn.number")" "finalize_json includes ASN number"
 assert_eq "US" "$(process_json "$RESULT_JSON" ".consensus.ipv4.country")" "finalize_json computes ipv4 consensus"
 assert_eq "200" "$(process_json "$RESULT_JSON" ".results.primary[0].metrics.ipv4.http_code")" "finalize_json parses metrics"
+assert_eq "$RESULT_SCHEMA_URL" "$(process_json "$RESULT_JSON" '.["$schema"]')" "finalize_json includes schema reference"
+assert_eq "1" "$(process_json "$RESULT_JSON" ".version")" "finalize_json stamps schema version"
 assert_eq "http_429" "$(process_json "$RESULT_JSON" ".results.primary[1].metrics.ipv6.error_type")" "finalize_json keeps error_type"
 assert_eq "YouTube CDN" "$(process_json "$RESULT_JSON" ".results.cdn[0].service")" "finalize_json includes cdn results"
 assert_eq "DNS Integrity" "$(process_json "$RESULT_JSON" ".results.dns[0].service")" "finalize_json includes dns results"

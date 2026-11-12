@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/vladon/ipregion/master/schema/ipregion-v1.schema.json",
   "asn": {
     "name": "Golden Example AS",
     "number": 64496

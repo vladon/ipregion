@@ -13,7 +13,7 @@
   ```
   `{ip}` in `url_template` is replaced with the target IP; `response_format` defaults to JSON, use `plain` for text responses.
 - **Groups**: `SERVICE_GROUPS` maps `primary` → `PRIMARY_SERVICES_ORDER`, `custom` → `CUSTOM_SERVICES_ORDER`. `main` runs groups via `run_service_group` (sequential) or `run_service_group_parallel`.
-- **Result pipeline**: `add_result` → `finalize_json` (builds `RESULT_JSON` via jq: per-service results, metrics, consensus country, ip/asn header data) → `print_results` / `write_output_file`.
+- **Result pipeline**: `add_result` → `finalize_json` (builds `RESULT_JSON` via jq: `$schema` ref, per-service results, metrics, consensus country, ip/asn header data; validated by `schema/ipregion-v1.schema.json` and the live CI workflow) → `print_results` / `write_output_file`.
 - **Report rendering (card UI)**: `print_report` renders everything at the end of the run: `┃` header block (branding, masked IPs + ASN + registered country, pooled verdict from consensus, `N/M checks passed` bar), an Attention card (abnormal cells grouped by value+reason, service lists wrapped, `unique_by` service+value), paired side-by-side group cards, and a legend. Cells are classified by `classify_cell_value` (country / yes / no / ipblock / region / unknown / info). Widths come from `visible_length` (ANSI- and emoji-aware) + `pad` + `repeat_char`; no external `column` dependency. Colors are gated per stream (`USE_COLOR_STDOUT`/`USE_COLOR_STDERR` from `-t 1`/`-t 2`, `NO_COLOR` honored) via `color()`/`COLOR_TARGET`; progress and logs go to stderr only, so piped output is clean. `--emoji` adds country flags (regional indicators) and group icons; `--no-attention` hides the Attention card. Country display names are fetched from CLDR (`country_display_name`) only for interactive stdout, falling back to the code.
 - **Dispatch**: `process_service` → `service_build_request` → `curl_wrapper` → `process_response` (case statement with one jq filter per primary service) or `process_with_custom_handler` for entries in `PRIMARY_SERVICES_CUSTOM_HANDLERS`. Custom services call their handler from `CUSTOM_SERVICES_HANDLERS`; `run_all_services` discovers all `lookup_*` functions by name.
 - **HTTP status mapping** (`status_from_http_code`, ~1296): 403 → `Denied`, 429 → `Rate-limit`, 5xx → `Server error`, other 4xx → `N/A`.
@@ -31,7 +31,11 @@ Flat repository, no source tree:
 | `ipregion.sh` | Entire application |
 | `tests/run.sh` | Unit tests (sources `ipregion.sh`, never runs `main`) |
 | `index.html` | Project page (install commands, copy button); shown to browsers by server-side routing |
+| `schema/ipregion-v1.schema.json` | JSON Schema for `--json` output (draft 2020-12); `RESULT_JSON` carries `$schema` pointing here |
 | `.github/workflows/deploy.yml` | CI: tests, lint, version injection, rsync deploy |
+| `.github/workflows/live.yml` | Cron (every 3 days) + manual: real run, `--json` validated against the schema with check-jsonschema, group-answer smoke, report artifact |
+| `.github/workflows/docker.yml` | Build + push `ghcr.io/vladon/ipregion` (latest/SHA/release tags) on master push and releases |
+| `.shellcheckrc` | Shared shellcheck config: `source-path=SCRIPTDIR`, extra optional checks (warnings only — the gate stays `shellcheck -S error`) |
 | `.cursor/rules/trunk-based-pr-workflow.mdc` | Git workflow rules (see below) |
 | `plans/` | Design docs (`ip-cache-fallback-architecture.md`, `versioning-fix.md`) |
 | `README.md` | User-facing usage; update when CLI changes |

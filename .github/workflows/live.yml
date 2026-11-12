@@ -1,0 +1,50 @@
+name: Live
+
+on:
+  schedule:
+    - cron: "0 6 */3 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: live-ipregion
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        run: pipx install check-jsonschema
+
+      - name: Run against real services
+        run: bash ipregion.sh --json >report.json
+
+      - name: Validate JSON schema
+        run: check-jsonschema --schemafile schema/ipregion-v1.schema.json report.json
+
+      - name: Check that every default-profile group answered
+        run: |
+          empty_groups=$(jq -r '
+            .results
+            | to_entries[]
+            | select(.key == "primary" or .key == "custom" or .key == "dns")
+            | select(all(.value[]; .ipv4 == null and .ipv6 == null))
+            | .key
+          ' report.json)
+          if [[ -n "$empty_groups" ]]; then
+            echo "Groups with no answers at all: $empty_groups"
+            exit 1
+          fi
+          echo "All default-profile groups produced answers."
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-report
+          path: report.json
+          retention-days: 30
