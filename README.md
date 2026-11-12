@@ -14,8 +14,10 @@ chmod +x ipregion.sh
 ### Run directly from GitHub
 
 ```bash
-bash <(wget -qO- https://ipregion.vladon.sh)
+bash -c 'bash <(wget -qO- https://ipregion.vladon.sh)'
 ```
+
+The outer `bash -c` parses process substitution, so this command also works from fish or sh.
 
 Opening <https://ipregion.vladon.sh> in a browser shows the project page; curl/wget always receive the raw script. The script is also served verbatim at <https://ipregion.vladon.sh/ipregion.sh>.
 
