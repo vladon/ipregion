@@ -1,235 +1,221 @@
-[1;36mIPv4[0m: [1m203.0.*.*[0m, registered in [1mUS[0m
-[1;36mIPv6[0m: [1m2001:db8:0::[0m, registered in [1mDE[0m
-[1;36mASN[0m: [1mAS64496 Golden Example AS[0m
+┃  Made with <3 by vladon · github.com/vladon/ipregion
+┃
+┃ IPv4  203.0.*.*         AS64496 Golden Example AS  registered in US
+┃ IPv6  2001:db8:0::      registered in DE
+┃    US   seen by most services
+┃   ━━━━━━━━━━━━━━━━━━━━━━━━━━──────────────────────────────────────  176/418 checks passed
 
-[1;36mIPv4 consensus[0m: [1mUS[0m
-[1;36mIPv6 consensus[0m: [1mUS[0m
+╭─ Attention ────────────────────────────────────────────────────────────────────────────╮
+│ Service           Value   Issue                                                        │
+│ 116 services      ✗       blocked:                                                     │
+│ AI Studio, AWS, Anthropic API, App Store, Apple Music, Apple Transport, Azure Portal   │
+│ Battle.net, Cloudflare Pages, Cohere API, Crates.io, DeepL, DeepSeek API, Deezer       │
+│ DigitalOcean, Discord API, Discord CDN, Discord Gateway, DoH Cloudflare, DoH Google    │
+│ DoT Cloudflare, DoT Google, Docker Hub, Docker Hub API, Douyin (CN), Dropbox           │
+│ ElevenLabs API, Epic Games, Facebook API, Facebook CDN, GCP Console, Gemini API        │
+│ Gemini Notebook, GitHub API, GitHub Codeload, GitHub Pages, GitHub Raw, GitLab         │
+│ GitLab API, GitLab Pages, Gmail, Go Modules, Google Calendar, Google Drive             │
+│ Google Meet, Google Photos, Google Transport, Groq API, Heroku, Hetzner, Hugging Face  │
+│ Instagram API, Instagram Transport, KakaoTalk, Line, LinkedIn API, MEGA, Matrix        │
+│ Maven Central, Messenger MQTT, Microsoft Teams, Microsoft Transport, Minecraft Session │
+│ Mistral API, Netflix Transport, Netlify, OK API, OneDrive, OpenAI API, OpenRouter      │
+│ Oracle Cloud, Outlook, Ozon Transport, PayPal, Peacock Access, Perplexity API          │
+│ Play Store, Proton, PyPI, RUTUBE Transport, Reddit API, Riot Games, Roblox, Roblox API │
+│ Signal Service, Slack, SoundCloud, Steam API, Steam Transport, Stripe API              │
+│ Telegram Bot API, Threads API, Threads Transport, Threema, TikTok Access               │
+│ TikTok Transport, Twitch API, Twitch Chat, Twitter Legacy API, VK API, Vercel, Viber   │
+│ Vultr, WeChat API, WhatsApp DC, Wise, Workers.dev, X API, Xbox, YouTube API            │
+│ YouTube Music, YouTube Transport, Zoom, npm Registry, ntfy, xAI API                    │
+│ 3 services        ?       no answer:                                                   │
+│ HTTP/2, Redirect Chain, TTL Honesty                                                    │
+│ LinkedIn Access   ⊘       Denied                                                       │
+│ iplocation.com    CY      different country                                            │
+╰────────────────────────────────────────────────────────────────────────────────────────╯
 
-[1;36mPopular services[0m
+╭─ GeoIP services ─────────────╮ ╭─ Popular services ──────────────────╮
+│ Service           IPv4  IPv6 │ │ Service              IPv4    IPv6   │
+│ maxmind.com       US    US   │ │ YouTube API          ✗       ✗      │
+│ rdap.db.ripe.net  US    US   │ │ YouTube Transport    ✗       ✗      │
+│ ipinfo.io         US    US   │ │ YouTube Music        ✗       ✗      │
+│ cloudflare.com    US    US   │ │ Google Transport     ✗       ✗      │
+│ ipapi.co          US    US   │ │ Redirect Chain       ?       ?      │
+│ ifconfig.co       US    US   │ │ HTTP/2               ?       ?      │
+│ ip2location.io    US    US   │ │ Bing                 ✓       ✓      │
+│ iplocation.com    CY    CY   │ │ DuckDuckGo           ✓       ✓      │
+│ country.is        US    US   │ │ Brave Search         ✓       ✓      │
+│ geojs.io          US    US   │ │ DoH Google           ✗       ✗      │
+│ ipapi.is          US    US   │ │ DoH Cloudflare       ✗       ✗      │
+│ ipbase.com        US    US   │ │ Gmail                ✗       ✗      │
+│ ipquery.io        US    US   │ │ Google Drive         ✗       ✗      │
+│ ipwhois.io        US    US   │ │ Google Meet          ✗       ✗      │
+│ ipwho.is          US    US   │ │ Google Photos        ✗       ✗      │
+│ ip-api.com        US    US   │ │ Google Calendar      ✗       ✗      │
+│ Detector404       US    US   │ │ Play Store           ✗       ✗      │
+│ ipregistry.co     US    US   │ │ AWS                  ✗       ✗      │
+│ geoapify.com      US    US   │ │ GCP Console          ✗       ✗      │
+│                              │ │ Oracle Cloud         ✗       ✗      │
+│                              │ │ Hetzner              ✗       ✗      │
+│                              │ │ DigitalOcean         ✗       ✗      │
+│                              │ │ Vultr                ✗       ✗      │
+│                              │ │ Gemini Notebook      ✗       ✗      │
+│                              │ │ Gemini API           ✗       ✗      │
+│                              │ │ AI Studio            ✗       ✗      │
+│                              │ │ Apple Transport      ✗       ✗      │
+│                              │ │ App Store            ✗       ✗      │
+│                              │ │ Apple Music          ✗       ✗      │
+│                              │ │ Steam API            ✗       ✗      │
+│                              │ │ Steam Transport      ✗       ✗      │
+│                              │ │ Microsoft Transport  ✗       ✗      │
+│                              │ │ Microsoft Teams      ✗       ✗      │
+│                              │ │ Outlook              ✗       ✗      │
+│                              │ │ Azure Portal         ✗       ✗      │
+│                              │ │ OneDrive             ✗       ✗      │
+│                              │ │ OpenAI API           ✗       ✗      │
+│                              │ │ Hulu                 ✓       ✓      │
+│                              │ │ Paramount+           ✓       ✓      │
+│                              │ │ Apple TV+            ✓       ✓      │
+│                              │ │ Pluto TV             ✓       ✓      │
+│                              │ │ discovery+           ✓       ✓      │
+│                              │ │ Tubi                 ✓       ✓      │
+│                              │ │ MUBI                 ✓       ✓      │
+│                              │ │ Rakuten Viki         ✓       ✓      │
+│                              │ │ iQIYI                ✓       ✓      │
+│                              │ │ Plex                 ✓       ✓      │
+│                              │ │ Kick                 ✓       ✓      │
+│                              │ │ Reddit API           ✗       ✗      │
+│                              │ │ Anthropic API        ✗       ✗      │
+│                              │ │ Netflix Transport    ✗       ✗      │
+│                              │ │ Instagram            ✓       ✓      │
+│                              │ │ Instagram API        ✗       ✗      │
+│                              │ │ Instagram Transport  ✗       ✗      │
+│                              │ │ TikTok Access        ✗       ✗      │
+│                              │ │ TikTok Transport     ✗       ✗      │
+│                              │ │ WhatsApp             ✓       ✓      │
+│                              │ │ WhatsApp DC          ✗       ✗      │
+│                              │ │ Telegram Access      ✓       ✓      │
+│                              │ │ Telegram DC          ✓       ✓      │
+│                              │ │ Discord Access       ✓       ✓      │
+│                              │ │ Discord API          ✗       ✗      │
+│                              │ │ Discord Gateway      ✗       ✗      │
+│                              │ │ Discord CDN          ✗       ✗      │
+│                              │ │ Twitter (X)          ✓       ✓      │
+│                              │ │ X API                ✗       ✗      │
+│                              │ │ Twitter Legacy API   ✗       ✗      │
+│                              │ │ LinkedIn Access      ⊘       ⊘      │
+│                              │ │ LinkedIn API         ✗       ✗      │
+│                              │ │ Facebook Access      ✓       ✓      │
+│                              │ │ Facebook API         ✗       ✗      │
+│                              │ │ Facebook CDN         ✗       ✗      │
+│                              │ │ Messenger Access     ✓       ✓      │
+│                              │ │ Messenger MQTT       ✗       ✗      │
+│                              │ │ Viber                ✗       ✗      │
+│                              │ │ Slack                ✗       ✗      │
+│                              │ │ Zoom                 ✗       ✗      │
+│                              │ │ Line                 ✗       ✗      │
+│                              │ │ KakaoTalk            ✗       ✗      │
+│                              │ │ Threema              ✗       ✗      │
+│                              │ │ Matrix               ✗       ✗      │
+│                              │ │ ntfy                 ✗       ✗      │
+│                              │ │ Telegram Bot API     ✗       ✗      │
+│                              │ │ Workers.dev          ✗       ✗      │
+│                              │ │ GitHub Pages         ✗       ✗      │
+│                              │ │ GitLab Pages         ✗       ✗      │
+│                              │ │ Vercel               ✗       ✗      │
+│                              │ │ Netlify              ✗       ✗      │
+│                              │ │ Cloudflare Pages     ✗       ✗      │
+│                              │ │ Heroku               ✗       ✗      │
+│                              │ │ Threads Access       ✓       ✓      │
+│                              │ │ Threads API          ✗       ✗      │
+│                              │ │ Threads Transport    ✗       ✗      │
+│                              │ │ Signal Access        ✓       ✓      │
+│                              │ │ Signal Service       ✗       ✗      │
+│                              │ │ Douyin (CN)          ✗       ✗      │
+│                              │ │ WeChat               ✓       ✓      │
+│                              │ │ WeChat API           ✗       ✗      │
+│                              │ │ Baidu                ✓       ✓      │
+│                              │ │ Alipay               ✓       ✓      │
+│                              │ │ VK                   ✓       ✓      │
+│                              │ │ VK API               ✗       ✗      │
+│                              │ │ OK                   ✓       ✓      │
+│                              │ │ OK API               ✗       ✗      │
+│                              │ │ RUTUBE Transport     ✗       ✗      │
+│                              │ │ Ozon Transport       ✗       ✗      │
+│                              │ │ Grok                 ✓       ✓      │
+│                              │ │ xAI API              ✗       ✗      │
+│                              │ │ DeepSeek             ✓       ✓      │
+│                              │ │ DeepSeek API         ✗       ✗      │
+│                              │ │ Perplexity           ✓       ✓      │
+│                              │ │ Perplexity API       ✗       ✗      │
+│                              │ │ Copilot              ✓       ✓      │
+│                              │ │ Mistral              ✓       ✓      │
+│                              │ │ Mistral API          ✗       ✗      │
+│                              │ │ Groq API             ✗       ✗      │
+│                              │ │ OpenRouter           ✗       ✗      │
+│                              │ │ Cohere API           ✗       ✗      │
+│                              │ │ ElevenLabs API       ✗       ✗      │
+│                              │ │ Qwen Web             ✓       ✓      │
+│                              │ │ DeepL                ✗       ✗      │
+│                              │ │ Character.AI         ✓       ✓      │
+│                              │ │ Poe                  ✓       ✓      │
+│                              │ │ Google Translate     ✓       ✓      │
+│                              │ │ Peacock Access       ✗       ✗      │
+│                              │ │ Bluesky              ✓       ✓      │
+│                              │ │ Snapchat             ✓       ✓      │
+│                              │ │ Pinterest            ✓       ✓      │
+│                              │ │ Truth Social         ✓       ✓      │
+│                              │ │ Weibo                ✓       ✓      │
+│                              │ │ Bilibili             ✓       ✓      │
+│                              │ │ NetEase Music        ✓       ✓      │
+│                              │ │ Twitch Site          ✓       ✓      │
+│                              │ │ Twitch API           ✗       ✗      │
+│                              │ │ Twitch Chat          ✗       ✗      │
+│                              │ │ Yandex               ✓       ✓      │
+│                              │ │ Mail.ru              ✓       ✓      │
+│                              │ │ Proton               ✗       ✗      │
+│                              │ │ Dropbox              ✗       ✗      │
+│                              │ │ MEGA                 ✗       ✗      │
+│                              │ │ Epic Games           ✗       ✗      │
+│                              │ │ Battle.net           ✗       ✗      │
+│                              │ │ Minecraft Session    ✗       ✗      │
+│                              │ │ Roblox               ✗       ✗      │
+│                              │ │ Roblox API           ✗       ✗      │
+│                              │ │ Riot Games           ✗       ✗      │
+│                              │ │ Xbox                 ✗       ✗      │
+│                              │ │ Stripe API           ✗       ✗      │
+│                              │ │ PayPal               ✗       ✗      │
+│                              │ │ Wise                 ✗       ✗      │
+│                              │ │ Notion               ✓       ✓      │
+│                              │ │ Figma                ✓       ✓      │
+│                              │ │ Miro                 ✓       ✓      │
+│                              │ │ Canva                ✓       ✓      │
+│                              │ │ Trello               ✓       ✓      │
+│                              │ │ Medium               ✓       ✓      │
+│                              │ │ Wikipedia            ✓       ✓      │
+│                              │ │ Stack Overflow       ✓       ✓      │
+│                              │ │ Habr                 ✓       ✓      │
+│                              │ │ SoundCloud           ✗       ✗      │
+│                              │ │ Deezer               ✗       ✗      │
+╰──────────────────────────────╯ ╰─────────────────────────────────────╯
 
-[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
-[1;32mYouTube API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mYouTube Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mYouTube Music[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGoogle Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mRedirect Chain[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mHTTP/2[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mBing[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDuckDuckGo[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mBrave Search[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDoH Google[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDoH Cloudflare[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGmail[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGoogle Drive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGoogle Meet[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGoogle Photos[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGoogle Calendar[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mPlay Store[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mAWS[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGCP Console[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mOracle Cloud[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mHetzner[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDigitalOcean[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mVultr[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGemini Notebook[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGemini API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mAI Studio[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mApple Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mApp Store[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mApple Music[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mSteam API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mSteam Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mMicrosoft Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mMicrosoft Teams[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mOutlook[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mAzure Portal[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mOneDrive[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mOpenAI API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mHulu[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mParamount+[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mApple TV+[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mPluto TV[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mdiscovery+[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mTubi[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mMUBI[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mRakuten Viki[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32miQIYI[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mPlex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mKick[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mReddit API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mAnthropic API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mNetflix Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mInstagram[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mInstagram API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mInstagram Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mTikTok Access[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mTikTok Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mWhatsApp[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mWhatsApp DC[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mTelegram Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mTelegram DC[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDiscord Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDiscord API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDiscord Gateway[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDiscord CDN[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mTwitter (X)[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mX API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mTwitter Legacy API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mLinkedIn Access[0m	[1;31mDenied[0m	[1;31mDenied[0m
-[1;32mLinkedIn API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mFacebook Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mFacebook API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mFacebook CDN[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mMessenger Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mMessenger MQTT[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mViber[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mSlack[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mZoom[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mLine[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mKakaoTalk[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mThreema[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mMatrix[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mntfy[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mTelegram Bot API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mWorkers.dev[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGitHub Pages[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGitLab Pages[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mVercel[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mNetlify[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mCloudflare Pages[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mHeroku[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mThreads Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mThreads API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mThreads Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mSignal Access[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mSignal Service[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDouyin (CN)[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mWeChat[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mWeChat API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mBaidu[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mAlipay[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mVK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mVK API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mOK[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mOK API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mRUTUBE Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mOzon Transport[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGrok[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mxAI API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDeepSeek[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDeepSeek API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mPerplexity[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mPerplexity API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mCopilot[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mMistral[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mMistral API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGroq API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mOpenRouter[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mCohere API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mElevenLabs API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mQwen Web[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDeepL[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mCharacter.AI[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mPoe[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mGoogle Translate[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mPeacock Access[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mBluesky[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mSnapchat[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mPinterest[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mTruth Social[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mWeibo[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mBilibili[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mNetEase Music[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mTwitch Site[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mTwitch API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mTwitch Chat[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mYandex[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mMail.ru[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mProton[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDropbox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mMEGA[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mEpic Games[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mBattle.net[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mMinecraft Session[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mRoblox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mRoblox API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mRiot Games[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mXbox[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mStripe API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mPayPal[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mWise[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mNotion[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mFigma[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mMiro[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mCanva[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mTrello[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mMedium[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mWikipedia[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mStack Overflow[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mHabr[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mSoundCloud[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDeezer[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
+╭─ Dev Infra ───────────────────────╮ ╭─ DNS diagnostics ──────────────────────────╮
+│ Service          IPv4     IPv6    │ │ Service             IPv4        IPv6       │
+│ GitHub           ✓        ✓       │ │ DNS Integrity       ✓           ✓          │
+│ GitHub API       ✗        ✗       │ │ DNS Intercept       ✓           ✓          │
+│ GitHub Codeload  ✗        ✗       │ │ PTR Match           ✓           ✓          │
+│ GitHub Raw       ✗        ✗       │ │ DNSSEC Validation   ✓           ✓          │
+│ GitLab           ✗        ✗       │ │ DoT Google          ✗           ✗          │
+│ GitLab API       ✗        ✗       │ │ DoT Cloudflare      ✗           ✗          │
+│ npm Registry     ✗        ✗       │ │ Public Answers      ✓           ✓          │
+│ PyPI             ✗        ✗       │ │ TTL Honesty         ?           ?          │
+│ Docker Hub       ✗        ✗       │ │ Resolver Consensus  ✓           ✓          │
+│ Docker Hub API   ✗        ✗       │ │ DNS Latency         12/180 ms   12/180 ms  │
+│ Go Modules       ✗        ✗       │ │ DNS Jitter          ±0/±0 ms    ±0/±0 ms   │
+│ Crates.io        ✗        ✗       │ │ Resolver Latency    12/8/45 ms  12/8/45 ms │
+│ Maven Central    ✗        ✗       │ │ Rebind Protection   ✓           ✓          │
+│ Hugging Face     ✗        ✗       │ │                                            │
+│ Cert Expiry      90 days  90 days │ │                                            │
+│ Proxy Egress     US       US      │ │                                            │
+╰───────────────────────────────────╯ ╰────────────────────────────────────────────╯
 
-[1;36mCDN[0m
+  ✓ works · ✗ no/blocked · ⊘ IP blocked · ? no answer · bright country = verdict
 
-[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
-
-[1;36mDev Infra[0m
-
-[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
-[1;32mGitHub[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mGitHub API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGitHub Codeload[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGitHub Raw[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGitLab[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGitLab API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mnpm Registry[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mPyPI[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDocker Hub[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDocker Hub API[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mGo Modules[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mCrates.io[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mMaven Central[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mHugging Face[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mCert Expiry[0m	[1m[1;32m90 days[0m[0m	[1m[1;32m90 days[0m[0m
-[1;32mProxy Egress[0m	[1mUS[0m	[1mUS[0m
-
-[1;36mDNS diagnostics[0m
-
-[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
-[1;32mDNS Integrity[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDNS Intercept[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mPTR Match[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDNSSEC Validation[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDoT Google[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mDoT Cloudflare[0m	[1m[1;31mNo[0m[0m	[1m[1;31mNo[0m[0m
-[1;32mPublic Answers[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mTTL Honesty[0m	[0;90mN/A[0m	[0;90mN/A[0m
-[1;32mResolver Consensus[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-[1;32mDNS Latency[0m	[1m12/180 ms[0m	[1m12/180 ms[0m
-[1;32mDNS Jitter[0m	[1m±0/±0 ms[0m	[1m±0/±0 ms[0m
-[1;32mResolver Latency[0m	[1m12/8/45 ms[0m	[1m12/8/45 ms[0m
-[1;32mRebind Protection[0m	[1m[1;32mYes[0m[0m	[1m[1;32mYes[0m[0m
-
-[1;36mGeoIP services[0m
-
-[1;97mService[0m	[1;97mIPv4[0m	[1;97mIPv6[0m
-[1;32mmaxmind.com[0m	[1mUS[0m	[1mUS[0m
-[1;32mrdap.db.ripe.net[0m	[1mUS[0m	[1mUS[0m
-[1;32mipinfo.io[0m	[1mUS[0m	[1mUS[0m
-[1;32mcloudflare.com[0m	[1mUS[0m	[1mUS[0m
-[1;32mipapi.co[0m	[1mUS[0m	[1mUS[0m
-[1;32mifconfig.co[0m	[1mUS[0m	[1mUS[0m
-[1;32mip2location.io[0m	[1mUS[0m	[1mUS[0m
-[1;32miplocation.com[0m	[1mCY[0m	[1mCY[0m
-[1;32mcountry.is[0m	[1mUS[0m	[1mUS[0m
-[1;32mgeojs.io[0m	[1mUS[0m	[1mUS[0m
-[1;32mipapi.is[0m	[1mUS[0m	[1mUS[0m
-[1;32mipbase.com[0m	[1mUS[0m	[1mUS[0m
-[1;32mipquery.io[0m	[1mUS[0m	[1mUS[0m
-[1;32mipwhois.io[0m	[1mUS[0m	[1mUS[0m
-[1;32mipwho.is[0m	[1mUS[0m	[1mUS[0m
-[1;32mip-api.com[0m	[1mUS[0m	[1mUS[0m
-[1;32mDetector404[0m	[1mUS[0m	[1mUS[0m
-[1;32mipregistry.co[0m	[1mUS[0m	[1mUS[0m
-[1;32mgeoapify.com[0m	[1mUS[0m	[1mUS[0m

@@ -2026,6 +2026,35 @@ for service_key in "${DEFAULT_PROFILE_SERVICES[@]}"; do
   assert_true "default profile defines $service_key" test -n "${CUSTOM_SERVICES[$service_key]:-}${CDN_SERVICES[$service_key]:-}${DEVINFRA_SERVICES[$service_key]:-}${DNS_DIAG_SERVICES[$service_key]:-}"
 done
 
+# Card UI rendering primitives --------------------------------------------
+
+assert_eq "3" "$(visible_length "abc")" "visible_length counts plain text"
+assert_eq "3" "$(visible_length "$(color ERROR "abc")")" "visible_length ignores ANSI codes"
+assert_eq "2" "$(visible_length "$(bold "$(color WARN "RU")")")" "visible_length handles nested codes"
+assert_eq "2" "$(visible_length "🚨")" "visible_length counts wide emoji as two cells"
+
+assert_eq "ab  " "$(pad "ab" 4)" "pad right-pads plain text"
+assert_eq "abcdef" "$(pad "abcdef" 2)" "pad never truncates"
+assert_eq "$(color ERROR "ab") " "$(pad "$(color ERROR "ab")" 3)" "pad measures painted text by visible width"
+
+assert_eq "──" "$(repeat_char "─" 2)" "repeat_char repeats characters"
+assert_empty "$(repeat_char "─" 0)" "repeat_char returns empty for zero"
+
+assert_eq "country" "$(classify_cell_value "RU")" "classify maps country codes"
+assert_eq "yes" "$(classify_cell_value "Yes")" "classify maps Yes"
+assert_eq "no" "$(classify_cell_value "No")" "classify maps No"
+assert_eq "ipblock" "$(classify_cell_value "Denied")" "classify maps Denied to ipblock"
+assert_eq "ipblock" "$(classify_cell_value "DNS block")" "classify maps DNS block to ipblock"
+assert_eq "region" "$(classify_cell_value "Region blocked")" "classify maps Region blocked"
+assert_eq "unknown" "$(classify_cell_value "$STATUS_NA")" "classify maps N/A to unknown"
+assert_eq "unknown" "$(classify_cell_value "$STATUS_RATE_LIMIT")" "classify maps Rate-limit to unknown"
+assert_eq "info" "$(classify_cell_value "17/284 ms")" "classify maps latency to info"
+
+assert_eq "🇷🇺" "$(format_flag "RU")" "format_flag builds regional indicator flags"
+
+SHOW_EMOJI=false
+assert_eq "RU" "$(label_country "RU")" "label_country omits flags without emoji"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1

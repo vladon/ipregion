@@ -85,10 +85,9 @@ ipregion.sh --watch 300 --fail-on-block dns_integrity cert_expiry
 
 ## Dependencies
 
-- bash 4+ (on macOS install via Homebrew; system bash 3.2 is not supported)
+- bash 4.3+ (on macOS install via Homebrew; system bash 3.2 is not supported)
 - curl
 - jq
-- column (util-linux/bsdmainutils; preinstalled on macOS)
 
 Missing commands are detected on start and can be installed automatically (apt/pacman/dnf/yum/zypper/apk/brew).
 
@@ -111,6 +110,8 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --parallel 6 # Run checks in parallel
 ./ipregion.sh --progress-log # Progress lines instead of spinner
 ./ipregion.sh --metrics # Show per-service metrics table
+./ipregion.sh --emoji # Show country flags and group icons
+./ipregion.sh --no-attention # Hide the Attention card
 ./ipregion.sh --fail-on-block dns_integrity # Exit 1 if the check is not Yes
 ./ipregion.sh --list # Print the check registry (group, key, display)
 ./ipregion.sh --youtube-lang en # Viewer language for the YouTube No Ads check

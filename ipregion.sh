@@ -227,8 +227,9 @@ PARALLEL_JOBS=0
 PARALLEL_PIDS=()
 PROGRESS_LOG=false
 LAST_PROGRESS_MSG=""
-HEADER_PRINTED=false
 SHOW_METRICS=false
+SHOW_EMOJI=false
+SHOW_ATTENTION=true
 OUTPUT_FILE=""
 
 # Cache configuration
@@ -270,6 +271,16 @@ CACHE_LAST_SOURCE=""
 CACHE_LAST_TIMESTAMP=""
 UPLOADED_URL_PATTERN='^https?://[^[:space:]]+$'
 
+# Colors render only on a terminal; NO_COLOR (https://no-color.org) disables
+# them too. Stdout (report) and stderr (logs, spinner) are gated separately.
+# The code variables stay usable as raw values (e.g. spinner counters).
+USE_COLOR_STDOUT=false
+USE_COLOR_STDERR=false
+if [[ -z "${NO_COLOR:-}" ]]; then
+  [[ -t 1 ]] && USE_COLOR_STDOUT=true
+  [[ -t 2 ]] && USE_COLOR_STDERR=true
+fi
+
 COLOR_HEADER="1;36"
 COLOR_SERVICE="1;32"
 COLOR_HEART="1;31"
@@ -283,6 +294,11 @@ COLOR_WARN="1;33"
 COLOR_INFO="1;36"
 COLOR_RESET="0"
 
+# ANSI/width helpers for the card renderer; the emoji class lists every icon
+# the UI can print (flags are counted separately in label_country)
+readonly ANSI_SEQUENCE=$'\033\[+([0-9;])m'
+readonly WIDE_EMOJI_PATTERN='[🚨📱🌍📡🛠🧭✅]'
+
 LOG_INFO="INFO"
 LOG_WARN="WARNING"
 LOG_ERROR="ERROR"
@@ -294,21 +310,53 @@ STATUS_RATE_LIMIT="Rate-limit"
 STATUS_SERVER_ERROR="Server error"
 STATUS_REGION_BLOCKED="Region blocked"
 
+# Report statuses (rendered in cards; reason strings stay in Attention)
+STATUS_YES="Yes"
+STATUS_NO="No"
+SYMBOL_YES="✓"
+SYMBOL_NO="✗"
+SYMBOL_IPBLOCK="⊘"
+SYMBOL_UNKNOWN="?"
+
+# Card engine geometry
+readonly CARD_GAP=1
+readonly CARD_SIDES_WIDTH=2
+readonly CARD_CONTENT_INDENT=1
+readonly CARD_TRAILING_GAP=1
+readonly CARD_TITLE_OFFSET=1
+readonly CARD_HORIZONTAL="─"
+readonly CARD_TOP_LEFT="╭"
+readonly CARD_TOP_RIGHT="╮"
+readonly CARD_BOTTOM_LEFT="╰"
+readonly CARD_BOTTOM_RIGHT="╯"
+readonly CARD_SIDE="│"
+readonly VALUE_COLUMN_WIDTH=10
+readonly HEADER_MARK="┃"
+readonly CHECKS_BAR_MARGIN=26
+readonly CHECKS_BAR_CHAR="━"
+readonly CHECKS_BAR_REST_CHAR="─"
+readonly VERDICT_NOTE="seen by most services"
+readonly LEGEND_LINE="✓ works · ✗ no/blocked · ⊘ IP blocked · ? no answer · bright country = verdict"
+
+declare -A GROUP_EMOJI=(
+  [primary]="🌍"
+  [custom]="📱"
+  [cdn]="📡"
+  [devinfra]="🛠"
+  [dns]="🧭"
+)
+
 declare -A DEPENDENCIES=(
   [jq]="jq"
   [curl]="curl"
-  [column]="util-linux"
   [nslookup]="bind-utils"
 )
 
 declare -A PACKAGE_MAPPING=(
   ["apt:nslookup"]="dnsutils"
-  ["apt:column"]="bsdmainutils"
   ["pacman:nslookup"]="bind"
   ["dnf:nslookup"]="bind-utils"
   ["yum:nslookup"]="bind-utils"
-  ["termux:column"]="util-linux"
-  ["brew:column"]="util-linux"
   ["brew:nslookup"]="bind"
 )
 
@@ -1114,6 +1162,10 @@ IPV6_OVER_IPV4_SERVICES=(
   "IPAPI_COM"
 )
 
+# Which stream the next color()/bold() output goes to: stdout renderers and
+# stderr log paths set this around their calls so gating follows the stream.
+COLOR_TARGET=stdout
+
 color() {
   local color_name="$1"
   local text="$2"
@@ -1131,16 +1183,29 @@ color() {
   ERROR) code="$COLOR_ERROR" ;;
   WARN) code="$COLOR_WARN" ;;
   INFO) code="$COLOR_INFO" ;;
-  RESET) code="$COLOR_RESET" ;;
   *) code="$color_name" ;;
+  esac
+
+  case "$COLOR_TARGET" in
+  stderr)
+    [[ "$USE_COLOR_STDERR" == true ]] || {
+      printf '%s' "$text"
+      return
+    }
+    ;;
+  *)
+    [[ "$USE_COLOR_STDOUT" == true ]] || {
+      printf '%s' "$text"
+      return
+    }
+    ;;
   esac
 
   printf "\033[%sm%s\033[0m" "$code" "$text"
 }
 
 bold() {
-  local text="$1"
-  printf "\033[1m%s\033[0m" "$text"
+  color "1" "$1"
 }
 
 get_timestamp() {
@@ -1152,6 +1217,8 @@ log() {
   local log_level="$1"
   local message="${*:2}"
   local timestamp
+  local prev_target="$COLOR_TARGET"
+  COLOR_TARGET=stderr
 
   if [[ "$VERBOSE" == true ]]; then
     local color_code
@@ -1168,12 +1235,17 @@ log() {
 
     printf "[%s] [%s]: %s\n" "$timestamp" "$(color $color_code "$log_level")" "$message" >&2
   fi
+
+  COLOR_TARGET="$prev_target"
 }
 
 error_exit() {
   local message="$1"
   local exit_code="${2:-1}"
+  local prev_target="$COLOR_TARGET"
+  COLOR_TARGET=stderr
   printf "%s %s\n" "$(color ERROR '[ERROR]')" "$(color TABLE_HEADER "$message")" >&2
+  COLOR_TARGET="$prev_target"
   display_help
   exit "$exit_code"
 }
@@ -1212,6 +1284,8 @@ Options:
   --exclude-service S  Exclude check (repeatable, case-insensitive)
   --fail-on-block S    Exit 1 if check S is not Yes (repeatable)
   --metrics            Show per-service HTTP/latency metrics in table output
+  --emoji              Show country flags and group icons
+  --no-attention       Hide the Attention card
   --youtube-lang LANG  Viewer language for the YouTube No Ads check (default: ru)
   -o, --output FILE    Save results to file (.json or .csv)
 
@@ -2236,6 +2310,14 @@ parse_arguments() {
       PROGRESS_LOG=true
       shift
       ;;
+    --emoji)
+      SHOW_EMOJI=true
+      shift
+      ;;
+    --no-attention)
+      SHOW_ATTENTION=false
+      shift
+      ;;
     -4 | --ipv4)
       IPV4_ONLY=true
       shift
@@ -3147,6 +3229,7 @@ spinner_start() {
   spinner_running=true
 
   (
+    COLOR_TARGET=stderr
     while $spinner_running; do
       # Self-termination sentinel: when the parent's cleanup removed the
       # service file (or the parent died without cleanup and a later run
@@ -4224,276 +4307,862 @@ add_result_line() {
   esac
 }
 
-print_table_group() {
+# ---------------------------------------------------------------------------
+# Card-based report renderer (presentation ported from vernette/ipregion)
+# ---------------------------------------------------------------------------
+
+strip_ansi() {
+  local text="$1"
+  local re=$'\033\\[[0-9;]*m'
+
+  while [[ "$text" =~ $re ]]; do
+    text="${text//${BASH_REMATCH[0]}/}"
+  done
+
+  printf '%s' "$text"
+}
+
+# Display width in terminal cells: ANSI sequences take none, listed emoji
+# take two cells, everything else one
+visible_length() {
+  local plain
+  plain="$(strip_ansi "$1")"
+  local narrow="${plain//$WIDE_EMOJI_PATTERN/}"
+
+  printf '%d' $((2 * ${#plain} - ${#narrow}))
+}
+
+repeat_char() {
+  local char="$1"
+  local count="$2"
+  local line
+
+  if ((count <= 0)); then
+    return
+  fi
+
+  printf -v line '%*s' "$count" ''
+  printf '%s' "${line// /$char}"
+}
+
+pad() {
+  local text="$1"
+  local width="$2"
+  local fill
+
+  fill=$((width - $(visible_length "$text")))
+  if ((fill < 0)); then
+    fill=0
+  fi
+
+  printf '%s%*s' "$text" "$fill" ''
+}
+
+max_visible_length() {
+  local max=0 item len
+  for item in "$@"; do
+    len=$(visible_length "$item")
+    if ((len > max)); then
+      max=$len
+    fi
+  done
+  printf '%d' "$max"
+}
+
+format_flag() {
+  local country="$1"
+  local first second
+
+  first=$((0x1F1E6 + $(printf '%d' "'${country:0:1}") - 65))
+  second=$((0x1F1E6 + $(printf '%d' "'${country:1:1}") - 65))
+
+  printf '%b' "\\U$(printf '%08X' "$first")\\U$(printf '%08X' "$second")"
+}
+
+label_country() {
+  local country="$1"
+
+  if [[ "$SHOW_EMOJI" != true || ! "$country" =~ ^[A-Z]{2}$ ]]; then
+    printf '%s' "$country"
+    return
+  fi
+
+  printf '%s %s' "$(format_flag "$country")" "$country"
+}
+
+label_group() {
+  local title="$1"
+
+  if [[ "$SHOW_EMOJI" != true || -z "$title" ]]; then
+    printf '%s' "$title"
+    return
+  fi
+
+  printf '%s %s' "${GROUP_EMOJI[$title]:-}" "$title"
+}
+
+# Cell classification: which family a result value belongs to
+classify_cell_value() {
+  local value="$1"
+
+  case "$value" in
+  "$STATUS_YES") echo "yes" ;;
+  "$STATUS_NO") echo "no" ;;
+  "$STATUS_NA" | "$STATUS_RATE_LIMIT" | "$STATUS_SERVER_ERROR") echo "unknown" ;;
+  "$STATUS_DENIED" | "IP block" | "DNS block") echo "ipblock" ;;
+  "$STATUS_REGION_BLOCKED") echo "region" ;;
+  [A-Z][A-Z]) echo "country" ;;
+  *) echo "info" ;;
+  esac
+}
+
+format_cell() {
+  local value="$1"
+  local width="$2"
+  local class text
+
+  if [[ -z "$value" ]]; then
+    printf '%s' "$(pad "$(color NULL "-")" "$width")"
+    return
+  fi
+
+  class="$(classify_cell_value "$value")"
+  case "$class" in
+  yes) text="$(color SERVICE "$SYMBOL_YES")" ;;
+  no) text="$(color ERROR "$SYMBOL_NO")" ;;
+  ipblock) text="$(color ERROR "$SYMBOL_IPBLOCK")" ;;
+  region) text="$(color WARN "$SYMBOL_NO")" ;;
+  unknown) text="$(color NULL "$SYMBOL_UNKNOWN")" ;;
+  country)
+    if is_verdict_country "$value"; then
+      text="$(bold "$(label_country "$value")")"
+    else
+      text="$(color WARN "$(label_country "$value")")"
+    fi
+    ;;
+  *) text="$(color NULL "$value")" ;;
+  esac
+
+  printf '%s' "$(pad "$text" "$width")"
+}
+
+print_card_top() {
+  local title="$1"
+  local width="$2"
+  local label
+
+  label=" $(label_group "$title") "
+  label="$(color HEADER "$label")"
+  printf '%s%s%s%s%s\n' \
+    "$(color NULL "$CARD_TOP_LEFT")" \
+    "$(repeat_char "$CARD_HORIZONTAL" "$CARD_TITLE_OFFSET")" \
+    "$label" \
+    "$(repeat_char "$CARD_HORIZONTAL" $((width - CARD_SIDES_WIDTH - CARD_TITLE_OFFSET - $(visible_length "$label"))))" \
+    "$(color NULL "$CARD_TOP_RIGHT")"
+}
+
+print_card_line() {
+  local line="$1"
+  local width="$2"
+  local fill
+
+  fill=$((width - CARD_SIDES_WIDTH - CARD_CONTENT_INDENT - CARD_TRAILING_GAP - $(visible_length "$line")))
+  if ((fill < 0)); then
+    fill=0
+  fi
+
+  printf '%s%*s%s%*s%s\n' \
+    "$(color NULL "$CARD_SIDE")" \
+    "$CARD_CONTENT_INDENT" '' \
+    "$line" \
+    "$((fill + CARD_TRAILING_GAP))" '' \
+    "$(color NULL "$CARD_SIDE")"
+}
+
+print_card_bottom() {
+  local width="$1"
+
+  printf '%s%s%s\n' \
+    "$(color NULL "$CARD_BOTTOM_LEFT")" \
+    "$(repeat_char "$CARD_HORIZONTAL" $((width - CARD_SIDES_WIDTH)))" \
+    "$(color NULL "$CARD_BOTTOM_RIGHT")"
+}
+
+# Render one card: title, width, height on arguments, content lines on stdin.
+# Shorter content is padded with empty lines up to height.
+print_titled_card() {
+  local title="$1"
+  local width="$2"
+  local height="$3"
+  local -a content_lines=()
+  local index
+
+  mapfile -t content_lines
+  while ((${#content_lines[@]} > 0)) && [[ -z "${content_lines[-1]}" ]]; do
+    unset 'content_lines[-1]'
+  done
+  if ((${#content_lines[@]} > height)); then
+    height="${#content_lines[@]}"
+  fi
+
+  print_card_top "$title" "$width"
+  for ((index = 0; index < height; index++)); do
+    print_card_line "${content_lines[index]:-}" "$width"
+  done
+  print_card_bottom "$width"
+}
+
+# Render two cards side by side with equalized heights
+print_titled_card_pair() {
+  local left_title="$1"
+  local left_width="$2"
+  local right_title="$3"
+  local right_width="$4"
+  local left_text="$5"
+  local right_text="$6"
+  local -a left_card=() right_card=()
+  local height index
+
+  mapfile -t left_card <<<"$left_text"
+  mapfile -t right_card <<<"$right_text"
+  height="${#left_card[@]}"
+  if ((${#right_card[@]} > height)); then
+    height="${#right_card[@]}"
+  fi
+
+  mapfile -t left_card < <(printf '%s\n' "${left_card[@]}" | print_titled_card "$left_title" "$left_width" "$height")
+  mapfile -t right_card < <(printf '%s\n' "${right_card[@]}" | print_titled_card "$right_title" "$right_width" "$height")
+
+  for ((index = 0; index < ${#left_card[@]}; index++)); do
+    printf '%s%*s%s\n' "${left_card[index]}" "$CARD_GAP" '' "${right_card[index]:-}"
+  done
+}
+
+declare -A GROUP_TITLES=(
+  [primary]="GeoIP services"
+  [custom]="Popular services"
+  [cdn]="CDN"
+  [devinfra]="Dev Infra"
+  [dns]="DNS diagnostics"
+)
+
+group_has_results() {
   local group="$1"
-  local group_title="$2"
-  local na="N/A"
-  local show_ipv4=0
-  local show_ipv6=0
-  local separator=$'\t'
 
-  if can_use_ipv4; then
-    show_ipv4=1
+  jq -e --arg group "$group" '(.results[$group] // []) | length > 0' <<<"$RESULT_JSON" >/dev/null
+}
+
+# Groups to render for the current selection, in card order
+selected_display_groups() {
+  local -a wanted=()
+  local group
+
+  case "$GROUPS_TO_SHOW" in
+  default) wanted=(primary custom dns) ;;
+  all) wanted=(primary custom cdn devinfra dns) ;;
+  *) wanted=("$GROUPS_TO_SHOW") ;;
+  esac
+
+  for group in "${wanted[@]}"; do
+    if group_has_results "$group"; then
+      printf '%s\n' "$group"
+    fi
+  done
+}
+
+# Card content lines for one group: "name  IPv4-cell  IPv6-cell".
+# Prints the card width on the first line (marked "width:"), then the lines.
+group_card_text() {
+  local group="$1"
+  local show_ipv4=false show_ipv6=false
+  local -a rows=() names=() vals4=() vals6=() lines=()
+  local row service v4 v6
+  local name_w=14 v4_w=4 v6_w=4 item len
+  local index line header
+
+  can_use_ipv4 && show_ipv4=true
+  can_use_ipv6 && show_ipv6=true
+
+  mapfile -t rows < <(jq -r --arg group "$group" '
+    (.results[$group] // [])[]
+    | [(.service // ""), ((.ipv4 // "") | if . == "null" then "" else . end),
+       ((.ipv6 // "") | if . == "null" then "" else . end)]
+    | @tsv
+  ' <<<"$RESULT_JSON")
+
+  for row in "${rows[@]}"; do
+    IFS=$'\t' read -r service v4 v6 <<<"$row"
+    names+=("$service")
+    if [[ "$show_ipv4" == true ]]; then
+      vals4+=("${v4:-}")
+    fi
+    if [[ "$show_ipv6" == true ]]; then
+      vals6+=("${v6:-}")
+    fi
+  done
+
+  name_w="$(max_visible_length "${names[@]}")"
+  ((name_w < 14)) && name_w=14
+  ((name_w > 26)) && name_w=26
+  v4_w="$(max_visible_length "${vals4[@]}")"
+  ((v4_w < 4)) && v4_w=4
+  ((v4_w > 12)) && v4_w=12
+  v6_w="$(max_visible_length "${vals6[@]}")"
+  ((v6_w < 4)) && v6_w=4
+  ((v6_w > 12)) && v6_w=12
+
+  header="$(color TABLE_HEADER "$(pad "Service" "$name_w")")"
+  local v4_col=0 v6_col=0
+  [[ "$show_ipv4" == true ]] && v4_col=1
+  [[ "$show_ipv6" == true ]] && v6_col=1
+  if [[ "$show_ipv4" == true ]]; then
+    header+="  $(color TABLE_HEADER "$(pad "IPv4" "$v4_w")")"
+  fi
+  if [[ "$show_ipv6" == true ]]; then
+    header+="  $(color TABLE_HEADER "$(pad "IPv6" "$v6_w")")"
+  fi
+  lines+=("$header")
+
+  for ((index = 0; index < ${#names[@]}; index++)); do
+    line="$(color SERVICE "$(pad "${names[index]}" "$name_w")")"
+    if [[ "$show_ipv4" == true ]]; then
+      line+="  $(format_cell "${vals4[index]}" "$v4_w")"
+    fi
+    if [[ "$show_ipv6" == true ]]; then
+      line+="  $(format_cell "${vals6[index]}" "$v6_w")"
+    fi
+    lines+=("$line")
+  done
+
+  printf 'width:%d\n' "$((name_w + 2 + (v4_col ? v4_w + 2 : 0) + (v6_col ? v6_w + 2 : 0) + CARD_SIDES_WIDTH))"
+  printf '%s\n' "${lines[@]}"
+}
+
+print_group_cards() {
+  local -a groups=()
+  local group left_group right_group
+  local left_text right_text left_width right_width
+
+  mapfile -t groups < <(selected_display_groups)
+  if ((${#groups[@]} == 0)); then
+    return
   fi
 
-  if can_use_ipv6; then
-    show_ipv6=1
-  fi
-
-  printf "%s\n\n" "$(color HEADER "$group_title")"
-
-  if is_command_available "column"; then
-    {
-      printf "%s" "$(color TABLE_HEADER 'Service')"
-
-      if [[ $show_ipv4 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv4')"
-      fi
-
-      if [[ $show_ipv6 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv6')"
-      fi
-
-      printf "\n"
-
-      jq -r --arg group "$group" '
-        (.results // {}) as $r
-        | ($r[$group] // [])
-        | .[]
-        | [ .service, (.ipv4 // "N/A"), (.ipv6 // "N/A") ]
-        | @tsv
-      ' <<<"$RESULT_JSON" | while IFS=$'\t' read -r s v4 v6; do
-
-        printf "%s" "$(color SERVICE "$s")"
-
-        if [[ $show_ipv4 -eq 1 ]]; then
-          if [[ "$v4" == "null" || -z "$v4" ]]; then
-            v4="$na"
-          fi
-          printf "%s%s" "$separator" "$(format_value "$v4")"
-        fi
-
-        if [[ $show_ipv6 -eq 1 ]]; then
-          if [[ "$v6" == "null" || -z "$v6" ]]; then
-            v6="$na"
-          fi
-          printf "%s%s" "$separator" "$(format_value "$v6")"
-        fi
-
-        printf "\n"
-      done
-    } | column -t -s "$separator"
-  else
-    log "$LOG_WARN" "column is not available; displaying unaligned output"
-    {
-      printf "%s" "$(color TABLE_HEADER 'Service')"
-
-      if [[ $show_ipv4 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv4')"
-      fi
-
-      if [[ $show_ipv6 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv6')"
-      fi
-
-      printf "\n"
-
-      jq -r --arg group "$group" '
-        (.results // {}) as $r
-        | ($r[$group] // [])
-        | .[]
-        | [ .service, (.ipv4 // "N/A"), (.ipv6 // "N/A") ]
-        | @tsv
-      ' <<<"$RESULT_JSON" | while IFS=$'\t' read -r s v4 v6; do
-
-        printf "%s" "$(color SERVICE "$s")"
-
-        if [[ $show_ipv4 -eq 1 ]]; then
-          if [[ "$v4" == "null" || -z "$v4" ]]; then
-            v4="$na"
-          fi
-          printf "%s%s" "$separator" "$(format_value "$v4")"
-        fi
-
-        if [[ $show_ipv6 -eq 1 ]]; then
-          if [[ "$v6" == "null" || -z "$v6" ]]; then
-            v6="$na"
-          fi
-          printf "%s%s" "$separator" "$(format_value "$v6")"
-        fi
-
-        printf "\n"
-      done
-    }
-  fi
+  local index=0
+  while ((index < ${#groups[@]})); do
+    left_group="${groups[index]}"
+    if ((index + 1 < ${#groups[@]})); then
+      right_group="${groups[index + 1]}"
+      left_text="$(group_card_text "$left_group")"
+      right_text="$(group_card_text "$right_group")"
+      left_width="${left_text%%$'\n'*}"
+      left_width="${left_width#width:}"
+      right_width="${right_text%%$'\n'*}"
+      right_width="${right_width#width:}"
+      left_text="${left_text#*$'\n'}"
+      right_text="${right_text#*$'\n'}"
+      print_titled_card_pair \
+        "${GROUP_TITLES[$left_group]}" "$left_width" \
+        "${GROUP_TITLES[$right_group]}" "$right_width" \
+        "$left_text" "$right_text"
+      printf '\n'
+      index=$((index + 2))
+    else
+      left_text="$(group_card_text "$left_group")"
+      left_width="${left_text%%$'\n'*}"
+      left_width="${left_width#width:}"
+      left_text="${left_text#*$'\n'}"
+      printf '%s\n' "$left_text" | print_titled_card \
+        "${GROUP_TITLES[$left_group]}" "$left_width" 0
+      printf '\n'
+      index=$((index + 1))
+    fi
+  done
 }
 
 print_metrics_group() {
   local group="$1"
   local title="$2"
-  local separator=$'\t'
-  local show_ipv4=0
-  local show_ipv6=0
+  local show_ipv4=false show_ipv6=false
+  local -a rows=() names=() vals4=() vals6=() lines=()
+  local row s m4 m6
+  local name_w=14 m4_w=10 m6_w=10 index line
 
   if [[ "$SHOW_METRICS" != true ]]; then
     return
   fi
 
-  if can_use_ipv4; then
-    show_ipv4=1
-  fi
+  can_use_ipv4 && show_ipv4=true
+  can_use_ipv6 && show_ipv6=true
 
-  if can_use_ipv6; then
-    show_ipv6=1
+  mapfile -t rows < <(jq -r --arg group "$group" '
+    def metric:
+      if . == null then "N/A" else
+        ((.http_code // "n/a")|tostring) + " / " +
+        ((.latency_ms // "n/a")|tostring) + "ms / " +
+        ((.error_type // "ok")|tostring)
+      end;
+    (.results // {}) as $r
+    | ($r[$group] // [])
+    | .[]
+    | [.service, (.metrics.ipv4 | metric), (.metrics.ipv6 | metric)]
+    | @tsv
+  ' <<<"$RESULT_JSON")
+
+  for row in "${rows[@]}"; do
+    IFS=$'\t' read -r s m4 m6 <<<"$row"
+    names+=("$s")
+    if [[ "$show_ipv4" == true ]]; then
+      vals4+=("$m4")
+    fi
+    if [[ "$show_ipv6" == true ]]; then
+      vals6+=("$m6")
+    fi
+  done
+
+  ((${#names[@]} > 0)) || return 0
+
+  name_w="$(max_visible_length "${names[@]}")"
+  ((name_w < 14)) && name_w=14
+  if [[ "$show_ipv4" == true ]]; then
+    m4_w="$(max_visible_length "${vals4[@]}")"
+    ((m4_w < 10)) && m4_w=10
+  fi
+  if [[ "$show_ipv6" == true ]]; then
+    m6_w="$(max_visible_length "${vals6[@]}")"
+    ((m6_w < 10)) && m6_w=10
   fi
 
   printf "%s\n\n" "$(color HEADER "$title")"
-  if is_command_available "column"; then
-    {
-      printf "%s" "$(color TABLE_HEADER 'Service')"
-      if [[ $show_ipv4 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv4 metric')"
-      fi
-      if [[ $show_ipv6 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv6 metric')"
-      fi
-      printf "\n"
 
-      jq -r --arg group "$group" '
-        (.results // {}) as $r
-        | ($r[$group] // [])
-        | .[]
-        | [
-            .service,
-            (
-              .metrics.ipv4
-              | if . == null then "N/A" else
-                  ((.http_code // "n/a")|tostring) + " / " +
-                  ((.latency_ms // "n/a")|tostring) + "ms / " +
-                  ((.error_type // "ok")|tostring)
-                end
-            ),
-            (
-              .metrics.ipv6
-              | if . == null then "N/A" else
-                  ((.http_code // "n/a")|tostring) + " / " +
-                  ((.latency_ms // "n/a")|tostring) + "ms / " +
-                  ((.error_type // "ok")|tostring)
-                end
-            )
-          ]
-        | @tsv
-      ' <<<"$RESULT_JSON" | while IFS=$'\t' read -r s m4 m6; do
-        printf "%s" "$(color SERVICE "$s")"
-        if [[ $show_ipv4 -eq 1 ]]; then
-          printf "%s%s" "$separator" "$m4"
-        fi
-        if [[ $show_ipv6 -eq 1 ]]; then
-          printf "%s%s" "$separator" "$m6"
-        fi
-        printf "\n"
-      done
-    } | column -t -s "$separator"
-    return
+  line="$(color TABLE_HEADER "$(pad "Service" "$name_w")")"
+  if [[ "$show_ipv4" == true ]]; then
+    line+="  $(color TABLE_HEADER "$(pad "IPv4 metric" "$m4_w")")"
+  fi
+  if [[ "$show_ipv6" == true ]]; then
+    line+="  $(color TABLE_HEADER "$(pad "IPv6 metric" "$m6_w")")"
+  fi
+  printf "%s\n" "$line"
+
+  for ((index = 0; index < ${#names[@]}; index++)); do
+    line="$(color SERVICE "$(pad "${names[index]}" "$name_w")")"
+    if [[ "$show_ipv4" == true ]]; then
+      line+="  $(pad "${vals4[index]}" "$m4_w")"
+    fi
+    if [[ "$show_ipv6" == true ]]; then
+      line+="  $(pad "${vals6[index]}" "$m6_w")"
+    fi
+    printf "%s\n" "$line"
+  done
+
+  printf "\n"
+}
+
+# ---------------------------------------------------------------------------
+# Verdict, header block, attention card, legend
+# ---------------------------------------------------------------------------
+
+VERDICT_COUNTRY=""
+VERDICT_TIED=()
+CHECKS_TOTAL=0
+CHECKS_NORMAL=0
+FULL_REPORT_WIDTH=90
+COUNTRY_NAMES_JSON=""
+readonly CLDR_TERRITORIES_URL="https://cdn.jsdelivr.net/npm/cldr-localenames-full/main/en/territories.json"
+
+# Pool per-protocol consensus into a single verdict: the country most
+# GeoIP services agree on across IPv4 and IPv6
+compute_report_verdict() {
+  local -a leaders=()
+  local row top_count=""
+
+  VERDICT_COUNTRY=""
+  VERDICT_TIED=()
+
+  mapfile -t leaders < <(jq -r '
+    [.consensus.ipv4, .consensus.ipv6]
+    | map(select(. != null and .country != null))
+    | if length == 0 then [] else
+        group_by(.country)
+        | map({country: .[0].country, count: (map(.count) | add)})
+        | sort_by(-.count, .country)
+      end
+    | .[] | "\(.count)\t\(.country)"
+  ' <<<"$RESULT_JSON")
+
+  ((${#leaders[@]} > 0)) || return 0
+
+  top_count="${leaders[0]%%$'\t'*}"
+  for row in "${leaders[@]}"; do
+    if [[ "${row%%$'\t'*}" == "$top_count" ]]; then
+      VERDICT_TIED+=("${row#*$'\t'}")
+    fi
+  done
+
+  if ((${#VERDICT_TIED[@]} == 1)); then
+    VERDICT_COUNTRY="${VERDICT_TIED[0]}"
+    VERDICT_TIED=()
+  fi
+}
+
+is_verdict_country() {
+  local country="$1"
+
+  [[ "$country" == "$VERDICT_COUNTRY" ]] || is_in_list "$country" "${VERDICT_TIED[@]}"
+}
+
+# Full country name from CLDR, only fetched for interactive output; falls
+# back to the code when piped or offline
+country_display_name() {
+  local code="$1"
+  local name=""
+
+  if [[ -z "$COUNTRY_NAMES_JSON" && "$USE_COLOR_STDOUT" == true && -n "$code" ]]; then
+    COUNTRY_NAMES_JSON="$(curl_wrapper GET "$CLDR_TERRITORIES_URL" --ip-version 4 2>/dev/null || true)"
+    if ! jq -e '.main.en.localeDisplayNames.territories' >/dev/null 2>&1 <<<"$COUNTRY_NAMES_JSON"; then
+      COUNTRY_NAMES_JSON=""
+    fi
   fi
 
-  log "$LOG_WARN" "column is not available; displaying unaligned metrics output"
-  {
-    printf "%s" "$(color TABLE_HEADER 'Service')"
-    if [[ $show_ipv4 -eq 1 ]]; then
-      printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv4 metric')"
-    fi
-    if [[ $show_ipv6 -eq 1 ]]; then
-      printf "%s%s" "$separator" "$(color TABLE_HEADER 'IPv6 metric')"
-    fi
-    printf "\n"
+  if [[ -n "$COUNTRY_NAMES_JSON" ]]; then
+    name="$(jq -r --arg c "$code" '.main.en.localeDisplayNames.territories[$c] // empty' <<<"$COUNTRY_NAMES_JSON")"
+  fi
 
-    jq -r --arg group "$group" '
-      (.results // {}) as $r
-      | ($r[$group] // [])
-      | .[]
-      | [
-          .service,
-          (
-            .metrics.ipv4
-            | if . == null then "N/A" else
-                ((.http_code // "n/a")|tostring) + " / " +
-                ((.latency_ms // "n/a")|tostring) + "ms / " +
-                ((.error_type // "ok")|tostring)
-              end
-          ),
-          (
-            .metrics.ipv6
-            | if . == null then "N/A" else
-                ((.http_code // "n/a")|tostring) + " / " +
-                ((.latency_ms // "n/a")|tostring) + "ms / " +
-                ((.error_type // "ok")|tostring)
-              end
-          )
-        ]
-      | @tsv
-    ' <<<"$RESULT_JSON" | while IFS=$'\t' read -r s m4 m6; do
-      printf "%s" "$(color SERVICE "$s")"
-      if [[ $show_ipv4 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$m4"
-      fi
-      if [[ $show_ipv6 -eq 1 ]]; then
-        printf "%s%s" "$separator" "$m6"
-      fi
-      printf "\n"
-    done
+  printf '%s' "${name:-$code}"
+}
+
+# Count every rendered cell and how many of them look normal (working,
+# informational, or agreeing with the verdict)
+count_report_checks() {
+  local -a groups=()
+  local summary
+
+  CHECKS_TOTAL=0
+  CHECKS_NORMAL=0
+
+  mapfile -t groups < <(selected_display_groups)
+  ((${#groups[@]} > 0)) || return 0
+
+  summary="$(jq -r -n \
+    --argjson groups "$(printf '%s\n' "${groups[@]}" | jq -R . | jq -s .)" \
+    --argjson verdicts "$(printf '%s\n' "$VERDICT_COUNTRY" "${VERDICT_TIED[@]}" | jq -R 'select(length > 0)' | jq -s .)" \
+    --arg v4 "$(if can_use_ipv4; then echo true; else echo false; fi)" \
+    --arg v6 "$(if can_use_ipv6; then echo true; else echo false; fi)" \
+    --rawfile body <(printf '%s' "$RESULT_JSON") '
+    def cls($v):
+      if $v == "Yes" then "yes"
+      elif $v == "No" then "no"
+      elif ($v | test("^[A-Z]{2}$")) then "country"
+      elif ($v == "N/A" or $v == "Rate-limit" or $v == "Server error") then "unknown"
+      elif ($v == "Denied" or $v == "IP block" or $v == "DNS block") then "ipblock"
+      elif ($v == "Region blocked") then "region"
+      else "info"
+      end;
+    ($body | fromjson) as $r
+    | [$groups[] as $g
+        | ($r.results[$g] // [])[] as $row
+        | ((if ($v4 == "true") then $row.ipv4 else null end),
+           (if ($v6 == "true") then $row.ipv6 else null end))
+        | select(. != null and . != "null")
+        | {value: ., class: cls(.)}
+      ] as $cells
+    | [$cells[] as $cell
+        | select($cell.class == "yes"
+          or $cell.class == "info"
+          or ($cell.class == "country" and any($verdicts[]; . == $cell.value)))
+      ] | length
+    | "\(($cells | length))\t\(.)"
+  ' 2>/dev/null || true)"
+
+  [[ "$summary" == *$'\t'* ]] || return 0
+  CHECKS_TOTAL="${summary%%$'\t'*}"
+  CHECKS_NORMAL="${summary#*$'\t'}"
+  [[ "$CHECKS_TOTAL" =~ ^[0-9]+$ && "$CHECKS_NORMAL" =~ ^[0-9]+$ ]] || {
+    CHECKS_TOTAL=0
+    CHECKS_NORMAL=0
   }
 }
 
-print_header() {
-  local ipv4 ipv6
-  local na="N/A"
-  local asn_value asn_name_value asn_display
-  local consensus_ipv4 consensus_ipv6
+checks_health_color() {
+  local percent
 
-  ipv4=$(process_json "$RESULT_JSON" ".ip.ipv4.address")
-  ipv6=$(process_json "$RESULT_JSON" ".ip.ipv6.address")
-  consensus_ipv4=$(process_json "$RESULT_JSON" ".consensus.ipv4.country")
-  consensus_ipv6=$(process_json "$RESULT_JSON" ".consensus.ipv6.country")
+  ((CHECKS_TOTAL > 0)) || {
+    printf '1;32'
+    return
+  }
 
-  local via_suffix=""
-
-  if [[ -n "$INTERFACE_NAME" ]]; then
-    via_suffix=" via $INTERFACE_NAME"
-  fi
-
-  if [[ "$ipv4" != "null" ]]; then
-    printf "%s: %s%s, %s %s\n" "$(color HEADER 'IPv4')" "$(bold "$(mask_ipv4 "$ipv4")")" "$via_suffix" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV4:-$STATUS_NA}")"
-  fi
-
-  if [[ "$ipv6" != "null" ]]; then
-    printf "%s: %s%s, %s %s\n" "$(color HEADER 'IPv6')" "$(bold "$(mask_ipv6 "$ipv6")")" "$via_suffix" "registered in" "$(bold "${REGISTERED_COUNTRY_IPV6:-$STATUS_NA}")"
-  fi
-
-  asn_value="$ASN_NUMBER"
-  asn_name_value="$ASN_NAME"
-
-  if [[ -z "$asn_value" || "$asn_value" == "null" ]]; then
-    asn_display="$na"
-  elif [[ -z "$asn_name_value" || "$asn_name_value" == "null" ]]; then
-    asn_display="AS$asn_value"
+  percent=$((CHECKS_NORMAL * 100 / CHECKS_TOTAL))
+  if ((percent >= 85)); then
+    printf '1;32'
+  elif ((percent >= 50)); then
+    printf '1;33'
   else
-    asn_display="AS$asn_value $asn_name_value"
+    printf '1;31'
+  fi
+}
+
+bar_prefix() {
+  local line
+
+  while IFS= read -r line; do
+    if [[ -z "$line" ]]; then
+      printf '%s\n' "$(color "0;36" "$HEADER_MARK")"
+    else
+      printf '%s %s\n' "$(color "0;36" "$HEADER_MARK")" "$line"
+    fi
+  done
+}
+
+print_checks_bar_line() {
+  local width filled_width color
+
+  ((CHECKS_TOTAL > 0)) || return 0
+  ((CHECKS_NORMAL < 0)) && CHECKS_NORMAL=0
+  ((CHECKS_NORMAL > CHECKS_TOTAL)) && CHECKS_NORMAL=$CHECKS_TOTAL
+
+  width=$((FULL_REPORT_WIDTH - CHECKS_BAR_MARGIN))
+  ((width < 10)) && width=10
+  filled_width=$((width * CHECKS_NORMAL / CHECKS_TOTAL))
+  color="$(checks_health_color)"
+
+  printf '  %s%s  %s\n' \
+    "$(color "$color" "$(repeat_char "$CHECKS_BAR_CHAR" "$filled_width")")" \
+    "$(color NULL "$(repeat_char "$CHECKS_BAR_REST_CHAR" $((width - filled_width)))")" \
+    "$(color NULL "$CHECKS_NORMAL/$CHECKS_TOTAL checks passed")"
+}
+
+print_report_ip_lines() {
+  local ipv4 ipv6 asn_display country4 country6 line
+
+  ipv4="$(process_json "$RESULT_JSON" ".ip.ipv4.address")"
+  ipv6="$(process_json "$RESULT_JSON" ".ip.ipv6.address")"
+  country4="$REGISTERED_COUNTRY_IPV4"
+  country6="$REGISTERED_COUNTRY_IPV6"
+
+  [[ "$ipv4" == "null" ]] && ipv4=""
+  [[ "$ipv6" == "null" ]] && ipv6=""
+
+  asn_display=""
+  if [[ -n "$ASN_NUMBER" && "$ASN_NUMBER" != "null" ]]; then
+    asn_display="AS$ASN_NUMBER"
+    [[ -n "$ASN_NAME" && "$ASN_NAME" != "null" ]] && asn_display+=" $ASN_NAME"
   fi
 
-  printf "%s: %s\n\n" "$(color HEADER 'ASN')" "$(bold "$asn_display")"
-
-  if [[ "$consensus_ipv4" != "null" && -n "$consensus_ipv4" ]]; then
-    printf "%s: %s\n" "$(color HEADER 'IPv4 consensus')" "$(bold "$consensus_ipv4")"
+  if [[ -n "$ipv4" ]]; then
+    local ip_cell
+    ip_cell="$(pad "$(mask_ipv4 "$ipv4")" 16)"
+    line="$(color HEADER "$(pad 'IPv4' 5)") $(bold "$ip_cell")"
+    [[ -n "$asn_display" ]] && line+="  $(color ASN "$asn_display")"
+    [[ -n "$country4" && "$country4" != "null" ]] && line+="  registered in $(bold "$(label_country "$country4")")"
+    printf '%s\n' "$line"
+    asn_display=""
   fi
 
-  if [[ "$consensus_ipv6" != "null" && -n "$consensus_ipv6" ]]; then
-    printf "%s: %s\n" "$(color HEADER 'IPv6 consensus')" "$(bold "$consensus_ipv6")"
+  if [[ -n "$ipv6" ]]; then
+    local ip6_cell
+    ip6_cell="$(pad "$(mask_ipv6 "$ipv6")" 16)"
+    line="$(color HEADER "$(pad 'IPv6' 5)") $(bold "$ip6_cell")"
+    [[ -n "$asn_display" ]] && line+="  $(color ASN "$asn_display")"
+    [[ -n "$country6" && "$country6" != "null" ]] && line+="  registered in $(bold "$(label_country "$country6")")"
+    printf '%s\n' "$line"
+  fi
+}
+
+print_report_verdict_line() {
+  local name badge_color verdict_label
+
+  [[ -n "$VERDICT_COUNTRY" || ${#VERDICT_TIED[@]} -gt 0 ]] || return 0
+
+  if [[ -n "$VERDICT_COUNTRY" ]]; then
+    verdict_label="$VERDICT_COUNTRY"
+    name="$(country_display_name "$VERDICT_COUNTRY")"
+    [[ "$name" == "$verdict_label" ]] && name=""
+  else
+    verdict_label="${VERDICT_TIED[0]}"
+    name="tie: ${VERDICT_TIED[*]}"
   fi
 
-  if [[ "$consensus_ipv4" != "null" || "$consensus_ipv6" != "null" ]]; then
-    printf "\n"
+  badge_color="$(checks_health_color)"
+  printf '  %s %s %s\n' \
+    "$(color "$badge_color" " $verdict_label ")" \
+    "$(bold "$name")" \
+    "$(color NULL "$VERDICT_NOTE")"
+}
+
+print_report_header() {
+  printf '%s\n' "$(color "0;36" "$HEADER_MARK")  Made with$(color HEART " <3 ")by vladon $(color NULL "·") github.com/vladon/ipregion"
+  printf '%s\n' "$(color "0;36" "$HEADER_MARK")"
+
+  {
+    print_report_ip_lines
+    print_report_verdict_line
+    print_checks_bar_line
+  } | bar_prefix
+
+  printf '\n'
+}
+
+# Human-readable reason for an abnormal cell
+attention_issue_text() {
+  local value="$1"
+  local class
+
+  class="$(classify_cell_value "$value")"
+  case "$class" in
+  no) echo "blocked" ;;
+  region) echo "region blocked" ;;
+  ipblock) echo "$value" ;;
+  unknown)
+    if [[ "$value" == "$STATUS_NA" ]]; then
+      echo "no answer"
+    else
+      echo "$value"
+    fi
+    ;;
+  country) echo "different country" ;;
+  *) echo "$value" ;;
+  esac
+}
+
+attention_value_text() {
+  local value="$1"
+  local class
+
+  class="$(classify_cell_value "$value")"
+  case "$class" in
+  country) label_country "$value" ;;
+  yes) echo "$SYMBOL_YES" ;;
+  no | region) echo "$SYMBOL_NO" ;;
+  ipblock) echo "$SYMBOL_IPBLOCK" ;;
+  *) echo "$SYMBOL_UNKNOWN" ;;
+  esac
+}
+
+# One attention row per abnormal cell: service, value
+collect_attention_rows() {
+  local -a groups=()
+  local group
+
+  mapfile -t groups < <(selected_display_groups)
+  ((${#groups[@]} > 0)) || return 0
+
+  jq -r -n \
+    --argjson groups "$(printf '%s\n' "${groups[@]}" | jq -R . | jq -s .)" \
+    --argjson verdicts "$(printf '%s\n' "$VERDICT_COUNTRY" "${VERDICT_TIED[@]}" | jq -R 'select(length > 0)' | jq -s .)" \
+    --arg v4 "$(if can_use_ipv4; then echo true; else echo false; fi)" \
+    --arg v6 "$(if can_use_ipv6; then echo true; else echo false; fi)" \
+    --rawfile body <(printf '%s' "$RESULT_JSON") '
+    def cls($v):
+      if $v == "Yes" then "yes"
+      elif $v == "No" then "no"
+      elif ($v | test("^[A-Z]{2}$")) then "country"
+      elif ($v == "N/A" or $v == "Rate-limit" or $v == "Server error") then "unknown"
+      elif ($v == "Denied" or $v == "IP block" or $v == "DNS block") then "ipblock"
+      elif ($v == "Region blocked") then "region"
+      else "info"
+      end;
+    def abnormal($class; $value):
+      ($class == "no" or $class == "ipblock" or $class == "region" or $class == "unknown")
+      or ($class == "country" and (($verdicts | length) > 0) and ([$verdicts[] | select(. == $value)] | length) == 0);
+    ($body | fromjson) as $r
+    | [$groups[] as $g
+        | ($r.results[$g] // [])[] as $row
+        | ((if ($v4 == "true") then {service: $row.service, value: ($row.ipv4 // null)} else empty end),
+           (if ($v6 == "true") then {service: $row.service, value: ($row.ipv6 // null)} else empty end))
+        | select(.value != null and .value != "null")
+        | (.value | cls(.)) as $class
+        | select(abnormal($class; .value))
+      ]
+    | unique_by([.service, .value])
+    | .[] | "\(.service)\t\(.value)"
+  ' 2>/dev/null
+}
+
+# Wrap a ", "-separated service list into lines no wider than the width
+wrap_words() {
+  local text="$1"
+  local width="$2"
+  local line="" word
+  local -a words out=()
+
+  readarray -t words < <(printf '%s' "$text" | sed 's/, /\n/g')
+  for word in "${words[@]}"; do
+    if [[ -z "$line" ]]; then
+      line="$word"
+    elif (($(visible_length "$line") + 2 + $(visible_length "$word") <= width)); then
+      line+=", $word"
+    else
+      out+=("$line")
+      line="$word"
+    fi
+  done
+  [[ -n "$line" ]] && out+=("$line")
+
+  if ((${#out[@]} > 0)); then
+    printf '%s\n' "${out[@]}"
   fi
+}
+
+print_attention_card() {
+  [[ "$SHOW_ATTENTION" == true ]] || return 0
+
+  local -a rows=() keys=() card_lines=() wrapped_lines=()
+  local row service value issue key wrapped
+  local -A services_by_key=() count_by_key=()
+  local name_w=16 value_w=6 issue_w wrap_w
+
+  mapfile -t rows < <(collect_attention_rows)
+  ((${#rows[@]} > 0)) || return 0
+
+  for row in "${rows[@]}"; do
+    IFS=$'\t' read -r service value <<<"$row"
+    issue="$(attention_issue_text "$value")"
+    value="$(attention_value_text "$value")"
+    key="$value"$'\x1f'"$issue"
+    if [[ -z "${count_by_key[$key]:-}" ]]; then
+      keys+=("$key")
+      services_by_key[$key]=""
+    fi
+    count_by_key[$key]="$((${count_by_key[$key]:-0} + 1))"
+    services_by_key[$key]+="${services_by_key[$key]:+, }$service"
+  done
+
+  issue_w=$((FULL_REPORT_WIDTH - CARD_SIDES_WIDTH - CARD_CONTENT_INDENT - CARD_TRAILING_GAP - name_w - value_w - 4))
+  ((issue_w < 10)) && issue_w=10
+  wrap_w=$((FULL_REPORT_WIDTH - CARD_SIDES_WIDTH - CARD_CONTENT_INDENT - CARD_TRAILING_GAP))
+
+  card_lines+=("$(color TABLE_HEADER "$(pad "Service" "$name_w")")  $(color TABLE_HEADER "$(pad "Value" "$value_w")")  $(color TABLE_HEADER "Issue")")
+
+  for key in "${keys[@]}"; do
+    value="${key%%$'\x1f'*}"
+    issue="${key#*$'\x1f'}"
+    if ((count_by_key[$key] == 1)); then
+      card_lines+=("$(pad "${services_by_key[$key]}" "$name_w")  $(color NULL "$(pad "$value" "$value_w")")  $(color WARN "$issue")")
+    else
+      card_lines+=("$(color NULL "$(pad "${count_by_key[$key]} services" "$name_w")")  $(color NULL "$(pad "$value" "$value_w")")  $(color WARN "$issue"):")
+      mapfile -t wrapped_lines < <(wrap_words "${services_by_key[$key]}" "$wrap_w")
+      for wrapped in "${wrapped_lines[@]}"; do
+        card_lines+=("$(color NULL "$wrapped")")
+      done
+    fi
+  done
+
+  printf '%s\n' "${card_lines[@]}" | print_titled_card "Attention" "$FULL_REPORT_WIDTH" 0
+  printf '\n'
+}
+
+print_report_legend() {
+  printf '  %s\n\n' "$(color NULL "$LEGEND_LINE")"
+}
+
+print_report() {
+  compute_report_verdict
+  count_report_checks
+
+  print_report_header
+  print_attention_card
+  print_group_cards
+  print_report_legend
 }
 
 detect_output_format() {
@@ -4587,55 +5256,24 @@ print_results() {
     spinner_stop
   fi
 
-  if [[ "$HEADER_PRINTED" != true ]]; then
-    print_header
-  fi
+  print_report
 
   case "$GROUPS_TO_SHOW" in
-  primary)
-    print_table_group "primary" "GeoIP services"
-    print_metrics_group "primary" "GeoIP service metrics"
-    ;;
-  custom)
-    print_table_group "custom" "Popular services"
-    print_metrics_group "custom" "Popular service metrics"
-    ;;
-  cdn)
-    print_table_group "cdn" "CDN"
-    print_metrics_group "cdn" "CDN metrics"
-    ;;
-  devinfra)
-    print_table_group "devinfra" "Dev Infra"
-    print_metrics_group "devinfra" "Dev Infra metrics"
-    ;;
-  dns)
-    print_table_group "dns" "DNS diagnostics"
-    print_metrics_group "dns" "DNS diagnostics metrics"
-    ;;
+  primary) print_metrics_group "primary" "GeoIP service metrics" ;;
+  custom) print_metrics_group "custom" "Popular service metrics" ;;
+  cdn) print_metrics_group "cdn" "CDN metrics" ;;
+  devinfra) print_metrics_group "devinfra" "Dev Infra metrics" ;;
+  dns) print_metrics_group "dns" "DNS diagnostics metrics" ;;
   default)
-    print_table_group "primary" "GeoIP services"
     print_metrics_group "primary" "GeoIP service metrics"
-    printf "\n"
-    print_table_group "custom" "Popular services"
     print_metrics_group "custom" "Popular service metrics"
-    printf "\n"
-    print_table_group "dns" "DNS diagnostics"
     print_metrics_group "dns" "DNS diagnostics metrics"
     ;;
   *)
-    print_table_group "custom" "Popular services"
     print_metrics_group "custom" "Popular service metrics"
-    printf "\n"
-    print_table_group "cdn" "CDN"
     print_metrics_group "cdn" "CDN metrics"
-    printf "\n"
-    print_table_group "devinfra" "Dev Infra"
     print_metrics_group "devinfra" "Dev Infra metrics"
-    printf "\n"
-    print_table_group "dns" "DNS diagnostics"
     print_metrics_group "dns" "DNS diagnostics metrics"
-    printf "\n"
-    print_table_group "primary" "GeoIP services"
     print_metrics_group "primary" "GeoIP service metrics"
     ;;
   esac
@@ -7831,38 +8469,6 @@ main() {
   discover_external_ips
   load_registered_countries
   get_asn
-
-  if [[ "$JSON_OUTPUT" != "true" && "$ONLY_CHANGES" != true ]]; then
-    local restart_spinner=false
-    if [[ "$spinner_running" == true ]]; then
-      restart_spinner=true
-      spinner_stop
-    fi
-
-    finalize_json
-    print_header
-    HEADER_PRINTED=true
-
-    if [[ "$restart_spinner" == true ]]; then
-      spinner_start
-    fi
-  fi
-
-  if [[ "$JSON_OUTPUT" != "true" && "$PROGRESS_LOG" != true ]]; then
-    local restart_spinner=false
-    if [[ "$spinner_running" == true ]]; then
-      restart_spinner=true
-      spinner_stop
-    fi
-
-    finalize_json
-    print_header
-    HEADER_PRINTED=true
-
-    if [[ "$restart_spinner" == true ]]; then
-      spinner_start
-    fi
-  fi
 
   run_selected_groups || exit 1
 
