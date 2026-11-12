@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**ipregion** is a single-file Bash CLI (`ipregion.sh`, ~3700 lines) that reports IP geolocation and region availability. It queries GeoIP APIs (group `primary`) and popular-website region checks (group `custom`: Google, YouTube, Gemini, Steam, TikTok, Apple, …) in parallel over IPv4/IPv6, with optional SOCKS5 proxy or network interface binding. Output: color-coded table, JSON, or CSV. MIT-licensed fork of [vernette/ipregion](https://github.com/vernette/ipregion), heavily rewritten. CI deploys it as plain text to `https://ipregion.vladon.sh`.
+**ipregion** is a single-file Bash CLI (`ipregion.sh`, ~3700 lines) that reports IP geolocation and region availability. It queries GeoIP APIs (group `primary`) and popular-website region checks (group `custom`: Google, YouTube, Gemini, Steam, TikTok, Apple, …) in parallel over IPv4/IPv6, with optional SOCKS5 proxy or network interface binding. Output: color-coded table, JSON, or CSV. MIT-licensed fork of [vernette/ipregion](https://github.com/vernette/ipregion), heavily rewritten. CI deploys the script and the project page to `https://ipregion.vladon.sh`: the hosting serves the raw script to curl/wget and `index.html` to browsers; that routing is server-side (nginx on the deploy host) and not part of this repository.
 
 ## Architecture & Data Flow
 
@@ -29,7 +29,7 @@ Flat repository, no source tree:
 |---|---|
 | `ipregion.sh` | Entire application |
 | `tests/run.sh` | Unit tests (sources `ipregion.sh`, never runs `main`) |
-| `index.php` | Two-liner: serves `ipregion.sh` as `text/plain` |
+| `index.html` | Project page (install commands, copy button); shown to browsers by server-side routing |
 | `.github/workflows/deploy.yml` | CI: tests, lint, version injection, rsync deploy |
 | `.cursor/rules/trunk-based-pr-workflow.mdc` | Git workflow rules (see below) |
 | `plans/` | Design docs (`ip-cache-fallback-architecture.md`, `versioning-fix.md`) |
@@ -64,7 +64,7 @@ shfmt -i 2 -d ipregion.sh tests/run.sh tests/golden.sh       # format gate (2-sp
 ## Important Files
 
 - `ipregion.sh` — key sections: config arrays (84–233), `parse_arguments` (1138), `status_from_http_code` (1296), cache functions (1496–1675), `curl_wrapper` (1982), `process_response` (2193), `finalize_json` (2572), `add_result` (2686), output/format detection (3007–3123), custom handlers `lookup_*` (3125+), `main` (3564), entry guard (3677).
-- `tests/run.sh`, `index.php`, `.github/workflows/deploy.yml`, `README.md` — see table above.
+- `tests/run.sh`, `index.html`, `.github/workflows/deploy.yml`, `README.md` — see table above.
 
 ## Runtime/Tooling Preferences
 
