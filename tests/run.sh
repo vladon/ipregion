@@ -2068,6 +2068,19 @@ VERDICT_TIED=()
 assert_true "single verdict matches itself" is_verdict_country FI
 assert_false "single verdict rejects others" is_verdict_country RU
 
+# host_resolves must stay bounded when the resolver stalls (getent branch):
+# a blackholed query used to hang the whole check for minutes
+STUB_GETENT=$(mktemp -d)
+printf '#!/bin/sh\nsleep 60\n' >"$STUB_GETENT/getent"
+chmod +x "$STUB_GETENT/getent"
+stalled_probe_rc=0
+timeout 8 env PATH="$STUB_GETENT:$PATH" bash -c '
+  source "'"$ROOT_DIR"'/ipregion.sh" >/dev/null 2>&1
+  host_resolves deezer.com
+' >/dev/null 2>&1 || stalled_probe_rc=$?
+assert_false "host_resolves bounds a stalled getent resolver" test "$stalled_probe_rc" -eq 124
+rm -rf "$STUB_GETENT"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
