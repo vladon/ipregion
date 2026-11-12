@@ -32,7 +32,7 @@ Flat repository, no source tree:
 | `tests/run.sh` | Unit tests (sources `ipregion.sh`, never runs `main`) |
 | `index.html` | Project page (install commands, copy button); shown to browsers by server-side routing |
 | `schema/ipregion-v1.schema.json` | JSON Schema for `--json` output (draft 2020-12); `RESULT_JSON` carries `$schema` pointing here |
-| `.github/workflows/deploy.yml` | CI: tests, lint, version injection, rsync deploy |
+| `.github/workflows/deploy.yml` | CI: tests, lint, version injection, rsync deploy; on `release` events also uploads the version-stamped `ipregion.sh` as a release asset (keeps the `releases/latest/download/ipregion.sh` fallback fresh) |
 | `.github/workflows/live.yml` | Cron (every 3 days) + manual: real run, `--json` validated against the schema with check-jsonschema, group-answer smoke, report artifact |
 | `.github/workflows/docker.yml` | Build + push `ghcr.io/vladon/ipregion` (latest/SHA/release tags) on master push and releases |
 | `.shellcheckrc` | Shared shellcheck config: `source-path=SCRIPTDIR`, extra optional checks (warnings only — the gate stays `shellcheck -S error`) |
