@@ -2057,6 +2057,17 @@ assert_eq "🇷🇺" "$(format_flag "RU")" "format_flag builds regional indicato
 SHOW_EMOJI=false
 assert_eq "RU" "$(label_country "RU")" "label_country omits flags without emoji"
 
+# Verdict tie membership ---------------------------------------------------
+
+VERDICT_COUNTRY=""
+VERDICT_TIED=(RU US)
+assert_true "tied verdict matches tie member" is_verdict_country RU
+assert_false "tied verdict rejects non-member" is_verdict_country DE
+VERDICT_COUNTRY="FI"
+VERDICT_TIED=()
+assert_true "single verdict matches itself" is_verdict_country FI
+assert_false "single verdict rejects others" is_verdict_country RU
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
