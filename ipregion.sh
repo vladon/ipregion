@@ -6107,7 +6107,10 @@ host_resolves() {
   fi
 
   if command -v getent >/dev/null 2>&1; then
-    addr=$(getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1; exit}')
+    # Bound the resolver like the nslookup/host branches below: glibc
+    # retries a dropped query across the search list and can stall a
+    # single lookup for minutes on networks that silently filter names.
+    addr=$(timeout 5 getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1; exit}')
   elif command -v nslookup >/dev/null 2>&1; then
     # Bound the resolver: some networks silently DROP queries (filtered
     # zones), and default retries then stall each lookup for minutes.
