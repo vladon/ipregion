@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-ipregion-vladon-sh
+  group: deploy-ipregion-top
   cancel-in-progress: true
 
 jobs:
@@ -122,4 +122,4 @@ jobs:
           cp ipregion.sh index.html README.md LICENSE deploy-stage/
           rsync -az --delete \
             deploy-stage/ \
-            orange-ipregion:/srv/www/ipregion.vladon.sh/
+            orange-ipregion:/srv/www/ipregion.top/
