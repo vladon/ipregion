@@ -1900,25 +1900,6 @@ process_json() {
   jq -r "$jq_filter" <<<"$json"
 }
 
-format_value() {
-  local value="$1"
-
-  case "$value" in
-  "$STATUS_NA")
-    color NULL "$value"
-    ;;
-  "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "IP block")
-    color ERROR "$value"
-    ;;
-  "$STATUS_RATE_LIMIT" | "DNS block" | "$STATUS_REGION_BLOCKED")
-    color WARN "$value"
-    ;;
-  *)
-    bold "$value"
-    ;;
-  esac
-}
-
 print_value_or_colored() {
   local value="$1"
   local color_name="$2"
