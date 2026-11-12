@@ -7,19 +7,19 @@
 ### Download and run locally
 
 ```bash
-wget -O ipregion.sh https://ipregion.vladon.sh
+wget -O ipregion.sh https://ipregion.top
 chmod +x ipregion.sh
 ```
 
 ### Run directly from GitHub
 
 ```bash
-bash -c 'bash <(wget -qO- https://ipregion.vladon.sh)'
+bash -c 'bash <(wget -qO- https://ipregion.top)'
 ```
 
 The outer `bash -c` parses process substitution, so this command also works from fish or sh.
 
-Opening <https://ipregion.vladon.sh> in a browser shows the project page; curl/wget always receive the raw script. The script is also served verbatim at <https://ipregion.vladon.sh/ipregion.sh>.
+Opening <https://ipregion.top> in a browser shows the project page; curl/wget always receive the raw script. The script is also served verbatim at <https://ipregion.top/ipregion.sh>.
 
 ### Run a pinned release
 

@@ -326,7 +326,7 @@ original_curl_stub() {
 # Only the Telegram datacenter answers in this fixture set; WhatsApp edges and
 # the Discord gateway drop the connection.
 tcp_probe() {
-  [[ "$1" == "149.154.167.51" || "$1" == "ipregion.vladon.sh" ]]
+  [[ "$1" == "149.154.167.51" || "$1" == "ipregion.top" ]]
 }
 
 # Redirect-chain canaries serve 200 directly, no redirects; the

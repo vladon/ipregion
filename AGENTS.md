@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**ipregion** is a single-file Bash CLI (`ipregion.sh`, ~3700 lines) that reports IP geolocation and region availability. It queries GeoIP APIs (group `primary`) and popular-website region checks (group `custom`: Google, YouTube, Gemini, Steam, TikTok, Apple, …) in parallel over IPv4/IPv6, with optional SOCKS5 proxy or network interface binding. Output: color-coded table, JSON, or CSV. MIT-licensed fork of [vernette/ipregion](https://github.com/vernette/ipregion), heavily rewritten. CI deploys the script and the project page to `https://ipregion.vladon.sh`: the hosting serves the raw script to curl/wget and `index.html` to browsers; that routing is server-side (nginx on the deploy host) and not part of this repository.
+**ipregion** is a single-file Bash CLI (`ipregion.sh`, ~3700 lines) that reports IP geolocation and region availability. It queries GeoIP APIs (group `primary`) and popular-website region checks (group `custom`: Google, YouTube, Gemini, Steam, TikTok, Apple, …) in parallel over IPv4/IPv6, with optional SOCKS5 proxy or network interface binding. Output: color-coded table, JSON, or CSV. MIT-licensed fork of [vernette/ipregion](https://github.com/vernette/ipregion), heavily rewritten. CI deploys the script and the project page to `https://ipregion.top`: the hosting serves the raw script to curl/wget and `index.html` to browsers; that routing is server-side (Caddy on the deploy host) and not part of this repository.
 
 ## Architecture & Data Flow
 

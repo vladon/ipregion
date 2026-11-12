@@ -7150,7 +7150,7 @@ cert_days_remaining() {
 # <=30 days (yellow), otherwise green days remaining. N/A when openssl
 # is missing, the host is unreachable, or the dates cannot be parsed.
 lookup_cert_expiry() {
-  local host="${CERT_EXPIRY_HOST:-ipregion.vladon.sh}"
+  local host="${CERT_EXPIRY_HOST:-ipregion.top}"
   local days
 
   tcp_probe "$host" 443 || {
