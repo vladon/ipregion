@@ -4789,6 +4789,19 @@ compute_report_verdict() {
   fi
 }
 
+# True when the value equals any of the listed candidates
+is_in_list() {
+  local value="$1"
+  shift
+
+  local item
+  for item in "$@"; do
+    [[ "$item" == "$value" ]] && return 0
+  done
+
+  return 1
+}
+
 is_verdict_country() {
   local country="$1"
 
