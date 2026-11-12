@@ -4079,7 +4079,8 @@ finalize_json() {
       --arg registered_country_ipv6 "$REGISTERED_COUNTRY_IPV6" \
       --arg asn_number "$ASN_NUMBER" \
       --arg asn_name "$ASN_NAME" \
-      --arg version "1" '
+      --arg version "1" \
+      --arg schema "$RESULT_SCHEMA_URL" '
         def parse_metric($raw):
           if ($raw | length) == 0 then null
           else
@@ -4134,6 +4135,7 @@ finalize_json() {
         | (lines_to_array($e)) as $devinfra
         | (lines_to_array($n)) as $dns
         | {
+          "$schema": $schema,
           version: ($version|tonumber),
           ip: {
             ipv4: {
@@ -4749,6 +4751,7 @@ CHECKS_TOTAL=0
 CHECKS_NORMAL=0
 FULL_REPORT_WIDTH=90
 COUNTRY_NAMES_JSON=""
+readonly RESULT_SCHEMA_URL="https://raw.githubusercontent.com/vladon/ipregion/master/schema/ipregion-v1.schema.json"
 readonly CLDR_TERRITORIES_URL="https://cdn.jsdelivr.net/npm/cldr-localenames-full/main/en/territories.json"
 
 # Pool per-protocol consensus into a single verdict: the country most

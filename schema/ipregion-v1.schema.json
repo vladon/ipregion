@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/vladon/ipregion/master/schema/ipregion-v1.schema.json",
+  "title": "ipregion.sh --json output, version 1",
+  "type": "object",
+  "required": ["$schema", "version", "ip", "asn", "consensus", "results"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "const": "https://raw.githubusercontent.com/vladon/ipregion/master/schema/ipregion-v1.schema.json" },
+    "version": { "const": 1 },
+    "ip": { "$ref": "#/$defs/identity" },
+    "asn": { "$ref": "#/$defs/asn" },
+    "consensus": { "$ref": "#/$defs/consensus" },
+    "results": {
+      "type": "object",
+      "required": ["primary", "custom", "cdn", "devinfra", "dns"],
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "type": "array", "items": { "$ref": "#/$defs/service" } },
+        "custom": { "type": "array", "items": { "$ref": "#/$defs/service" } },
+        "cdn": { "type": "array", "items": { "$ref": "#/$defs/service" } },
+        "devinfra": { "type": "array", "items": { "$ref": "#/$defs/service" } },
+        "dns": { "type": "array", "items": { "$ref": "#/$defs/service" } }
+      }
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "required": ["ipv4", "ipv6"],
+      "additionalProperties": false,
+      "properties": {
+        "ipv4": { "$ref": "#/$defs/protocolIdentity" },
+        "ipv6": { "$ref": "#/$defs/protocolIdentity" }
+      }
+    },
+    "protocolIdentity": {
+      "type": "object",
+      "required": ["address", "source", "cache_hit", "timestamp", "registered_country"],
+      "additionalProperties": false,
+      "properties": {
+        "address": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "cache_hit": { "type": "boolean" },
+        "timestamp": { "type": ["integer", "null"] },
+        "registered_country": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Z]{2}$"
+        }
+      }
+    },
+    "asn": {
+      "type": "object",
+      "required": ["number", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "number": { "type": ["integer", "null"], "minimum": 1 },
+        "name": { "type": ["string", "null"] }
+      }
+    },
+    "consensus": {
+      "type": "object",
+      "required": ["ipv4", "ipv6"],
+      "additionalProperties": false,
+      "properties": {
+        "ipv4": { "$ref": "#/$defs/consensusEntry" },
+        "ipv6": { "$ref": "#/$defs/consensusEntry" }
+      }
+    },
+    "consensusEntry": {
+      "type": ["object", "null"],
+      "required": ["country", "count", "total", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "country": { "$ref": "#/$defs/countryCode" },
+        "count": { "type": "integer", "minimum": 1 },
+        "total": { "type": "integer", "minimum": 1 },
+        "confidence": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "countryCode": { "type": "string", "pattern": "^[A-Z]{2}$" },
+    "service": {
+      "type": "object",
+      "required": ["service", "ipv4", "ipv6", "metrics"],
+      "additionalProperties": false,
+      "properties": {
+        "service": { "type": "string", "minLength": 1 },
+        "ipv4": { "$ref": "#/$defs/cell" },
+        "ipv6": { "$ref": "#/$defs/cell" },
+        "metrics": {
+          "type": "object",
+          "required": ["ipv4", "ipv6"],
+          "additionalProperties": false,
+          "properties": {
+            "ipv4": { "$ref": "#/$defs/metrics" },
+            "ipv6": { "$ref": "#/$defs/metrics" }
+          }
+        }
+      }
+    },
+    "cell": { "type": ["string", "null"], "minLength": 0 },
+    "metrics": {
+      "type": ["object", "null"],
+      "required": ["http_code", "latency_ms", "transport_ip_version", "error_type"],
+      "additionalProperties": false,
+      "properties": {
+        "http_code": { "type": ["integer", "null"] },
+        "latency_ms": { "type": ["integer", "null"], "minimum": 0 },
+        "transport_ip_version": { "type": ["integer", "null"], "enum": [4, 6, null] },
+        "error_type": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
