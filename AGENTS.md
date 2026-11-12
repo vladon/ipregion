@@ -14,6 +14,7 @@
   `{ip}` in `url_template` is replaced with the target IP; `response_format` defaults to JSON, use `plain` for text responses.
 - **Groups**: `SERVICE_GROUPS` maps `primary` → `PRIMARY_SERVICES_ORDER`, `custom` → `CUSTOM_SERVICES_ORDER`. `main` runs groups via `run_service_group` (sequential) or `run_service_group_parallel`.
 - **Result pipeline**: `add_result` → `finalize_json` (builds `RESULT_JSON` via jq: per-service results, metrics, consensus country, ip/asn header data) → `print_results` / `write_output_file`.
+- **Report rendering (card UI)**: `print_report` renders everything at the end of the run: `┃` header block (branding, masked IPs + ASN + registered country, pooled verdict from consensus, `N/M checks passed` bar), an Attention card (abnormal cells grouped by value+reason, service lists wrapped, `unique_by` service+value), paired side-by-side group cards, and a legend. Cells are classified by `classify_cell_value` (country / yes / no / ipblock / region / unknown / info). Widths come from `visible_length` (ANSI- and emoji-aware) + `pad` + `repeat_char`; no external `column` dependency. Colors are gated per stream (`USE_COLOR_STDOUT`/`USE_COLOR_STDERR` from `-t 1`/`-t 2`, `NO_COLOR` honored) via `color()`/`COLOR_TARGET`; progress and logs go to stderr only, so piped output is clean. `--emoji` adds country flags (regional indicators) and group icons; `--no-attention` hides the Attention card. Country display names are fetched from CLDR (`country_display_name`) only for interactive stdout, falling back to the code.
 - **Dispatch**: `process_service` → `service_build_request` → `curl_wrapper` → `process_response` (case statement with one jq filter per primary service) or `process_with_custom_handler` for entries in `PRIMARY_SERVICES_CUSTOM_HANDLERS`. Custom services call their handler from `CUSTOM_SERVICES_HANDLERS`; `run_all_services` discovers all `lookup_*` functions by name.
 - **HTTP status mapping** (`status_from_http_code`, ~1296): 403 → `Denied`, 429 → `Rate-limit`, 5xx → `Server error`, other 4xx → `N/A`.
 - **Parallelism**: `PARALLEL_JOBS=0` auto-detects workers (`detect_parallel_jobs`). Each job is an isolated subshell writing to a `mktemp` file; `wait_for_parallel_slot` uses `wait -n` when `supports_wait_n` (bash ≥ 4.3), else a legacy polling loop. Spinner is suppressed in parallel mode (`--force-spinner` to override; `--progress-log` prints lines instead).
@@ -39,16 +40,16 @@ Flat repository, no source tree:
 
 ```bash
 bash tests/run.sh                            # unit tests (needs jq, bash ≥ 4.3)
-bash tests/golden.sh                         # golden tests for the availability family (needs jq, column)
+bash tests/golden.sh                         # golden tests for the report rendering (needs jq)
 shellcheck -S error ipregion.sh tests/run.sh tests/golden.sh # lint gate
 shfmt -i 2 -d ipregion.sh tests/run.sh tests/golden.sh       # format gate (2-space indent)
 ./ipregion.sh -g primary                     # manual check: GeoIP group
 ./ipregion.sh -g custom                      # manual check: website group
 ```
 
-- Runtime deps: `bash`, `curl`, `jq`, `column` (util-linux/bsdmainutils); optional `nslookup`. The script detects distro/package manager and offers to install missing commands.
+- Runtime deps: `bash` ≥ 4.3, `curl`, `jq`; optional `nslookup`. The script detects distro/package manager and offers to install missing commands.
 - **macOS caveat**: system `/bin/bash` is 3.2 (no associative arrays) — install Homebrew bash. On macOS the script runs fully with Homebrew bash (BSD grep/sed/date are supported; `curl --json` is emulated for older system curl).
-- Golden tests (`tests/golden.sh`) render the availability family against stubbed `curl_wrapper`/`tcp_probe` responses and diff the full table plus a sorted `RESULT_JSON` against `tests/golden/expected/`. Regenerate after intentional output changes with `GOLDEN_UPDATE=1 bash tests/golden.sh`; the suite self-skips when `column` is absent (CI installs `util-linux-misc`).
+- Golden tests (`tests/golden.sh`) render the availability family against stubbed `curl_wrapper`/`tcp_probe` responses and diff the full table plus a sorted `RESULT_JSON` against `tests/golden/expected/`. Regenerate after intentional output changes with `GOLDEN_UPDATE=1 bash tests/golden.sh`. Rendering is self-contained (no `column`), so goldens are deterministic across systems; colors are disabled in non-TTY runs, keeping snapshots plain.
 
 ## Code Conventions & Common Patterns
 
