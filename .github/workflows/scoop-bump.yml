@@ -1,0 +1,96 @@
+name: Update Scoop bucket
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to bump the bucket to (defaults to the latest release)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scoop-bucket
+  cancel-in-progress: false
+
+jobs:
+  bump-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check SCOOP_TOKEN secret
+        env:
+          SCOOP_TOKEN: ${{ secrets.SCOOP_TOKEN }}
+        run: |
+          if [[ -z "$SCOOP_TOKEN" ]]; then
+            echo "::error::SCOOP_TOKEN secret is not set. Add a token with write access to vladon/scoop-bucket (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+
+      - name: Resolve tag
+        id: rel
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+        run: |
+          TAG="${DISPATCH_TAG:-$(curl -fsSL https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)}"
+          VERSION="${TAG#v}"
+          PS1_URL="https://github.com/vladon/ipregion/releases/download/${TAG}/ipregion.ps1"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "ps1_url=$PS1_URL" >> "$GITHUB_OUTPUT"
+          echo "Bumping bucket to $TAG ($PS1_URL)"
+
+      - name: Wait for release asset and compute hash
+        id: asset
+        env:
+          PS1_URL: ${{ steps.rel.outputs.ps1_url }}
+        run: |
+          HASH=""
+          for i in $(seq 1 60); do
+            if HASH=$(curl -fsSL "$PS1_URL" | sha256sum | cut -d' ' -f1); then
+              echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+              echo "Asset hash: $HASH"
+              break
+            fi
+            sleep 5
+          done
+          [[ -n "$HASH" ]] || { echo "::error::ipregion.ps1 asset never appeared at $PS1_URL"; exit 1; }
+
+      - name: Update bucket manifest
+        env:
+          SCOOP_TOKEN: ${{ secrets.SCOOP_TOKEN }}
+          VERSION: ${{ steps.rel.outputs.version }}
+          HASH: ${{ steps.asset.outputs.hash }}
+          REPO: vladon/scoop-bucket
+        run: |
+          CURRENT=$(curl -fsSL -H "Authorization: Bearer $SCOOP_TOKEN" \
+            "https://api.github.com/repos/${REPO}/contents/bucket/ipregion.json")
+          FILE_SHA=$(jq -r .sha <<<"$CURRENT")
+          MANIFEST=$(jq -r .content <<<"$CURRENT" | base64 -d | jq --arg v "$VERSION" --arg h "$HASH" \
+            '.version = $v
+             | .url = "https://github.com/vladon/ipregion/releases/download/v\($v)/ipregion.ps1"
+             | .hash = $h')
+          PAYLOAD=$(jq -n --arg m "$MANIFEST" --arg sha "$FILE_SHA" --arg msg "ipregion $VERSION" \
+            '{message: $msg, content: ($m | @base64), sha: $sha}')
+          curl -fsSL -X PUT \
+            -H "Authorization: Bearer $SCOOP_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPO}/contents/bucket/ipregion.json" \
+            -d "$PAYLOAD" >/dev/null
+          echo "Bucket manifest updated to $VERSION"
+
+      - name: Verify
+        env:
+          SCOOP_TOKEN: ${{ secrets.SCOOP_TOKEN }}
+          VERSION: ${{ steps.rel.outputs.version }}
+          REPO: vladon/scoop-bucket
+        run: |
+          sleep 3
+          BUMPED=$(curl -fsSL -H "Authorization: Bearer $SCOOP_TOKEN" \
+            "https://api.github.com/repos/${REPO}/contents/bucket/ipregion.json" \
+            | jq -r '.content' | base64 -d | jq -r '.version')
+          [[ "$BUMPED" == "$VERSION" ]] || { echo "::error::manifest version is $BUMPED, expected $VERSION"; exit 1; }
+          echo "Scoop bucket bumped to $BUMPED"
