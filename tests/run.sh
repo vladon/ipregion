@@ -11,6 +11,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # shellcheck source=/dev/null
 source "$ROOT_DIR/ipregion.sh"
+JQ_AVAILABLE=true
+export JQ_AVAILABLE
 
 # Handler tests must not depend on real DNS: web and transport probes both
 # consult host_resolves before connecting. Set DNS_STUB_MODE=blocked locally
@@ -1407,13 +1409,13 @@ unset PTR_MODE
 DNSSEC_MODE="validating"
 assert_eq "Yes" "$(lookup_dnssec_validation 4)" "dnssec validation maps failed resolution to Yes"
 unset DNSSEC_MODE PTR_MODE
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"Yes","ipv6":"Yes"}]}}'
+ARR_DNS=("DNS Integrity|||Yes|||Yes||||")
 FAIL_ON_BLOCK_KEYS=("DNS_INTEGRITY")
 fail_on_block_check && echo "OK: fail-on-block passes dns group Yes" || echo "FAIL: fail-on-block passes dns group Yes"
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"No","ipv6":"N/A"}]}}'
+ARR_DNS=("DNS Integrity|||No|||N/A||||")
 fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block flags dns group No" || echo "OK: fail-on-block flags dns group No"
 unset FAIL_ON_BLOCK_KEYS
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[]}}'
+ARR_DNS=()
 assert_true "dns registry defines PUBLIC_ANSWERS" test -n "${DNS_DIAG_SERVICES[PUBLIC_ANSWERS]:-}"
 assert_false "is_nonpublic_ipv4 passes public addresses" is_nonpublic_ipv4 "93.184.216.34"
 PUBLIC_LEAK_MODE="leak"
@@ -1512,7 +1514,7 @@ server_dns_latency_ms() {
 assert_true "custom registry defines RESOLVER_LATENCY" test -n "${DNS_DIAG_SERVICES[RESOLVER_LATENCY]:-}"
 assert_eq "integrity" "$(dns_summary_token DNS_INTEGRITY)" "dns summary token maps integrity"
 assert_eq "rebind" "$(dns_summary_token REBIND_PROTECTION)" "dns summary token maps rebind"
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[],"dns":[{"service":"DNS Integrity","ipv4":"Yes"},{"service":"DNS Intercept","ipv4":"Yes"},{"service":"PTR Match","ipv4":"Yes"},{"service":"DNSSEC Validation","ipv4":"Yes"},{"service":"DoT Google","ipv4":"Yes"},{"service":"DoT Cloudflare","ipv4":"Yes"},{"service":"Public Answers","ipv4":"Yes"},{"service":"TTL Honesty","ipv4":"Yes"},{"service":"Resolver Consensus","ipv4":"Yes"},{"service":"DNS Latency","ipv4":"12/180 ms"},{"service":"DNS Jitter","ipv4":"±7/±20 ms"},{"service":"Resolver Latency","ipv4":"12/8/45 ms"},{"service":"Resolver Jitter","ipv4":"±0 ms"},{"service":"DoH via Proxy","ipv4":"Yes"},{"service":"Rebind Protection","ipv4":"No"}]}}'
+ARR_DNS=("DNS Integrity|||Yes||||" "DNS Intercept|||Yes||||" "PTR Match|||Yes||||" "DNSSEC Validation|||Yes||||" "DoT Google|||Yes||||" "DoT Cloudflare|||Yes||||" "Public Answers|||Yes||||" "TTL Honesty|||Yes||||" "Resolver Consensus|||Yes||||" "DNS Latency|||12/180 ms||||" "DNS Jitter|||±7/±20 ms||||" "Resolver Latency|||12/8/45 ms||||" "Resolver Jitter|||±0 ms||||" "DoH via Proxy|||Yes||||" "Rebind Protection|||No||||")
 dns_summary_out=$(dns_summary_line 2>&1)
 assert_contains "$dns_summary_out" "integrity=Yes" "dns summary carries integrity verdict"
 assert_contains "$dns_summary_out" "rebind=No" "dns summary carries rebind verdict"
@@ -1521,7 +1523,7 @@ assert_contains "$dns_summary_out" "rlatency=12/8/45 ms" "dns summary carries re
 assert_contains "$dns_summary_out" "jitter=±7/±20 ms" "dns summary carries jitter value"
 assert_contains "$dns_summary_out" "rjitter=±0 ms" "dns summary carries resolver jitter verdict"
 assert_contains "$dns_summary_out" "dohvia=Yes" "dns summary carries doh via proxy verdict"
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[]}}'
+ARR_DNS=()
 dns_summary_out=$(dns_summary_line 2>&1)
 assert_contains "$dns_summary_out" "integrity=n/a" "dns summary renders n/a without dns results"
 unset dns_summary_out
@@ -1892,7 +1894,18 @@ rm -f "$SPINNER_SERVICE_FILE"
 SPINNER_SERVICE_FILE=""
 
 # Monitoring kit: verdict line collection, diffing, compare, telegram
-collect_verdict_lines '{"results":{"primary":[{"service":"Alpha","ipv4":"Yes","ipv6":"Yes"}],"custom":[{"service":"Beta","ipv4":"No","ipv6":"Denied"}],"cdn":[],"devinfra":[{"service":"Gamma","ipv4":"N/A","ipv6":"Yes"}]}}' >/tmp/mk_lines.txt
+ARR_PRIMARY=("Alpha|||Yes|||Yes||||")
+ARR_CUSTOM=("Beta|||No|||Denied||||")
+ARR_DEVINFRA=("Gamma|||N/A|||Yes||||")
+collect_verdict_lines >/tmp/mk_lines.txt
+ARR_PRIMARY=()
+ARR_CUSTOM=()
+ARR_DEVINFRA=()
+collect_verdict_lines_json '{"results":{"primary":[{"service":"Alpha","ipv4":"Yes","ipv6":"Yes"}],"custom":[{"service":"Beta","ipv4":"No","ipv6":"Denied"}],"cdn":[],"devinfra":[{"service":"Gamma","ipv4":"N/A","ipv6":"Yes"}]}}' >/tmp/mk_lines_json.txt
+grep -q "^Gamma=N\/A/Yes$" /tmp/mk_lines_json.txt && echo "OK: verdict lines collected from JSON" || {
+  echo "FAIL: verdict lines collected from JSON"
+  failures=$((failures + 1))
+}
 grep -q "^Alpha=Yes/Yes$" /tmp/mk_lines.txt && grep -q "^Beta=No/Denied$" /tmp/mk_lines.txt && grep -q "^Gamma=N\/A/Yes$" /tmp/mk_lines.txt && echo "OK: verdict lines collected" || {
   echo "FAIL: verdict lines collected"
   failures=$((failures + 1))
@@ -1956,14 +1969,14 @@ printf '%s\n' "$list_output" | grep -q $'^custom\tGEMINI_NOTEBOOK\tGemini Notebo
 }
 
 # --fail-on-block: verdict gating on the finalized RESULT_JSON
-RESULT_JSON='{"results":{"primary":[],"custom":[{"service":"GitHub","ipv4":"Yes","ipv6":"Yes"},{"service":"DeepL","ipv4":"No","ipv6":"Region blocked"}],"cdn":[],"devinfra":[]}}'
+ARR_CUSTOM=("GitHub|||Yes|||Yes||||" "DeepL|||No|||Region blocked||||")
 FAIL_ON_BLOCK_KEYS=("GITHUB")
 fail_on_block_check && echo "OK: fail-on-block passes when Yes" || echo "FAIL: fail-on-block passes when Yes"
 FAIL_ON_BLOCK_KEYS=("DEEPL")
 fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block detects blocked" || echo "OK: fail-on-block detects blocked"
 FAIL_ON_BLOCK_KEYS=("GITHUB" "DEEPL")
 fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block detects partial block" || echo "OK: fail-on-block detects partial block"
-RESULT_JSON='{"results":{"primary":[],"custom":[],"cdn":[],"devinfra":[]}}'
+ARR_CUSTOM=()
 FAIL_ON_BLOCK_KEYS=("GITHUB")
 fail_on_block_check 2>/dev/null && echo "FAIL: fail-on-block treats absent as blocked" || echo "OK: fail-on-block treats absent as blocked"
 # Informational verdicts (CDN locations, N/A) are not failures
@@ -2086,6 +2099,7 @@ rm -rf "$STUB_GETENT"
 selection_fixture() {
   bash -e -s -- "$ROOT_DIR" "$@" <<'FIXTURE'
   source "$1/ipregion.sh"
+  JQ_AVAILABLE="${JQ_AVAILABLE:-true}"
   jobs="$2" verdict="$3"
   shift 3
   parse_arguments "$@"
@@ -2107,7 +2121,13 @@ selection_fixture() {
   run_selected_groups || rc=$?
   finalize_json
   printf 'rc=%s total=%s\n' "$rc" "$CHECKS_TOTAL"
-  jq -r '[.results[][] | .service] | sort | .[]' <<<"$RESULT_JSON"
+  if [[ "$JQ_AVAILABLE" == true ]]; then
+    jq -r '[.results[][] | .service] | sort | .[]' <<<"$RESULT_JSON"
+  else
+    selected_display_groups | while IFS= read -r g; do
+      read_group_rows "$g" | cut -f1
+    done | sort
+  fi
   printf 'cards=%s\n' "$(selected_display_groups | tr '\n' ',')"
 FIXTURE
 }
@@ -2193,6 +2213,46 @@ conn_probe_rc=$(PATH="$conn_stub_bin:$PATH" bash -c '
 ')
 assert_eq "1" "$conn_probe_rc" "connectivity still fails when both ping and TCP are dead"
 rm -rf "$conn_stub_bin"
+
+# jq-optional renderer: the whole report renders from ARR_* with jq absent
+# from PATH entirely; --json refuses loudly instead
+NOJQ_BIN=$(mktemp -d)
+ln -s "$(command -v bash)" "$NOJQ_BIN/bash"
+nojq_report=$(timeout 30 env PATH="$NOJQ_BIN" bash -c '
+  source "'"$ROOT_DIR"'/ipregion.sh" >/dev/null 2>&1
+  JSON_OUTPUT=false
+  PROGRESS_LOG=true
+  EXTERNAL_IPV4="203.0.113.9"
+  REGISTERED_COUNTRY_IPV4="US"
+  ASN_NUMBER="64496"
+  ASN_NAME="NoJQ Example"
+  add_result "primary" "maxmind.com" "RU" "" "" ""
+  add_result "primary" "geojs.io" "US" "" "" ""
+  add_result "custom" "Telegram Access" "Yes" "" "" ""
+  add_result "dns" "DNS Integrity" "Yes" "" "" ""
+  print_report
+' 2>/dev/null)
+assert_contains "$nojq_report" "seen by most services" "no-jq report renders the verdict header"
+assert_contains "$nojq_report" "maxmind.com" "no-jq report renders primary rows"
+assert_contains "$nojq_report" "Telegram Access" "no-jq report renders custom rows"
+assert_contains "$nojq_report" "DNS Integrity" "no-jq report renders dns rows"
+assert_contains "$nojq_report" "checks passed" "no-jq report renders the checks bar"
+echo "DEBUG: entering nojq json step"
+nojq_json_out=""
+nojq_json_rc=0
+if nojq_json_out=$(timeout 30 env PATH="$NOJQ_BIN" bash -c '
+  source "'"$ROOT_DIR"'/ipregion.sh" >/dev/null 2>&1
+  JSON_OUTPUT=true
+  print_results
+' 2>&1); then
+  echo "FAIL: --json without jq unexpectedly succeeded"
+  failures=$((failures + 1))
+else
+  nojq_json_rc=$?
+fi
+assert_contains "$nojq_json_out" "--json requires jq" "--json without jq refuses loudly"
+assert_eq "1" "$nojq_json_rc" "--json without jq exits 1"
+rm -rf "$NOJQ_BIN"
 
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."

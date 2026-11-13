@@ -261,6 +261,8 @@ COMPARE_OLD=""
 COMPARE_NEW=""
 FAIL_ON_BLOCK_KEYS=()
 EXPLICIT_SELECTION=""
+JQ_AVAILABLE=false
+CURL_AVAILABLE=false
 LIST_ONLY=false
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
@@ -1869,8 +1871,18 @@ install_dependencies() {
   log "$LOG_INFO" "Missing dependencies: ${missing_dependencies[*]}"
 
   if ! prompt_for_installation "${missing_dependencies[@]}" </dev/tty; then
-    printf "%s\n" "$(color WARN 'Installation canceled by user')"
-    exit 1
+    printf "%s %s\n" \
+      "$(color WARN '[WARN]')" \
+      "Installation canceled - continuing with reduced capabilities:" >&2
+    for cmd in "${missing_commands[@]}"; do
+      case "$cmd" in
+      curl) printf "%s %s\n" "$(color WARN '[WARN]')" "  no curl: HTTP-based checks (GeoIP, sites, AI) are skipped" >&2 ;;
+      jq) printf "%s %s\n" "$(color WARN '[WARN]')" "  no jq: --json/--output/--compare, the IP cache and Telegram push are unavailable" >&2 ;;
+      nslookup) printf "%s %s\n" "$(color WARN '[WARN]')" "  no nslookup: DNS probes fall back to host/getent where possible" >&2 ;;
+      *) printf "%s %s\n" "$(color WARN '[WARN]')" "  no $cmd: related checks may be skipped" >&2 ;;
+      esac
+    done
+    return 0
   fi
 
   log "$LOG_INFO" "Installing missing dependencies"
@@ -2797,6 +2809,12 @@ load_ip_cache() {
   CACHE_LAST_SOURCE=""
   CACHE_LAST_TIMESTAMP=""
 
+  # The cache file is JSON: without jq it cannot be parsed safely
+  if ! have_jq; then
+    log "$LOG_VERBOSE" "jq is not available: IP cache disabled"
+    return 1
+  fi
+
   if [[ "$CACHE_ENABLED" != true ]]; then
     return 1
   fi
@@ -2861,6 +2879,10 @@ save_ip_cache() {
   local cache_content current_timestamp
   local temp_file
 
+  if ! have_jq; then
+    return 0
+  fi
+
   if [[ "$CACHE_ENABLED" != true ]]; then
     return 0
   fi
@@ -2911,6 +2933,11 @@ clear_ip_cache() {
 show_ip_cache() {
   local cache_content cached_ipv4 cached_ipv6 ipv4_ts ipv6_ts ipv4_src ipv6_src
   local current_timestamp ipv4_age ipv6_age ipv4_status ipv6_status
+
+  if ! have_jq; then
+    echo "Showing the IP cache requires jq"
+    return 0
+  fi
 
   if [[ ! -f "$CACHE_FILE" ]]; then
     echo "No cache file found at $CACHE_FILE"
@@ -4087,6 +4114,13 @@ finalize_json() {
   local t_primary t_custom t_cdn t_devinfra
   local IFS=$'\n'
 
+  if ! have_jq; then
+    # No jq: RESULT_JSON stays empty; the card report reads ARR_* directly,
+    # and JSON/CSV export features were gated off at startup.
+    RESULT_JSON=""
+    return 0
+  fi
+
   if ((${#ARR_PRIMARY[@]} > 0)); then
     t_primary=$(printf '%s\n' "${ARR_PRIMARY[@]//|||/$'\t'}")
   fi
@@ -4577,9 +4611,27 @@ declare -A GROUP_TITLES=(
 )
 
 group_has_results() {
-  local group="$1"
+  local -n rows_ref="ARR_${1^^}"
+  ((${#rows_ref[@]} > 0))
+}
 
-  jq -e --arg group "$group" '(.results[$group] // []) | length > 0' <<<"$RESULT_JSON" >/dev/null
+# Rows of one group straight from the result arrays, no jq involved:
+# "service<TAB>ipv4<TAB>ipv6<TAB>metric4<TAB>metric6" per line; empty and
+# literal "null" cells are normalized to empty strings.
+read_group_rows() {
+  local group="$1" row service v4 v6
+  local -n rows_ref="ARR_${group^^}"
+
+  for row in "${rows_ref[@]}"; do
+    service="${row%%|||*}"
+    row="${row#*|||}"
+    v4="${row%%|||*}"
+    row="${row#*|||}"
+    v6="${row%%|||*}"
+    [[ -z "$v4" || "$v4" == "null" ]] && v4=""
+    [[ -z "$v6" || "$v6" == "null" ]] && v6=""
+    printf '%s\t%s\t%s\t%s\t%s\n' "$service" "$v4" "$v6" "${row%%|||*}" "${row#*|||}"
+  done
 }
 
 # Groups to render for the current selection, in card order
@@ -4617,15 +4669,10 @@ group_card_text() {
   can_use_ipv4 && show_ipv4=true
   can_use_ipv6 && show_ipv6=true
 
-  mapfile -t rows < <(jq -r --arg group "$group" '
-    (.results[$group] // [])[]
-    | [(.service // ""), ((.ipv4 // "") | if . == "null" then "" else . end),
-       ((.ipv6 // "") | if . == "null" then "" else . end)]
-    | @tsv
-  ' <<<"$RESULT_JSON")
+  mapfile -t rows < <(read_group_rows "$group")
 
   for row in "${rows[@]}"; do
-    IFS=$'\t' read -r service v4 v6 <<<"$row"
+    IFS=$'\t' read -r service v4 v6 _ _ <<<"$row"
     names+=("$service")
     if [[ "$show_ipv4" == true ]]; then
       vals4+=("${v4:-}")
@@ -4714,6 +4761,30 @@ print_group_cards() {
   done
 }
 
+# "http_code=200;latency_ms=180;transport_ip_version=4;error_type=none"
+# rendered as "200 / 180ms / ok" (or "N/A" when nothing was recorded)
+parse_metric_string() {
+  local raw="$1"
+  local field pair key value code="n/a" latency="n/a" error="ok"
+
+  [[ -n "$raw" ]] || {
+    echo "N/A"
+    return
+  }
+
+  for field in ${raw//;/ }; do
+    key="${field%%=*}"
+    value="${field#*=}"
+    case "$key" in
+    http_code) [[ -n "$value" && "$value" != "n/a" ]] && code="$value" ;;
+    latency_ms) [[ -n "$value" && "$value" != "n/a" ]] && latency="$value" ;;
+    error_type) [[ -n "$value" && "$value" != "none" ]] && error="$value" ;;
+    esac
+  done
+
+  printf '%s / %sms / %s' "$code" "$latency" "$error"
+}
+
 print_metrics_group() {
   local group="$1"
   local title="$2"
@@ -4729,22 +4800,12 @@ print_metrics_group() {
   can_use_ipv4 && show_ipv4=true
   can_use_ipv6 && show_ipv6=true
 
-  mapfile -t rows < <(jq -r --arg group "$group" '
-    def metric:
-      if . == null then "N/A" else
-        ((.http_code // "n/a")|tostring) + " / " +
-        ((.latency_ms // "n/a")|tostring) + "ms / " +
-        ((.error_type // "ok")|tostring)
-      end;
-    (.results // {}) as $r
-    | ($r[$group] // [])
-    | .[]
-    | [.service, (.metrics.ipv4 | metric), (.metrics.ipv6 | metric)]
-    | @tsv
-  ' <<<"$RESULT_JSON")
+  mapfile -t rows < <(read_group_rows "$group")
 
   for row in "${rows[@]}"; do
-    IFS=$'\t' read -r s m4 m6 <<<"$row"
+    IFS=$'\t' read -r s _ _ m4 m6 <<<"$row"
+    m4="$(parse_metric_string "$m4")"
+    m6="$(parse_metric_string "$m6")"
     names+=("$s")
     if [[ "$show_ipv4" == true ]]; then
       vals4+=("$m4")
@@ -4808,36 +4869,62 @@ readonly CLDR_TERRITORIES_URL="https://cdn.jsdelivr.net/npm/cldr-localenames-ful
 # Pool per-protocol consensus into a single verdict: the country most
 # GeoIP services agree on across IPv4 and IPv6
 compute_report_verdict() {
-  local -a leaders=()
-  local row top_count=""
+  local value
+  local -a candidates=()
+  local -A counts=()
+  local top_count=0 country
 
   VERDICT_COUNTRY=""
   VERDICT_TIED=()
 
-  mapfile -t leaders < <(jq -r '
-    [.consensus.ipv4, .consensus.ipv6]
-    | map(select(. != null and .country != null))
-    | if length == 0 then [] else
-        group_by(.country)
-        | map({country: .[0].country, count: (map(.count) | add)})
-        | sort_by(-.count, .country)
-      end
-    | .[] | "\(.count)\t\(.country)"
-  ' <<<"$RESULT_JSON")
+  # Pool GeoIP cells across IPv4 and IPv6: the country most services
+  # agree on wins, alphabetical order breaks ties
+  while IFS=$'\t' read -r _ v4 v6 _ _; do
+    [[ "$v4" =~ ^[A-Z]{2}$ ]] && counts[$v4]=$((${counts[$v4]:-0} + 1))
+    [[ "$v6" =~ ^[A-Z]{2}$ ]] && counts[$v6]=$((${counts[$v6]:-0} + 1))
+  done < <(read_group_rows primary)
 
-  ((${#leaders[@]} > 0)) || return 0
+  ((${#counts[@]} > 0)) || return 0
 
-  top_count="${leaders[0]%%$'\t'*}"
-  for row in "${leaders[@]}"; do
-    if [[ "${row%%$'\t'*}" == "$top_count" ]]; then
-      VERDICT_TIED+=("${row#*$'\t'}")
+  for country in "${!counts[@]}"; do
+    if ((counts[$country] > top_count)); then
+      top_count=${counts[$country]}
     fi
   done
+  for country in "${!counts[@]}"; do
+    ((counts[$country] == top_count)) && candidates+=("$country")
+  done
 
-  if ((${#VERDICT_TIED[@]} == 1)); then
-    VERDICT_COUNTRY="${VERDICT_TIED[0]}"
-    VERDICT_TIED=()
+  if ((${#candidates[@]} == 1)); then
+    VERDICT_COUNTRY="${candidates[0]}"
+  else
+    # Alphabetical order without sort(1): candidates are few, and the
+    # no-jq environment may not have coreutils on PATH at all
+    local -a sorted_candidates=() next=()
+    local cand inserted
+    for cand in "${candidates[@]}"; do
+      next=()
+      inserted=0
+      for cand2 in "${sorted_candidates[@]}"; do
+        if ((inserted == 0)) && [[ "$cand" < "$cand2" ]]; then
+          next+=("$cand")
+          inserted=1
+        fi
+        next+=("$cand2")
+      done
+      ((inserted == 0)) && next+=("$cand")
+      sorted_candidates=("${next[@]}")
+    done
+    VERDICT_TIED=("${sorted_candidates[@]}")
   fi
+}
+
+have_jq() {
+  [[ "$JQ_AVAILABLE" == true ]]
+}
+
+have_curl() {
+  [[ "$CURL_AVAILABLE" == true ]]
 }
 
 # True when the value equals any of the listed candidates
@@ -4883,7 +4970,7 @@ country_display_name() {
 # informational, or agreeing with the verdict)
 count_report_checks() {
   local -a groups=()
-  local summary
+  local group v4 v6
 
   CHECKS_TOTAL=0
   CHECKS_NORMAL=0
@@ -4891,44 +4978,24 @@ count_report_checks() {
   mapfile -t groups < <(selected_display_groups)
   ((${#groups[@]} > 0)) || return 0
 
-  summary="$(jq -r -n \
-    --argjson groups "$(printf '%s\n' "${groups[@]}" | jq -R . | jq -s .)" \
-    --argjson verdicts "$(printf '%s\n' "$VERDICT_COUNTRY" "${VERDICT_TIED[@]}" | jq -R 'select(length > 0)' | jq -s .)" \
-    --arg v4 "$(if can_use_ipv4; then echo true; else echo false; fi)" \
-    --arg v6 "$(if can_use_ipv6; then echo true; else echo false; fi)" \
-    --rawfile body <(printf '%s' "$RESULT_JSON") '
-    def cls($v):
-      if $v == "Yes" then "yes"
-      elif $v == "No" then "no"
-      elif ($v | test("^[A-Z]{2}$")) then "country"
-      elif ($v == "N/A" or $v == "Rate-limit" or $v == "Server error") then "unknown"
-      elif ($v == "Denied" or $v == "IP block" or $v == "DNS block") then "ipblock"
-      elif ($v == "Region blocked") then "region"
-      else "info"
-      end;
-    ($body | fromjson) as $r
-    | [$groups[] as $g
-        | ($r.results[$g] // [])[] as $row
-        | ((if ($v4 == "true") then $row.ipv4 else null end),
-           (if ($v6 == "true") then $row.ipv6 else null end))
-        | select(. != null and . != "null")
-        | {value: ., class: cls(.)}
-      ] as $cells
-    | [$cells[] as $cell
-        | select($cell.class == "yes"
-          or $cell.class == "info"
-          or ($cell.class == "country" and any($verdicts[]; . == $cell.value)))
-      ] | length
-    | "\(($cells | length))\t\(.)"
-  ' 2>/dev/null || true)"
-
-  [[ "$summary" == *$'\t'* ]] || return 0
-  CHECKS_TOTAL="${summary%%$'\t'*}"
-  CHECKS_NORMAL="${summary#*$'\t'}"
-  [[ "$CHECKS_TOTAL" =~ ^[0-9]+$ && "$CHECKS_NORMAL" =~ ^[0-9]+$ ]] || {
-    CHECKS_TOTAL=0
-    CHECKS_NORMAL=0
-  }
+  for group in "${groups[@]}"; do
+    while IFS=$'\t' read -r _ v4 v6 _ _; do
+      if can_use_ipv4 && [[ -n "$v4" ]]; then
+        CHECKS_TOTAL=$((CHECKS_TOTAL + 1))
+        case "$(classify_cell_value "$v4")" in
+        yes | info) CHECKS_NORMAL=$((CHECKS_NORMAL + 1)) ;;
+        country) is_verdict_country "$v4" && CHECKS_NORMAL=$((CHECKS_NORMAL + 1)) ;;
+        esac
+      fi
+      if can_use_ipv6 && [[ -n "$v6" ]]; then
+        CHECKS_TOTAL=$((CHECKS_TOTAL + 1))
+        case "$(classify_cell_value "$v6")" in
+        yes | info) CHECKS_NORMAL=$((CHECKS_NORMAL + 1)) ;;
+        country) is_verdict_country "$v6" && CHECKS_NORMAL=$((CHECKS_NORMAL + 1)) ;;
+        esac
+      fi
+    done < <(read_group_rows "$group")
+  done
 }
 
 checks_health_color() {
@@ -4980,10 +5047,10 @@ print_checks_bar_line() {
 }
 
 print_report_ip_lines() {
-  local ipv4 ipv6 asn_display country4 country6 line
+  local ipv4 ipv6 asn_display country4 country6 line ip_cell ip6_cell
 
-  ipv4="$(process_json "$RESULT_JSON" ".ip.ipv4.address")"
-  ipv6="$(process_json "$RESULT_JSON" ".ip.ipv6.address")"
+  ipv4="$EXTERNAL_IPV4"
+  ipv6="$EXTERNAL_IPV6"
   country4="$REGISTERED_COUNTRY_IPV4"
   country6="$REGISTERED_COUNTRY_IPV6"
 
@@ -5089,41 +5156,55 @@ attention_value_text() {
 # One attention row per abnormal cell: service, value
 collect_attention_rows() {
   local -a groups=()
-  local group
+  local group service v4 v6 class key
+  declare -A seen=()
 
   mapfile -t groups < <(selected_display_groups)
   ((${#groups[@]} > 0)) || return 0
 
-  jq -r -n \
-    --argjson groups "$(printf '%s\n' "${groups[@]}" | jq -R . | jq -s .)" \
-    --argjson verdicts "$(printf '%s\n' "$VERDICT_COUNTRY" "${VERDICT_TIED[@]}" | jq -R 'select(length > 0)' | jq -s .)" \
-    --arg v4 "$(if can_use_ipv4; then echo true; else echo false; fi)" \
-    --arg v6 "$(if can_use_ipv6; then echo true; else echo false; fi)" \
-    --rawfile body <(printf '%s' "$RESULT_JSON") '
-    def cls($v):
-      if $v == "Yes" then "yes"
-      elif $v == "No" then "no"
-      elif ($v | test("^[A-Z]{2}$")) then "country"
-      elif ($v == "N/A" or $v == "Rate-limit" or $v == "Server error") then "unknown"
-      elif ($v == "Denied" or $v == "IP block" or $v == "DNS block") then "ipblock"
-      elif ($v == "Region blocked") then "region"
-      else "info"
-      end;
-    def abnormal($class; $value):
-      ($class == "no" or $class == "ipblock" or $class == "region" or $class == "unknown")
-      or ($class == "country" and (($verdicts | length) > 0) and ([$verdicts[] | select(. == $value)] | length) == 0);
-    ($body | fromjson) as $r
-    | [$groups[] as $g
-        | ($r.results[$g] // [])[] as $row
-        | ((if ($v4 == "true") then {service: $row.service, value: ($row.ipv4 // null)} else empty end),
-           (if ($v6 == "true") then {service: $row.service, value: ($row.ipv6 // null)} else empty end))
-        | select(.value != null and .value != "null")
-        | (.value | cls(.)) as $class
-        | select(abnormal($class; .value))
-      ]
-    | unique_by([.service, .value])
-    | .[] | "\(.service)\t\(.value)"
-  ' 2>/dev/null
+  for group in "${groups[@]}"; do
+    while IFS=$'\t' read -r service v4 v6 _ _; do
+      if can_use_ipv4 && [[ -n "$v4" ]]; then
+        class="$(classify_cell_value "$v4")"
+        if is_abnormal_cell "$class" "$v4"; then
+          key="$service"$'\x1f'"$v4"
+          if [[ -z "${seen[$key]:-}" ]]; then
+            seen[$key]=1
+            printf '%s\t%s\n' "$service" "$v4"
+          fi
+        fi
+      fi
+      if can_use_ipv6 && [[ -n "$v6" ]]; then
+        class="$(classify_cell_value "$v6")"
+        if is_abnormal_cell "$class" "$v6"; then
+          key="$service"$'\x1f'"$v6"
+          if [[ -z "${seen[$key]:-}" ]]; then
+            seen[$key]=1
+            printf '%s\t%s\n' "$service" "$v6"
+          fi
+        fi
+      fi
+    done < <(read_group_rows "$group")
+  done
+}
+
+# A cell lands in the Attention card when it failed outright, answered
+# with a block signature, or - once a verdict exists - names a country
+# the other services do not agree with
+is_abnormal_cell() {
+  local class="$1"
+  local value="$2"
+
+  case "$class" in
+  no | ipblock | region | unknown) return 0 ;;
+  country)
+    if [[ ${#VERDICT_TIED[@]} -gt 0 || -n "$VERDICT_COUNTRY" ]] && ! is_verdict_country "$value"; then
+      return 0
+    fi
+    ;;
+  esac
+
+  return 1
 }
 
 # Wrap a ", "-separated service list into lines no wider than the width
@@ -5238,6 +5319,10 @@ write_output_file() {
     return 0
   fi
 
+  if ! have_jq; then
+    error_exit "--output requires jq. Install jq, or drop --output."
+  fi
+
   output_format=$(detect_output_format "$OUTPUT_FILE")
   if [[ -z "$output_format" ]]; then
     error_exit "Unsupported output format for $OUTPUT_FILE. Use .json or .csv"
@@ -5294,6 +5379,9 @@ print_results() {
   write_output_file
 
   if [[ "$JSON_OUTPUT" == true ]]; then
+    if ! have_jq; then
+      error_exit "--json requires jq. Install jq, or drop --json for the card report."
+    fi
     echo "$RESULT_JSON" | jq
     return
   fi
@@ -8242,35 +8330,41 @@ fail_on_block_display() {
 }
 
 fail_on_block_check() {
-  local key verdict failed_list=""
-  local -a wanted_displays=() evaluated_keys=()
+  local key display failed_list="" row v4 v6
+  local -a evaluated_keys=()
+  declare -A cell_by_service=()
+
   for key in "${FAIL_ON_BLOCK_KEYS[@]}"; do
     is_service_in_list "$key" "${evaluated_keys[@]}" && continue
     evaluated_keys+=("$key")
-    wanted_displays+=("$(fail_on_block_display "$key")")
   done
-  local wanted_json
-  wanted_json=$(printf '%s\n' "${wanted_displays[@]}" | jq -R . | jq -s .)
+
+  for group in "${ALL_GROUPS[@]}"; do
+    while IFS=$'\t' read -r service v4 v6 _ _; do
+      cell_by_service[$service]="$v4"$'\x1f'"$v6"
+    done < <(read_group_rows "$group")
+  done
 
   for key in "${evaluated_keys[@]}"; do
-    verdict=$(jq -r --arg k "$(fail_on_block_display "$key")" \
-      --arg no "No" \
-      --arg denied "$STATUS_DENIED" \
-      --arg server "$STATUS_SERVER_ERROR" \
-      --arg rate "$STATUS_RATE_LIMIT" \
-      --arg region "$STATUS_REGION_BLOCKED" \
-      --arg expired "Expired" \
-      --arg ipblock "IP block" '
-      [ .results.primary[], .results.custom[], .results.cdn[], .results.devinfra[], .results.dns[]? ]
-      | map(select(.service == $k))
-      | if length == 0 then "absent"
-        elif any(.[]; .ipv4 == $no or .ipv4 == $denied or .ipv4 == $server or .ipv4 == $rate or .ipv4 == $region or .ipv4 == $expired or .ipv4 == $ipblock or .ipv6 == $no or .ipv6 == $denied or .ipv6 == $server or .ipv6 == $rate or .ipv6 == $region or .ipv6 == $expired or .ipv6 == $ipblock) then "failed"
-        else "ok"
-        end
-    ' <<<"$RESULT_JSON" 2>/dev/null)
-    if [[ "$verdict" == "failed" || "$verdict" == "absent" ]]; then
+    display="$(fail_on_block_display "$key")"
+    row="${cell_by_service[$display]:-}"
+    if [[ -z "$row" ]]; then
       failed_list+="$key "
+      continue
     fi
+    v4="${row%%$'\x1f'*}"
+    v6="${row#*$'\x1f'}"
+    case "$v4" in
+    "No" | "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "$STATUS_RATE_LIMIT" | "$STATUS_REGION_BLOCKED" | "Expired" | "IP block")
+      failed_list+="$key "
+      continue
+      ;;
+    esac
+    case "$v6" in
+    "No" | "$STATUS_DENIED" | "$STATUS_SERVER_ERROR" | "$STATUS_RATE_LIMIT" | "$STATUS_REGION_BLOCKED" | "Expired" | "IP block")
+      failed_list+="$key "
+      ;;
+    esac
   done
 
   if [[ -n "$failed_list" ]]; then
@@ -8282,8 +8376,21 @@ fail_on_block_check() {
   return 0
 }
 
-# One "service=v4/v6" line per check from a result JSON
+# One "service=v4/v6" line per check, straight from the result arrays:
+# the --watch loop and the DNS summary need no jq
 collect_verdict_lines() {
+  local group service v4 v6
+
+  for group in "${ALL_GROUPS[@]}"; do
+    while IFS=$'\t' read -r service v4 v6 _ _; do
+      printf '%s=%s/%s\n' "$service" "${v4:--}" "${v6:--}"
+    done < <(read_group_rows "$group")
+  done
+}
+
+# Same lines, parsed from a saved result JSON file (used by --compare;
+# requires jq)
+collect_verdict_lines_json() {
   local json="$1"
 
   jq -r '
@@ -8318,12 +8425,16 @@ dns_summary_token() {
 # One-line DNS-family verdict summary for --watch cycles:
 #   DNS integrity=Yes intercept=Yes ... latency=12/180 ms rebind=Yes
 dns_summary_line() {
-  local key token verdict out="DNS"
+  local key token verdict out="DNS" service v4
+  declare -A dns_cells=()
+
+  while IFS=$'\t' read -r service v4 _ _ _; do
+    dns_cells[$service]="$v4"
+  done < <(read_group_rows dns)
+
   for key in "${DNS_DIAG_SERVICES_ORDER[@]}"; do
     token=$(dns_summary_token "$key")
-    verdict=$(jq -r --arg k "${DNS_DIAG_SERVICES[$key]}" \
-      '[.results.dns[]?] | map(select(.service == $k))[0].ipv4 // "n/a"' \
-      <<<"${RESULT_JSON:-}" 2>/dev/null)
+    verdict="${dns_cells[${DNS_DIAG_SERVICES[$key]}]:-n/a}"
     out+=" $token=$verdict"
   done
   printf '%s\n' "$out" >&2
@@ -8387,8 +8498,8 @@ run_compare() {
 
   local changes
   changes=$(compute_verdict_changes \
-    "$(collect_verdict_lines "$(cat "$old_file")")" \
-    "$(collect_verdict_lines "$(cat "$new_file")")")
+    "$(collect_verdict_lines_json "$(cat "$old_file")")" \
+    "$(collect_verdict_lines_json "$(cat "$new_file")")")
 
   if [[ -z "$changes" ]]; then
     echo "No verdict changes."
@@ -8403,14 +8514,14 @@ run_compare() {
 run_monitor_loop() {
   local prev_verdicts next_verdicts changes
   finalize_json
-  prev_verdicts=$(collect_verdict_lines "$RESULT_JSON")
+  prev_verdicts=$(collect_verdict_lines)
 
   while true; do
     sleep "$WATCH_INTERVAL"
     run_selected_groups || exit 1
     finalize_json
 
-    next_verdicts=$(collect_verdict_lines "$RESULT_JSON")
+    next_verdicts=$(collect_verdict_lines)
     changes=$(compute_verdict_changes "$prev_verdicts" "$next_verdicts")
     if [[ -n "$changes" ]]; then
       printf '%s\n' "$changes" >&2
@@ -8487,6 +8598,19 @@ main() {
 
   detect_distro
   install_dependencies
+
+  is_command_available jq && JQ_AVAILABLE=true || JQ_AVAILABLE=false
+  is_command_available curl && CURL_AVAILABLE=true || CURL_AVAILABLE=false
+
+  if [[ "$JSON_OUTPUT" == true ]] && ! have_jq; then
+    error_exit "--json requires jq. Install jq, or drop --json for the card report."
+  fi
+  if [[ -n "$OUTPUT_FILE" ]] && ! have_jq; then
+    error_exit "--output requires jq. Install jq, or drop --output."
+  fi
+  if [[ -n "$COMPARE_OLD" ]] && ! have_jq; then
+    error_exit "--compare requires jq. Install jq, or drop --compare."
+  fi
 
   if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && "$ONLY_CHANGES" != true ]]; then
     spinner_start

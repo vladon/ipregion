@@ -7,29 +7,30 @@
 
 ╭─ Attention ────────────────────────────────────────────────────────────────────────────╮
 │ Service           Value   Issue                                                        │
-│ 116 services      ✗       blocked:                                                     │
-│ AI Studio, AWS, Anthropic API, App Store, Apple Music, Apple Transport, Azure Portal   │
-│ Battle.net, Cloudflare Pages, Cohere API, Crates.io, DeepL, DeepSeek API, Deezer       │
-│ DigitalOcean, Discord API, Discord CDN, Discord Gateway, DoH Cloudflare, DoH Google    │
-│ DoT Cloudflare, DoT Google, Docker Hub, Docker Hub API, Douyin (CN), Dropbox           │
-│ ElevenLabs API, Epic Games, Facebook API, Facebook CDN, GCP Console, Gemini API        │
-│ Gemini Notebook, GitHub API, GitHub Codeload, GitHub Pages, GitHub Raw, GitLab         │
-│ GitLab API, GitLab Pages, Gmail, Go Modules, Google Calendar, Google Drive             │
-│ Google Meet, Google Photos, Google Transport, Groq API, Heroku, Hetzner, Hugging Face  │
-│ Instagram API, Instagram Transport, KakaoTalk, Line, LinkedIn API, MEGA, Matrix        │
-│ Maven Central, Messenger MQTT, Microsoft Teams, Microsoft Transport, Minecraft Session │
-│ Mistral API, Netflix Transport, Netlify, OK API, OneDrive, OpenAI API, OpenRouter      │
-│ Oracle Cloud, Outlook, Ozon Transport, PayPal, Peacock Access, Perplexity API          │
-│ Play Store, Proton, PyPI, RUTUBE Transport, Reddit API, Riot Games, Roblox, Roblox API │
-│ Signal Service, Slack, SoundCloud, Steam API, Steam Transport, Stripe API              │
-│ Telegram Bot API, Threads API, Threads Transport, Threema, TikTok Access               │
-│ TikTok Transport, Twitch API, Twitch Chat, Twitter Legacy API, VK API, Vercel, Viber   │
-│ Vultr, WeChat API, WhatsApp DC, Wise, Workers.dev, X API, Xbox, YouTube API            │
-│ YouTube Music, YouTube Transport, Zoom, npm Registry, ntfy, xAI API                    │
-│ 3 services        ?       no answer:                                                   │
-│ HTTP/2, Redirect Chain, TTL Honesty                                                    │
-│ LinkedIn Access   ⊘       Denied                                                       │
 │ iplocation.com    CY      different country                                            │
+│ 116 services      ✗       blocked:                                                     │
+│ YouTube API, YouTube Transport, YouTube Music, Google Transport, DoH Google            │
+│ DoH Cloudflare, Gmail, Google Drive, Google Meet, Google Photos, Google Calendar       │
+│ Play Store, AWS, GCP Console, Oracle Cloud, Hetzner, DigitalOcean, Vultr               │
+│ Gemini Notebook, Gemini API, AI Studio, Apple Transport, App Store, Apple Music        │
+│ Steam API, Steam Transport, Microsoft Transport, Microsoft Teams, Outlook              │
+│ Azure Portal, OneDrive, OpenAI API, Reddit API, Anthropic API, Netflix Transport       │
+│ Instagram API, Instagram Transport, TikTok Access, TikTok Transport, WhatsApp DC       │
+│ Discord API, Discord Gateway, Discord CDN, X API, Twitter Legacy API, LinkedIn API     │
+│ Facebook API, Facebook CDN, Messenger MQTT, Viber, Slack, Zoom, Line, KakaoTalk        │
+│ Threema, Matrix, ntfy, Telegram Bot API, Workers.dev, GitHub Pages, GitLab Pages       │
+│ Vercel, Netlify, Cloudflare Pages, Heroku, Threads API, Threads Transport              │
+│ Signal Service, Douyin (CN), WeChat API, VK API, OK API, RUTUBE Transport              │
+│ Ozon Transport, xAI API, DeepSeek API, Perplexity API, Mistral API, Groq API           │
+│ OpenRouter, Cohere API, ElevenLabs API, DeepL, Peacock Access, Twitch API, Twitch Chat │
+│ Proton, Dropbox, MEGA, Epic Games, Battle.net, Minecraft Session, Roblox, Roblox API   │
+│ Riot Games, Xbox, Stripe API, PayPal, Wise, SoundCloud, Deezer, GitHub API             │
+│ GitHub Codeload, GitHub Raw, GitLab, GitLab API, npm Registry, PyPI, Docker Hub        │
+│ Docker Hub API, Go Modules, Crates.io, Maven Central, Hugging Face, DoT Google         │
+│ DoT Cloudflare                                                                         │
+│ 3 services        ?       no answer:                                                   │
+│ Redirect Chain, HTTP/2, TTL Honesty                                                    │
+│ LinkedIn Access   ⊘       Denied                                                       │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 
 ╭─ GeoIP services ─────────────╮ ╭─ Popular services ──────────────────╮

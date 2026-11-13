@@ -87,10 +87,10 @@ ipregion.sh --watch 300 --fail-on-block dns_integrity --fail-on-block cert_expir
 ## Dependencies
 
 - bash 4.3+ (on macOS install via Homebrew; system bash 3.2 is not supported)
-- curl
-- jq
+- curl — required for HTTP-based checks (GeoIP, sites, AI, transport probes)
+- jq — required for `--json`, `--output`, `--compare`, the IP cache and Telegram push. The card report, Attention card, verdict gating and `--metrics` render without it; on start a missing jq downgrades to the card report instead of exiting
 
-Missing commands are detected on start and can be installed automatically (apt/pacman/dnf/yum/zypper/apk/brew).
+Missing commands are detected on start and can be installed automatically (apt/pacman/dnf/yum/zypper/apk/brew). Declining the install keeps the script running with a reduced check set instead of exiting.
 
 ## Key Options
 
