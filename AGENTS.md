@@ -52,7 +52,7 @@ shfmt -i 2 -d ipregion.sh tests/run.sh tests/golden.sh       # format gate (2-sp
 ./ipregion.sh -g custom                      # manual check: website group
 ```
 
-- Runtime deps: `bash` ≥ 4.3, `curl`, `jq`; optional `nslookup`. The script detects distro/package manager and offers to install missing commands.
+- Runtime deps: `bash` ≥ 4.3 hard-required; `jq` optional — availability is probed after the install offer (`JQ_AVAILABLE`). Without jq the report renders from `ARR_*` via `read_group_rows` (verdict, attention, gates and metrics are pure bash) and startup downgrades to the card report; `--json`/`--output`/`--compare`/IP cache/Telegram push refuse with a clear error. `curl` still required (HTTP checks) — curl-optional degradation is planned next (`CURL_AVAILABLE` flag already probed). `nslookup` optional with `host`/`getent` fallbacks. The script detects distro/package manager and offers to install missing commands; declining continues with reduced capabilities instead of exiting.
 - **macOS caveat**: system `/bin/bash` is 3.2 (no associative arrays) — install Homebrew bash. On macOS the script runs fully with Homebrew bash (BSD grep/sed/date are supported; `curl --json` is emulated for older system curl).
 - Golden tests (`tests/golden.sh`) render the availability family against stubbed `curl_wrapper`/`tcp_probe` responses and diff the full table plus a sorted `RESULT_JSON` against `tests/golden/expected/`. Regenerate after intentional output changes with `GOLDEN_UPDATE=1 bash tests/golden.sh`. Rendering is self-contained (no `column`), so goldens are deterministic across systems; colors are disabled in non-TTY runs, keeping snapshots plain.
 
