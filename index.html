@@ -80,6 +80,28 @@
 		align-items: center;
 		gap: 12px;
 	}
+	.install-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-bottom: 10px;
+	}
+	.install-tab {
+		background: var(--card);
+		color: var(--muted);
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 5px 12px;
+		font-size: 13px;
+		font-weight: 500;
+		cursor: pointer;
+	}
+	.install-tab:hover { border-color: var(--accent); color: var(--fg); }
+	.install-tab.active {
+		background: var(--accent-dim);
+		border-color: var(--accent-dim);
+		color: #fff;
+	}
 	.install-card code {
 		flex: 1;
 		font-family: "Medeo Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -163,14 +185,18 @@
 
 	<section id="install">
 		<h2>Install</h2>
+		<div class="install-tabs" role="tablist" aria-label="Install method">
+			<button class="install-tab active" type="button" role="tab" aria-selected="true" data-method="wget">wget</button>
+			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="curl">curl</button>
+			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="file">download</button>
+			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="docker">docker</button>
+		</div>
 		<div class="install-card">
 			<span class="prompt">$</span><code id="install-cmd">bash -c 'bash &lt;(wget -qO- https://ipregion.top)'</code>
 			<button class="copy-btn" id="copy-btn" type="button">Copy</button>
 		</div>
-		<p class="alt-commands">
-			Or download it first: <code>wget -O ipregion.sh https://ipregion.top</code><br>
-			Script needs <b>bash ≥ 4.3</b>, plus <code>curl</code> and <code>jq</code>.
-		</p>
+		<p class="hint" id="install-note">Works from fish and sh, too — the outer bash parses process substitution.</p>
+		<p class="alt-commands">Script needs <b>bash ≥ 4.3</b>, plus <code>curl</code> and <code>jq</code>.</p>
 		<p class="hint">curl and wget always receive the raw script — this page is shown only to browsers. The script itself is always available at <a href="/ipregion.sh" style="color: var(--accent);">/ipregion.sh</a>.</p>
 	</section>
 
@@ -218,6 +244,38 @@
 		this.textContent = "Copied!";
 		var btn = this;
 		setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+	});
+
+	var installMethods = {
+		wget: {
+			cmd: "bash -c 'bash <(wget -qO- https://ipregion.top)'",
+			note: "Works from fish and sh, too — the outer bash parses process substitution."
+		},
+		curl: {
+			cmd: "bash -c 'bash <(curl -sL https://ipregion.top)'",
+			note: "Works from fish and sh, too — the outer bash parses process substitution."
+		},
+		file: {
+			cmd: "wget -O ipregion.sh https://ipregion.top && chmod +x ipregion.sh && ./ipregion.sh",
+			note: "Or drop ipregion.sh somewhere on your PATH."
+		},
+		docker: {
+			cmd: "docker run --rm ghcr.io/vladon/ipregion:latest",
+			note: "Add --network=host for IPv6 and interface binding checks."
+		}
+	};
+	var installTabs = document.querySelectorAll(".install-tab");
+	installTabs.forEach(function (tab) {
+		tab.addEventListener("click", function () {
+			var method = installMethods[tab.dataset.method];
+			document.getElementById("install-cmd").textContent = method.cmd;
+			document.getElementById("install-note").textContent = method.note;
+			installTabs.forEach(function (t) {
+				var active = t === tab;
+				t.classList.toggle("active", active);
+				t.setAttribute("aria-selected", active ? "true" : "false");
+			});
+		});
 	});
 </script>
 </body>
