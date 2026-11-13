@@ -6,31 +6,32 @@
 ┃   ━━━━━━━━━━━━━━━━━━━━━━━━━━──────────────────────────────────────  176/418 checks passed
 
 ╭─ Attention ────────────────────────────────────────────────────────────────────────────╮
-│ Service           Value   Issue                                                        │
-│ iplocation.com    CY      different country                                            │
-│ 116 services      ✗       blocked:                                                     │
-│ YouTube API, YouTube Transport, YouTube Music, Google Transport, DoH Google            │
-│ DoH Cloudflare, Gmail, Google Drive, Google Meet, Google Photos, Google Calendar       │
-│ Play Store, AWS, GCP Console, Oracle Cloud, Hetzner, DigitalOcean, Vultr               │
-│ Gemini Notebook, Gemini API, AI Studio, Apple Transport, App Store, Apple Music        │
-│ Steam API, Steam Transport, Microsoft Transport, Microsoft Teams, Outlook              │
-│ Azure Portal, OneDrive, OpenAI API, Reddit API, Anthropic API, Netflix Transport       │
-│ Instagram API, Instagram Transport, TikTok Access, TikTok Transport, WhatsApp DC       │
-│ Discord API, Discord Gateway, Discord CDN, X API, Twitter Legacy API, LinkedIn API     │
-│ Facebook API, Facebook CDN, Messenger MQTT, Viber, Slack, Zoom, Line, KakaoTalk        │
-│ Threema, Matrix, ntfy, Telegram Bot API, Workers.dev, GitHub Pages, GitLab Pages       │
-│ Vercel, Netlify, Cloudflare Pages, Heroku, Threads API, Threads Transport              │
-│ Signal Service, Douyin (CN), WeChat API, VK API, OK API, RUTUBE Transport              │
-│ Ozon Transport, xAI API, DeepSeek API, Perplexity API, Mistral API, Groq API           │
-│ OpenRouter, Cohere API, ElevenLabs API, DeepL, Peacock Access, Twitch API, Twitch Chat │
-│ Proton, Dropbox, MEGA, Epic Games, Battle.net, Minecraft Session, Roblox, Roblox API   │
-│ Riot Games, Xbox, Stripe API, PayPal, Wise, SoundCloud, Deezer, GitHub API             │
-│ GitHub Codeload, GitHub Raw, GitLab, GitLab API, npm Registry, PyPI, Docker Hub        │
-│ Docker Hub API, Go Modules, Crates.io, Maven Central, Hugging Face, DoT Google         │
-│ DoT Cloudflare                                                                         │
-│ 3 services        ?       no answer:                                                   │
-│ Redirect Chain, HTTP/2, TTL Honesty                                                    │
-│ LinkedIn Access   ⊘       Denied                                                       │
+│ different country (CY) · 1 service                                                     │
+│     iplocation.com                                                                     │
+│ blocked · 116 services                                                                 │
+│     YouTube API, YouTube Transport, YouTube Music, Google Transport, DoH Google        │
+│     DoH Cloudflare, Gmail, Google Drive, Google Meet, Google Photos, Google Calendar   │
+│     Play Store, AWS, GCP Console, Oracle Cloud, Hetzner, DigitalOcean, Vultr           │
+│     Gemini Notebook, Gemini API, AI Studio, Apple Transport, App Store, Apple Music    │
+│     Steam API, Steam Transport, Microsoft Transport, Microsoft Teams, Outlook          │
+│     Azure Portal, OneDrive, OpenAI API, Reddit API, Anthropic API, Netflix Transport   │
+│     Instagram API, Instagram Transport, TikTok Access, TikTok Transport, WhatsApp DC   │
+│     Discord API, Discord Gateway, Discord CDN, X API, Twitter Legacy API, LinkedIn API │
+│     Facebook API, Facebook CDN, Messenger MQTT, Viber, Slack, Zoom, Line, KakaoTalk    │
+│     Threema, Matrix, ntfy, Telegram Bot API, Workers.dev, GitHub Pages, GitLab Pages   │
+│     Vercel, Netlify, Cloudflare Pages, Heroku, Threads API, Threads Transport          │
+│     Signal Service, Douyin (CN), WeChat API, VK API, OK API, RUTUBE Transport          │
+│     Ozon Transport, xAI API, DeepSeek API, Perplexity API, Mistral API, Groq API       │
+│     OpenRouter, Cohere API, ElevenLabs API, DeepL, Peacock Access, Twitch API          │
+│     Twitch Chat, Proton, Dropbox, MEGA, Epic Games, Battle.net, Minecraft Session      │
+│     Roblox, Roblox API, Riot Games, Xbox, Stripe API, PayPal, Wise, SoundCloud, Deezer │
+│     GitHub API, GitHub Codeload, GitHub Raw, GitLab, GitLab API, npm Registry, PyPI    │
+│     Docker Hub, Docker Hub API, Go Modules, Crates.io, Maven Central, Hugging Face     │
+│     DoT Google, DoT Cloudflare                                                         │
+│ no answer · 3 services                                                                 │
+│     Redirect Chain, HTTP/2, TTL Honesty                                                │
+│ Denied · 1 service                                                                     │
+│     LinkedIn Access                                                                    │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 
 ╭─ GeoIP services ─────────────╮ ╭─ Popular services ──────────────────╮
