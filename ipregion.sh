@@ -5507,9 +5507,8 @@ print_attention_card() {
   [[ "$SHOW_ATTENTION" == true ]] || return 0
 
   local -a rows=() keys=() card_lines=() wrapped_lines=()
-  local row service value issue key wrapped
+  local row service value issue key wrapped count label list_w
   local -A services_by_key=() count_by_key=()
-  local name_w=16 value_w=6 issue_w wrap_w
 
   mapfile -t rows < <(collect_attention_rows)
   ((${#rows[@]} > 0)) || return 0
@@ -5527,24 +5526,35 @@ print_attention_card() {
     services_by_key[$key]+="${services_by_key[$key]:+, }$service"
   done
 
-  issue_w=$((FULL_REPORT_WIDTH - CARD_SIDES_WIDTH - CARD_CONTENT_INDENT - CARD_TRAILING_GAP - name_w - value_w - 4))
-  ((issue_w < 10)) && issue_w=10
-  wrap_w=$((FULL_REPORT_WIDTH - CARD_SIDES_WIDTH - CARD_CONTENT_INDENT - CARD_TRAILING_GAP))
-
-  card_lines+=("$(color TABLE_HEADER "$(pad "Service" "$name_w")")  $(color TABLE_HEADER "$(pad "Value" "$value_w")")  $(color TABLE_HEADER "Issue")")
+  # Grouped layout, not a table: the Service/Value/Issue columns never
+  # lined up with content like "6 services | ? | no answer:". One label
+  # line per group, then the service list indented under it so wraps
+  # cannot be mistaken for new rows.
+  list_w=$((FULL_REPORT_WIDTH - CARD_SIDES_WIDTH - CARD_CONTENT_INDENT - CARD_TRAILING_GAP - 4))
+  ((list_w < 20)) && list_w=20
 
   for key in "${keys[@]}"; do
     value="${key%%$'\x1f'*}"
     issue="${key#*$'\x1f'}"
-    if ((count_by_key[$key] == 1)); then
-      card_lines+=("$(pad "${services_by_key[$key]}" "$name_w")  $(color NULL "$(pad "$value" "$value_w")")  $(color WARN "$issue")")
-    else
-      card_lines+=("$(color NULL "$(pad "${count_by_key[$key]} services" "$name_w")")  $(color NULL "$(pad "$value" "$value_w")")  $(color WARN "$issue"):")
-      mapfile -t wrapped_lines < <(wrap_words "${services_by_key[$key]}" "$wrap_w")
-      for wrapped in "${wrapped_lines[@]}"; do
-        card_lines+=("$(color NULL "$wrapped")")
-      done
-    fi
+    count="${count_by_key[$key]}"
+
+    # Bare symbols duplicate the issue text; named values (a dissenting
+    # country) carry information and earn their parentheses.
+    case "$value" in
+    "$SYMBOL_YES" | "$SYMBOL_NO" | "$SYMBOL_IPBLOCK" | "$SYMBOL_UNKNOWN")
+      label="$(color WARN "$issue")"
+      ;;
+    *)
+      label="$(color WARN "$issue") $(color NULL "($value)")"
+      ;;
+    esac
+
+    card_lines+=("$label $(color NULL "· $count service$([[ $count == 1 ]] || echo s)")")
+
+    mapfile -t wrapped_lines < <(wrap_words "${services_by_key[$key]}" "$list_w")
+    for wrapped in "${wrapped_lines[@]}"; do
+      card_lines+=("$(color NULL "    $wrapped")")
+    done
   done
 
   printf '%s\n' "${card_lines[@]}" | print_titled_card "Attention" "$FULL_REPORT_WIDTH" 0
