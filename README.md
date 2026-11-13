@@ -131,39 +131,7 @@ would otherwise be excluded. Repeat this flag for multiple verdict gates.
 
 Every run ends with a card-based report:
 
-```text
-┃  Made with <3 by vladon · github.com/vladon/ipregion
-┃
-┃ IPv4  50.7.*.*          AS208677 Cloud.ru  registered in US
-┃    DE   seen by most services
-┃   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━────────────────────  18/26 checks passed
-
-╭─ Attention ───────────────────────────────────────────────────────────╮
-│ Service           Value   Issue                                       │
-│ Signal Service    ⊘       DNS block                                   │
-│ 2 services        ✗       blocked:                                    │
-│ Telegram DC, WhatsApp DC                                              │
-│ 2 services        RU      different country:                          │
-│ cloudflare.com, maxmind.com                                           │
-│ ipapi.co          ?       Rate-limit                                  │
-╰───────────────────────────────────────────────────────────────────────╯
-
-╭─ GeoIP services ─────────────╮ ╭─ Popular services ─────────╮
-│ Service           IPv4       │ │ Service          IPv4      │
-│ maxmind.com       RU         │ │ Telegram Access  ✓         │
-│ cloudflare.com    RU         │ │ Telegram DC      ✗         │
-│ ifconfig.co       DE         │ │ WhatsApp         ✓         │
-│ country.is        US         │ │ Signal Service   ⊘         │
-╰──────────────────────────────╯ ╰────────────────────────────╯
-
-╭─ DNS diagnostics ──────────────╮
-│ Service         IPv4           │
-│ DNS Integrity   ✓              │
-│ DNS Latency     28/156 ms      │
-╰────────────────────────────────╯
-
-  ✓ works · ✗ no/blocked · ⊘ IP blocked · ? no answer · bright country = verdict
-```
+![ipregion report](.github/assets/ipregion-report.png)
 
 - The header block shows the masked addresses with ASN and registered country, then the **verdict** — the country most GeoIP services agree on, pooled across IPv4 and IPv6 (ties are listed) with the full country name on interactive runs — and a `checks passed` bar colored by the share of healthy checks.
 - The **Attention** card groups every abnormal check by value and reason: countries that disagree with the verdict, `No`/blocked results, IP-level blocks and unanswered probes. Identical cells aggregate as `N services` with the wrapped service list. `--no-attention` hides the card.
