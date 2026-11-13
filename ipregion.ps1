@@ -35,7 +35,9 @@ $script = $cachedScript
 if (-not $update) {
     foreach ($candidate in $localCandidates) {
         if (Test-Path $candidate) {
-            $script = $candidate
+            # .ProviderPath strips the PowerShell provider prefix that
+            # Git Bash cannot understand (e.g. on mapped UNC working dirs)
+            $script = (Resolve-Path $candidate).ProviderPath
             break
         }
     }
