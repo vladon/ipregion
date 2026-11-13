@@ -7,6 +7,7 @@ on:
     paths:
       - ipregion.sh
       - index.html
+      - README.md
       - tests/run.sh
       - tests/golden.sh
       - tests/golden/**
