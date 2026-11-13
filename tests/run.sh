@@ -2134,6 +2134,15 @@ assert_contains "$selection_output" "total=28" "bare invocation retains curated 
 selection_output=$(selection_fixture 1 Yes --include-service dns_integrity --fail-on-block dns_integrity --fail-on-block cert_expiry)
 assert_contains "$selection_output" "rc=0 total=2" "repeatable DNS and certificate gates execute once"
 
+# --full dispatches every group including dns (used to omit dns while the
+# planned total still counted it, so the spinner could never reach 100%)
+selection_output=$(selection_fixture 1 Yes --full)
+assert_contains "$selection_output" "maxmind.com" "--full schedules the primary group"
+assert_contains "$selection_output" "Deezer" "--full schedules the custom group"
+assert_contains "$selection_output" "YouTube CDN" "--full schedules the cdn group"
+assert_contains "$selection_output" "GitHub" "--full schedules the devinfra group"
+assert_contains "$selection_output" "DNS Integrity" "--full schedules the dns group"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1

@@ -259,6 +259,7 @@ DNS_SUMMARY=false
 COMPARE_OLD=""
 COMPARE_NEW=""
 FAIL_ON_BLOCK_KEYS=()
+EXPLICIT_SELECTION=""
 LIST_ONLY=false
 REGISTERED_COUNTRY_IPV4=""
 REGISTERED_COUNTRY_IPV6=""
@@ -1119,6 +1120,9 @@ declare -A CUSTOM_SERVICES_HANDLERS=(
   [SOUNDCLOUD]="lookup_soundcloud"
   [DEEZER]="lookup_deezer"
 )
+
+# Canonical group dispatch order, shared by report, metrics and scheduling
+readonly ALL_GROUPS=(primary custom cdn devinfra dns)
 
 declare -A SERVICE_GROUPS=(
   [primary]="${PRIMARY_SERVICES_ORDER[*]}"
@@ -2154,6 +2158,12 @@ validate_known_service() {
   return 1
 }
 
+# True when explicit --include-service picks or --fail-on-block gates
+# widen the selection beyond the group profile.
+has_explicit_selection() {
+  ((${#INCLUDED_SERVICES[@]} > 0 || ${#FAIL_ON_BLOCK_KEYS[@]} > 0))
+}
+
 should_skip_service() {
   local service_name="$1"
 
@@ -2189,7 +2199,11 @@ count_group_checks() {
   local group="$1"
   local count=0
   local -a group_services
-  read -ra group_services <<<"${SERVICE_GROUPS[$group]:-}"
+  if [[ -n "${2:-}" ]]; then
+    read -ra group_services <<<"$2"
+  else
+    read -ra group_services <<<"${SERVICE_GROUPS[$group]:-}"
+  fi
   local service_name
   for service_name in "${group_services[@]}"; do
     should_skip_service "$service_name" || ((count++))
@@ -3935,14 +3949,16 @@ process_custom_service() {
 
 run_service_group() {
   local group="$1"
-  local services_string="${SERVICE_GROUPS[$group]}"
+  local services_string="${2:-${SERVICE_GROUPS[$group]:-}}"
   local services_array service_name handler_func display_name result
+
+  [[ "$group" == explicit ]] && group="selected"
 
   [[ -n "${CHECKS_GROUP_FILE:-}" ]] && printf '%s' "$group" >"$CHECKS_GROUP_FILE"
 
   read -ra services_array <<<"$services_string"
 
-  log "$LOG_INFO" "Running $group group services"
+  log "$LOG_INFO" "Running $group checks"
 
   for service_name in "${services_array[@]}"; do
     if should_skip_service "$service_name"; then
@@ -3961,8 +3977,10 @@ run_service_group() {
 
 run_service_group_parallel() {
   local group="$1"
-  local services_string="${SERVICE_GROUPS[$group]}"
+  local services_string="${2:-${SERVICE_GROUPS[$group]:-}}"
   local services_array service_name temp_dir result_file
+
+  [[ "$group" == explicit ]] && group="selected"
 
   [[ -n "${CHECKS_GROUP_FILE:-}" ]] && printf '%s' "$group" >"$CHECKS_GROUP_FILE"
 
@@ -4546,13 +4564,13 @@ selected_display_groups() {
   local group
 
   local display_selection="$GROUPS_TO_SHOW"
-  if ((${#INCLUDED_SERVICES[@]} > 0 || ${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
+  if has_explicit_selection; then
     display_selection=all
   fi
   case "$display_selection" in
   default) wanted=(primary custom dns) ;;
-  all) wanted=(primary custom cdn devinfra dns) ;;
-  *) wanted=("$GROUPS_TO_SHOW") ;;
+  all) wanted=("${ALL_GROUPS[@]}") ;;
+  *) wanted=("$display_selection") ;;
   esac
 
   for group in "${wanted[@]}"; do
@@ -5265,7 +5283,7 @@ print_results() {
   print_report
 
   local metrics_selection="$GROUPS_TO_SHOW"
-  if ((${#INCLUDED_SERVICES[@]} > 0 || ${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
+  if has_explicit_selection; then
     metrics_selection=all
   fi
   case "$metrics_selection" in
@@ -8087,7 +8105,7 @@ prepare_explicit_selection() {
   if ((${#INCLUDED_SERVICES[@]} > 0)); then
     candidates=("${INCLUDED_SERVICES[@]}")
   elif [[ "$GROUPS_TO_SHOW" == all ]]; then
-    for group in primary custom cdn devinfra dns; do
+    for group in "${ALL_GROUPS[@]}"; do
       read -ra keys <<<"${SERVICE_GROUPS[$group]}"
       candidates+=("${keys[@]}")
     done
@@ -8098,7 +8116,7 @@ prepare_explicit_selection() {
   for key in "${candidates[@]}"; do
     is_service_in_list "$key" "${selected[@]}" || selected+=("$key")
   done
-  SERVICE_GROUPS[explicit]="${selected[*]}"
+  EXPLICIT_SELECTION="${selected[*]}"
 }
 
 # Runs the checks for the groups selected via --group: resets per-run
@@ -8111,95 +8129,41 @@ run_selected_groups() {
   ARR_DEVINFRA=()
   [[ -n "${CHECKS_DONE_FILE:-}" ]] && : >"$CHECKS_DONE_FILE"
 
-  local dispatch_group="$GROUPS_TO_SHOW"
-  if ((${#INCLUDED_SERVICES[@]} > 0 || ${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
+  local -a dispatch_list=()
+  local -a runner_args=()
+  if has_explicit_selection; then
     prepare_explicit_selection
-    dispatch_group=explicit
+    dispatch_list=("explicit")
+    runner_args=("$EXPLICIT_SELECTION")
+  elif [[ "$GROUPS_TO_SHOW" == all ]]; then
+    dispatch_list=("${ALL_GROUPS[@]}")
+  else
+    dispatch_list=("$GROUPS_TO_SHOW")
   fi
 
   if [[ "$JSON_OUTPUT" != "true" && "$PROGRESS_LOG" != true ]]; then
-    local selected_groups total_group
-    case "$dispatch_group" in
-    explicit) selected_groups=(explicit) ;;
-    primary) selected_groups=(primary) ;;
-    custom) selected_groups=(custom) ;;
-    cdn) selected_groups=(cdn) ;;
-    dns) selected_groups=(dns) ;;
-    devinfra) selected_groups=(devinfra) ;;
-    default) selected_groups=(default) ;;
-    *) selected_groups=(primary custom cdn devinfra dns) ;;
-    esac
     CHECKS_TOTAL=0
-    for total_group in "${selected_groups[@]}"; do
-      CHECKS_TOTAL=$((CHECKS_TOTAL + $(count_group_checks "$total_group")))
+    local total_group
+    for total_group in "${dispatch_list[@]}"; do
+      if [[ "$total_group" == explicit ]]; then
+        CHECKS_TOTAL=$((CHECKS_TOTAL + $(count_group_checks explicit "$EXPLICIT_SELECTION")))
+      else
+        CHECKS_TOTAL=$((CHECKS_TOTAL + $(count_group_checks "$total_group")))
+      fi
     done
     [[ -n "${CHECKS_TOTAL_FILE:-}" ]] && printf '%s' "$CHECKS_TOTAL" >"$CHECKS_TOTAL_FILE"
   fi
 
-  case "$dispatch_group" in
-  explicit)
+  local group
+  for group in "${dispatch_list[@]}"; do
     if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "explicit"
+      run_service_group_parallel "$group" "${runner_args[@]}"
     else
-      run_service_group "explicit"
+      run_service_group "$group" "${runner_args[@]}"
     fi
-    ;;
-  primary)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "primary"
-    else
-      run_service_group "primary"
-    fi
-    ;;
-  default)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "default"
-    else
-      run_service_group "default"
-    fi
-    ;;
-  custom)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "custom"
-    else
-      run_service_group "custom"
-    fi
-    ;;
-  cdn)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "cdn"
-    else
-      run_service_group "cdn"
-    fi
-    ;;
-  dns)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "dns"
-    else
-      run_service_group "dns"
-    fi
-    ;;
-  devinfra)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "devinfra"
-    else
-      run_service_group "devinfra"
-    fi
-    ;;
-  *)
-    if ((PARALLEL_JOBS > 1)); then
-      run_service_group_parallel "primary"
-      run_service_group_parallel "custom"
-      run_service_group_parallel "cdn"
-      run_service_group_parallel "devinfra"
-    else
-      run_service_group "primary"
-      run_service_group "custom"
-      run_service_group "cdn"
-      run_service_group "devinfra"
-    fi
-    ;;
-  esac
+  done
+
+  EXPLICIT_SELECTION=""
 
   if ((${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
     finalize_json
@@ -8212,7 +8176,7 @@ run_selected_groups() {
 # registry entries carry "display|domain|url" - display is field one.
 print_check_registry() {
   local group key display
-  for group in primary custom cdn devinfra dns; do
+  for group in "${ALL_GROUPS[@]}"; do
     local -a keys=()
     case "$group" in
     primary) keys=("${PRIMARY_SERVICES_ORDER[@]}") ;;
@@ -8255,14 +8219,16 @@ fail_on_block_display() {
 
 fail_on_block_check() {
   local key verdict failed_list=""
-  local -a wanted_displays=()
+  local -a wanted_displays=() evaluated_keys=()
   for key in "${FAIL_ON_BLOCK_KEYS[@]}"; do
+    is_service_in_list "$key" "${evaluated_keys[@]}" && continue
+    evaluated_keys+=("$key")
     wanted_displays+=("$(fail_on_block_display "$key")")
   done
   local wanted_json
   wanted_json=$(printf '%s\n' "${wanted_displays[@]}" | jq -R . | jq -s .)
 
-  for key in "${FAIL_ON_BLOCK_KEYS[@]}"; do
+  for key in "${evaluated_keys[@]}"; do
     verdict=$(jq -r --arg k "$(fail_on_block_display "$key")" \
       --arg no "No" \
       --arg denied "$STATUS_DENIED" \
