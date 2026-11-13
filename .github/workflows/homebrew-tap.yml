@@ -1,0 +1,96 @@
+name: Update Homebrew tap
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homebrew-tap
+  cancel-in-progress: false
+
+jobs:
+  bump-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check TAP_TOKEN secret
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          if [[ -z "$TAP_TOKEN" ]]; then
+            echo "::error::TAP_TOKEN secret is not set. Add a token with write access to vladon/homebrew-ipregion (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+
+      - name: Prepare release info
+        id: rel
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "url=https://github.com/vladon/ipregion/releases/download/${TAG}/ipregion.sh" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for release asset (Deploy attaches it concurrently)
+        run: |
+          ASSET=""
+          for i in $(seq 1 60); do
+            if curl -fsSL "${{ steps.rel.outputs.url }}" -o /tmp/ipregion.sh; then
+              ASSET=/tmp/ipregion.sh
+              break
+            fi
+            echo "attempt $i/60: asset not attached yet"
+            sleep 10
+          done
+          if [[ -z "$ASSET" || ! -s /tmp/ipregion.sh ]]; then
+            echo "::error::release asset never appeared at ${{ steps.rel.outputs.url }}"
+            exit 1
+          fi
+
+      - name: Checksum and sanity
+        id: sha
+        run: |
+          SHA=$(sha256sum /tmp/ipregion.sh | cut -d' ' -f1)
+          if ! [[ "$SHA" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::unexpected checksum format: $SHA"
+            exit 1
+          fi
+          bash -n /tmp/ipregion.sh
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Clone tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: git clone "https://x-access-token:${TAP_TOKEN}@github.com/vladon/homebrew-ipregion.git" tap
+
+      - name: Bump formula
+        run: |
+          cd tap
+          F=Formula/ipregion.rb
+          if grep -q "version \"${{ steps.rel.outputs.version }}\"" "$F"; then
+            echo "formula already at ${{ steps.rel.outputs.version }}, nothing to do"
+            exit 0
+          fi
+          sed -i \
+            -e "s|releases/download/v[^\"]*/ipregion.sh|releases/download/${{ steps.rel.outputs.tag }}/ipregion.sh|" \
+            -e "s|version \"[^\"]*\"|version \"${{ steps.rel.outputs.version }}\"|" \
+            -e "s|sha256 \"[^\"]*\"|sha256 \"${{ steps.sha.outputs.sha }}\"|" \
+            "$F"
+          grep -E 'releases/download|version "|sha256 "' "$F"
+
+      - name: Push bump
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          cd tap
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "nothing to push"
+            exit 0
+          fi
+          git config user.name "ipregion-release-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add Formula/ipregion.rb
+          git commit -m "ipregion ${{ steps.rel.outputs.version }}"
+          git push "https://x-access-token:${TAP_TOKEN}@github.com/vladon/homebrew-ipregion.git" main
