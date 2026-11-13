@@ -121,7 +121,7 @@ jobs:
       - name: Deploy files
         run: |
           install -d deploy-stage
-          cp ipregion.sh index.html README.md LICENSE deploy-stage/
+          cp ipregion.sh ipregion.ps1 ipregion.cmd index.html README.md LICENSE deploy-stage/
           cp -a fonts deploy-stage/fonts
           rsync -az --delete \
             deploy-stage/ \
@@ -133,7 +133,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ steps.version.outputs.version_value }}" \
-            deploy-stage/ipregion.sh --clobber
+            deploy-stage/ipregion.sh deploy-stage/ipregion.ps1 deploy-stage/ipregion.cmd --clobber
           gh release view "${{ steps.version.outputs.version_value }}" \
             --json assets --jq '.assets[] | "\(.name) \(.size) bytes"'
 
