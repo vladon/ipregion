@@ -205,6 +205,7 @@
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="brew">brew</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="completions">completions</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="docker">docker</button>
+			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="windows">windows</button>
 		</div>
 		<div class="install-card">
 			<div class="install-line">
@@ -291,6 +292,10 @@
 		docker: {
 			cmd: "docker run --rm ghcr.io/vladon/ipregion:latest",
 			note: "Add --network=host for IPv6 and interface binding checks."
+		},
+		windows: {
+			cmd: "Invoke-WebRequest https://github.com/vladon/ipregion/releases/latest/download/ipregion.cmd -OutFile ipregion.cmd\n.\\ipregion.cmd -g dns",
+			note: "Windows (PowerShell or cmd): needs a bash environment - Git for Windows (https://git-scm.com/download/win) or WSL. ipregion.ps1 for PowerShell and scoop install vladon/ipregion are on the same release page."
 		}
 	};
 	var installTabs = document.querySelectorAll(".install-tab");
