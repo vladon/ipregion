@@ -356,6 +356,133 @@ declare -A DEPENDENCIES=(
   [nslookup]="bind-utils"
 )
 
+declare -A CURL_FREE_CHECKS=(
+  [AI_STUDIO]=1
+  [ANTHROPIC_API]=1
+  [APPLE_MUSIC]=1
+  [APPLE_TRANSPORT]=1
+  [APP_STORE]=1
+  [AWS]=1
+  [AZURE_PORTAL]=1
+  [BATTLE_NET]=1
+  [CERT_EXPIRY]=1
+  [COHERE_API]=1
+  [CRATES_IO]=1
+  [DEEPSEEK_API]=1
+  [DEEZER]=1
+  [DIGITALOCEAN]=1
+  [DISCORD_API]=1
+  [DISCORD_CDN]=1
+  [DISCORD_GATEWAY]=1
+  [DNSSEC_VALIDATION]=1
+  [DNS_INTEGRITY]=1
+  [DNS_INTERCEPT]=1
+  [DNS_LATENCY]=1
+  [DNS_PTR]=1
+  [DNS_TTL]=1
+  [DOCKER_HUB]=1
+  [DOCKER_HUB_API]=1
+  [DOH_CLOUDFLARE]=1
+  [DOH_GOOGLE]=1
+  [DOT_CLOUDFLARE]=1
+  [DOT_GOOGLE]=1
+  [DROPBOX]=1
+  [ELEVENLABS_API]=1
+  [EPIC_GAMES]=1
+  [FACEBOOK_API]=1
+  [FACEBOOK_CDN]=1
+  [GCP_CONSOLE]=1
+  [GEMINI_API]=1
+  [GITHUB_API]=1
+  [GITHUB_CODELOAD]=1
+  [GITHUB_PAGES]=1
+  [GITHUB_RAW]=1
+  [GITLAB]=1
+  [GITLAB_API]=1
+  [GITLAB_PAGES]=1
+  [GMAIL]=1
+  [GOOGLE_CALENDAR]=1
+  [GOOGLE_DRIVE]=1
+  [GOOGLE_MEET]=1
+  [GOOGLE_PHOTOS]=1
+  [GOOGLE_TRANSPORT]=1
+  [GO_MODULES]=1
+  [GROQ_API]=1
+  [HEROKU_APP]=1
+  [HETZNER]=1
+  [HUGGING_FACE]=1
+  [INSTAGRAM_API]=1
+  [INSTAGRAM_TRANSPORT]=1
+  [KAKAOTALK]=1
+  [LINE]=1
+  [LINKEDIN_API]=1
+  [MATRIX]=1
+  [MAVEN_CENTRAL]=1
+  [MEGA]=1
+  [MESSENGER_MQTT]=1
+  [MICROSOFT_TRANSPORT]=1
+  [MINECRAFT_SESSION]=1
+  [MISTRAL_API]=1
+  [NETFLIX_TRANSPORT]=1
+  [NETLIFY_APP]=1
+  [NPM_REGISTRY]=1
+  [NTFY]=1
+  [OK_API]=1
+  [ONEDRIVE]=1
+  [OPENAI_API]=1
+  [OPENROUTER]=1
+  [ORACLE_CLOUD]=1
+  [OUTLOOK]=1
+  [OZON_TRANSPORT]=1
+  [PAGES_DEV]=1
+  [PAYPAL]=1
+  [PERPLEXITY_API]=1
+  [PLAY_STORE]=1
+  [PROTON]=1
+  [PUBLIC_ANSWERS]=1
+  [PYPI]=1
+  [REBIND_PROTECTION]=1
+  [REDDIT_API]=1
+  [RESOLVER_CONSENSUS]=1
+  [RESOLVER_JITTER]=1
+  [RESOLVER_LATENCY]=1
+  [RIOT]=1
+  [ROBLOX]=1
+  [ROBLOX_API]=1
+  [RUTUBE_TRANSPORT]=1
+  [SIGNAL_SERVICE]=1
+  [SLACK]=1
+  [SOUNDCLOUD]=1
+  [STEAM_API]=1
+  [STEAM_TRANSPORT]=1
+  [STRIPE_API]=1
+  [TEAMS]=1
+  [TELEGRAM_BOT_API]=1
+  [TELEGRAM_DC]=1
+  [THREADS_API]=1
+  [THREADS_TRANSPORT]=1
+  [THREEMA]=1
+  [TIKTOK_TRANSPORT]=1
+  [TWITCH_API]=1
+  [TWITCH_CHAT]=1
+  [TWITTER_LEGACY_API]=1
+  [VERCEL_APP]=1
+  [VIBER]=1
+  [VK_API]=1
+  [VULTR]=1
+  [WECHAT_API]=1
+  [WHATSAPP_DC]=1
+  [WISE]=1
+  [WORKERS_DEV]=1
+  [XAI_API]=1
+  [XBOX]=1
+  [X_API]=1
+  [YOUTUBE_API]=1
+  [YOUTUBE_MUSIC]=1
+  [YOUTUBE_TRANSPORT]=1
+  [ZOOM]=1
+)
+
 declare -A PACKAGE_MAPPING=(
   ["apt:nslookup"]="dnsutils"
   ["pacman:nslookup"]="bind"
@@ -2168,6 +2295,14 @@ validate_known_service() {
   return 1
 }
 
+# True when the check depends on curl (HTTP). TCP-target probes,
+# resolver-based DNS checks and the openssl cert expiry keep working
+# without curl. Keys are listed in CURL_FREE_CHECKS; everything not
+# listed is treated as HTTP and skipped when curl is unavailable.
+service_needs_curl() {
+  [[ -z "${CURL_FREE_CHECKS[$1]:-}" ]]
+}
+
 # True when explicit --include-service picks or --fail-on-block gates
 # widen the selection beyond the group profile.
 has_explicit_selection() {
@@ -2180,6 +2315,13 @@ should_skip_service() {
   # A requested verdict gate must run even outside the profile/include list.
   if is_service_in_list "$service_name" "${FAIL_ON_BLOCK_KEYS[@]}"; then
     return 1
+  fi
+
+  # No curl: HTTP-based checks cannot run and are excluded from the
+  # schedule and totals; DNS resolver checks, DoT/DoH TCP probes and the
+  # openssl cert expiry keep going.
+  if [[ "$CURL_AVAILABLE" != true ]] && service_needs_curl "$service_name"; then
+    return 0
   fi
 
   if ((${#INCLUDED_SERVICES[@]} > 0)); then
@@ -8610,6 +8752,26 @@ main() {
   fi
   if [[ -n "$COMPARE_OLD" ]] && ! have_jq; then
     error_exit "--compare requires jq. Install jq, or drop --compare."
+  fi
+
+  if [[ "$CURL_AVAILABLE" != true ]]; then
+    local -a warn_groups=()
+    local http_skipped=0 warn_group warn_key
+    case "$GROUPS_TO_SHOW" in
+    default) warn_groups=(primary custom dns) ;;
+    all) warn_groups=("${ALL_GROUPS[@]}") ;;
+    *) warn_groups=("$GROUPS_TO_SHOW") ;;
+    esac
+    for warn_group in "${warn_groups[@]}"; do
+      local -a warn_keys=()
+      read -ra warn_keys <<<"${SERVICE_GROUPS[$warn_group]:-}"
+      for warn_key in "${warn_keys[@]}"; do
+        service_needs_curl "$warn_key" && http_skipped=$((http_skipped + 1))
+      done
+    done
+    printf "%s %s\n" \
+      "$(color WARN '[WARN]')" \
+      "curl is not available: $http_skipped HTTP-based checks will be skipped (DNS resolver checks, DoT/DoH TCP probes and cert expiry still run)" >&2
   fi
 
   if [[ "$JSON_OUTPUT" != "true" && "$VERBOSE" != "true" && "$PROGRESS_LOG" != true && "$ONLY_CHANGES" != true ]]; then

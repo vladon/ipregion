@@ -19,6 +19,11 @@ fi
 # shellcheck source=/dev/null
 source "$ROOT_DIR/ipregion.sh"
 
+# The suite stubs curl_wrapper itself: declare curl available so the
+# curl-optional gate does not skip HTTP-based checks under test
+CURL_AVAILABLE=true
+export CURL_AVAILABLE
+
 # Golden renders the full multi-group fixture set; keep print_results on
 # the all-groups branch regardless of the script's default profile.
 GROUPS_TO_SHOW="all"
