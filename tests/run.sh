@@ -2131,7 +2131,7 @@ selection_fixture() {
     jq -r '[.results[][] | .service] | sort | .[]' <<<"$RESULT_JSON"
   else
     selected_display_groups | while IFS= read -r g; do
-      read_group_rows "$g" | cut -f1
+      read_group_rows "$g" | cut -d$'\x1f' -f1
     done | sort
   fi
   printf 'cards=%s\n' "$(selected_display_groups | tr '\n' ',')"
@@ -2309,6 +2309,32 @@ fi
 assert_contains "$nojq_json_out" "--json requires jq" "--json without jq refuses loudly"
 assert_eq "1" "$nojq_json_rc" "--json without jq exits 1"
 rm -rf "$NOJQ_BIN"
+
+# read_group_rows field alignment: empty/null value cells must not shift
+# metrics into value positions, and raw metric strings must never leak into
+# card cells (regression: "http_code=...;error_type=none|||" rendered as a
+# country cell when null/empty values collapsed the tab fields)
+ARR_PRIMARY=("ipapi.is|||null||||||http_code=200;latency_ms=210;transport_ip_version=4;error_type=none|||")
+assert_eq "$(read_group_rows primary)" \
+  "$(printf 'ipapi.is\037\037\037http_code=200;latency_ms=210;transport_ip_version=4;error_type=none\037')" \
+  "read_group_rows keeps null-value rows field-aligned with metrics"
+ARR_PRIMARY=("maxmind.com|||RU|||RU|||http_code=200;latency_ms=180;transport_ip_version=4;error_type=none|||http_code=200;latency_ms=200;transport_ip_version=6;error_type=curl_error")
+assert_eq "$(read_group_rows primary)" \
+  "$(printf 'maxmind.com\037RU\037RU\037http_code=200;latency_ms=180;transport_ip_version=4;error_type=none\037http_code=200;latency_ms=200;transport_ip_version=6;error_type=curl_error')" \
+  "read_group_rows keeps valued rows field-aligned with metrics"
+ARR_PRIMARY=()
+
+EXTERNAL_IPV4="192.0.2.10"
+ARR_PRIMARY=("ipapi.is|||null||||||http_code=200;latency_ms=210;transport_ip_version=4;error_type=none|||" "maxmind.com|||RU|||RU|||||")
+assert_contains "$(group_card_text primary)" "maxmind.com" "card still renders valued rows after alignment fix"
+if group_card_text primary | grep -q 'http_code='; then
+  echo "FAIL: card leaks raw metrics into cells"
+  failures=$((failures + 1))
+else
+  echo "OK: card does not leak raw metrics"
+fi
+EXTERNAL_IPV4=""
+ARR_PRIMARY=()
 
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
