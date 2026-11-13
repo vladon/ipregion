@@ -2165,6 +2165,12 @@ dns_fallback_rc=$(PATH="$DNS_FALLBACK_BIN" bash -c '
 assert_eq "1" "$dns_fallback_rc" "check_ip_dns reports failure when getent yields nothing"
 rm -rf "$DNS_FALLBACK_BIN"
 
+# Handlers emit plain cell values: the card renderer, classification,
+# verdict gating and the JSON report operate on raw text (a regression
+# here baked ANSI into results on interactive runs)
+assert_eq "Yes" "$(print_value_or_colored Yes SERVICE)" "handlers emit plain values"
+assert_eq "DNS block" "$(print_value_or_colored "DNS block" WARN)" "handlers emit plain status strings"
+
 # check_ip_connectivity must survive ICMP-blocked environments via a TCP
 # probe: GitHub CI runners drop outbound ping, which used to fail the whole
 # protocol support chain

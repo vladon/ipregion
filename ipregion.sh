@@ -1907,14 +1907,11 @@ process_json() {
 
 print_value_or_colored() {
   local value="$1"
-  local color_name="$2"
 
-  if [[ "$JSON_OUTPUT" == true ]]; then
-    echo "$value"
-    return
-  fi
-
-  color "$color_name" "$value"
+  # Handlers must emit plain values: classification, verdict gating, the
+  # JSON report and the card renderer all operate on raw cell text. The
+  # card renderer applies colors by cell class.
+  echo "$value"
 }
 
 mask_ipv4() {
