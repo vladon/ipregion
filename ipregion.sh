@@ -226,6 +226,15 @@ EXTERNAL_IPV4_TIMESTAMP=""
 EXTERNAL_IPV6_TIMESTAMP=""
 PARALLEL_JOBS=0
 PARALLEL_PIDS=()
+PARALLEL_PID_STARTED=()
+PARALLEL_PID_SERVICE=()
+PARALLEL_PID_RESULT=()
+# Hard per-worker deadline (seconds). A wedged worker (bash subshell
+# bugs, tarpitting endpoints) is killed and reported as N/A instead of
+# stalling the whole run.
+PARALLEL_WORKER_TIMEOUT="${PARALLEL_WORKER_TIMEOUT:-120}"
+[[ "$PARALLEL_WORKER_TIMEOUT" =~ ^[0-9]+$ ]] || PARALLEL_WORKER_TIMEOUT=120
+((PARALLEL_WORKER_TIMEOUT < 30)) && PARALLEL_WORKER_TIMEOUT=30
 PROGRESS_LOG=false
 LAST_PROGRESS_MSG=""
 SHOW_METRICS=false
@@ -1717,48 +1726,135 @@ is_command_available() {
   command -v "$cmd" >/dev/null 2>&1
 }
 
-supports_wait_n() {
-  local major minor
-  major=${BASH_VERSINFO[0]:-0}
-  minor=${BASH_VERSINFO[1]:-0}
-
-  ((major > 4 || (major == 4 && minor >= 3)))
-}
-
 prune_parallel_pids() {
-  local pid
+  local i pid
   local -a remaining=()
+  local -a remaining_started=()
+  local -a remaining_service=()
+  local -a remaining_result=()
 
-  for pid in "${PARALLEL_PIDS[@]}"; do
+  for i in "${!PARALLEL_PIDS[@]}"; do
+    pid="${PARALLEL_PIDS[i]}"
     if kill -0 "$pid" 2>/dev/null; then
       remaining+=("$pid")
+      remaining_started+=("${PARALLEL_PID_STARTED[i]}")
+      remaining_service+=("${PARALLEL_PID_SERVICE[i]}")
+      remaining_result+=("${PARALLEL_PID_RESULT[i]}")
     else
       wait "$pid" 2>/dev/null
     fi
   done
 
   PARALLEL_PIDS=("${remaining[@]}")
+  PARALLEL_PID_STARTED=("${remaining_started[@]}")
+  PARALLEL_PID_SERVICE=("${remaining_service[@]}")
+  PARALLEL_PID_RESULT=("${remaining_result[@]}")
+}
+
+# Kill a wedged worker and its command-substitution descendants (TERM,
+# then KILL). Snapshot children first so no fork can escape the sweep.
+kill_worker_subtree() {
+  local root="$1"
+  local -a targets=()
+  local pid child grandchild
+
+  targets+=("$root")
+  for child in $(ps --no-headers -o pid --ppid "$root" 2>/dev/null); do
+    targets+=("$child")
+    for grandchild in $(ps --no-headers -o pid --ppid "$child" 2>/dev/null); do
+      targets+=("$grandchild")
+    done
+  done
+
+  for pid in "${targets[@]}"; do
+    kill -TERM "$pid" 2>/dev/null || true
+  done
+  sleep 0.3
+  for pid in "${targets[@]}"; do
+    kill -KILL "$pid" 2>/dev/null || true
+  done
+}
+
+# Fallback row for a worker killed after PARALLEL_WORKER_TIMEOUT: keeps
+# the report complete (the cell reads N/A with a timeout error metric)
+# and lets the spinner counter reach the planned total.
+append_worker_timeout_result() {
+  local service="$1"
+  local result_file="$2"
+  local group display_name cfg
+
+  if [[ -n "${DEVINFRA_SERVICES[$service]:-}" ]]; then
+    group="devinfra"
+    display_name="${DEVINFRA_SERVICES[$service]}"
+  elif [[ -n "${DNS_DIAG_SERVICES[$service]:-}" ]]; then
+    group="dns"
+    display_name="${DNS_DIAG_SERVICES[$service]}"
+  elif [[ -n "${CDN_SERVICES[$service]:-}" ]]; then
+    group="cdn"
+    display_name="${CDN_SERVICES[$service]}"
+  elif [[ -n "${CUSTOM_SERVICES[$service]:-}" ]]; then
+    group="custom"
+    display_name="${CUSTOM_SERVICES[$service]}"
+  else
+    group="primary"
+    cfg="${PRIMARY_SERVICES[$service]:-}"
+    display_name="${cfg%%|*}"
+  fi
+  [[ -n "$display_name" ]] || display_name="$service"
+
+  [[ -f "$result_file" ]] && return
+
+  printf "%s|||%s|||%s|||%s|||%s|||%s\n" \
+    "$group" "$display_name" "N/A" "N/A" \
+    "http_code=0;latency_ms=0;transport_ip_version=4;error_type=worker_timeout" \
+    "http_code=0;latency_ms=0;transport_ip_version=4;error_type=worker_timeout" \
+    >>"$result_file"
+
+  [[ -n "${CHECKS_DONE_FILE:-}" ]] && printf '%s\n' "$COLOR_NULL" >>"$CHECKS_DONE_FILE"
+  # Visible without --verbose on purpose: killing a worker is a visible,
+  # state-changing event (same convention as the IP-support warning).
+  printf "%s %s\n" \
+    "$(color WARN '[WARN]')" \
+    "$(color TABLE_HEADER "$display_name") worker exceeded ${PARALLEL_WORKER_TIMEOUT}s; check marked N/A" >&2
+  log "$LOG_WARN" "$service worker exceeded ${PARALLEL_WORKER_TIMEOUT}s; marked N/A"
+}
+
+# Bash workers can wedge forever (observed: bash 5.3.9 spinning inside a
+# subshell while recording PIPESTATUS of a finished pipeline). Enforce a
+# hard per-worker deadline so one wedged check cannot stall the run.
+reap_expired_parallel_workers() {
+  local i pid started service result_file
+
+  for i in "${!PARALLEL_PIDS[@]}"; do
+    pid="${PARALLEL_PIDS[i]}"
+    kill -0 "$pid" 2>/dev/null || continue
+    started="${PARALLEL_PID_STARTED[i]}"
+    ((SECONDS - started < PARALLEL_WORKER_TIMEOUT)) && continue
+    service="${PARALLEL_PID_SERVICE[i]}"
+    result_file="${PARALLEL_PID_RESULT[i]}"
+    kill_worker_subtree "$pid"
+    append_worker_timeout_result "$service" "$result_file"
+    wait "$pid" 2>/dev/null
+  done
 }
 
 wait_for_parallel_slot() {
   while ((${#PARALLEL_PIDS[@]} >= PARALLEL_JOBS)); do
-    if supports_wait_n; then
-      wait -n 2>/dev/null || true
-      prune_parallel_pids
-    else
-      log "$LOG_INFO" "Bash < 4.3 detected; using legacy parallel wait loop"
-      prune_parallel_pids
-      if ((${#PARALLEL_PIDS[@]} < PARALLEL_JOBS)); then
-        break
-      fi
-      sleep 0.1
-    fi
+    reap_expired_parallel_workers
+    prune_parallel_pids
+    ((${#PARALLEL_PIDS[@]} < PARALLEL_JOBS)) && break
+    sleep 0.15
   done
 }
 
 register_parallel_pid() {
   local pid="$1"
+  local service="$2"
+  local result_file="$3"
   PARALLEL_PIDS+=("$pid")
+  PARALLEL_PID_STARTED+=("$SECONDS")
+  PARALLEL_PID_SERVICE+=("$service")
+  PARALLEL_PID_RESULT+=("$result_file")
 }
 
 detect_parallel_jobs() {
@@ -3508,6 +3604,11 @@ spinner_start() {
 }
 
 spinner_stop() {
+  # No-op outside the main shell: an inherited trap (INT/TERM/HUP) must
+  # not kill/reap the spinner or delete its sentinel files, and `wait` on
+  # a foreign pid is what wedges bash-5.3 subshells in the first place.
+  [[ "$BASHPID" == "$$" ]] || return 0
+
   spinner_running=false
 
   if [[ -n "${spinner_pid:-}" ]]; then
@@ -4218,7 +4319,7 @@ run_service_group_parallel() {
       fi
     ) &
 
-    register_parallel_pid "$!"
+    register_parallel_pid "$!" "$service_name" "$result_file"
     wait_for_parallel_slot
   done
 
@@ -4228,12 +4329,14 @@ run_service_group_parallel() {
       "Waiting for remaining $group checks..." >&2
   fi
 
-  local pid
-  local -a remaining_group_pids=("${PARALLEL_PIDS[@]}")
-  for pid in "${remaining_group_pids[@]}"; do
-    wait "$pid" 2>/dev/null || true
+  # Bounded drain: reap finished workers, enforce the per-worker
+  # deadline (kill wedged workers, record N/A rows), never block
+  # indefinitely on a single stuck check.
+  while ((${#PARALLEL_PIDS[@]} > 0)); do
+    reap_expired_parallel_workers
+    prune_parallel_pids
+    ((${#PARALLEL_PIDS[@]} > 0)) && sleep 0.15
   done
-  PARALLEL_PIDS=()
 
   for service_name in "${services_array[@]}"; do
     if should_skip_service "$service_name"; then
@@ -6421,7 +6524,12 @@ host_resolves() {
     # Bound the resolver like the nslookup/host branches below: glibc
     # retries a dropped query across the search list and can stall a
     # single lookup for minutes on networks that silently filter names.
-    addr=$(timeout 5 getent ahostsv4 "$host" 2>/dev/null | awk 'NF {print $1; exit}')
+    # Parse with parameter expansion, not a pipeline: nested pipelines
+    # inside command-substitution subshells are what trips the bash-5.3
+    # PIPESTATUS bookkeeping wedge (see reap_expired_parallel_workers).
+    addr=$(timeout 5 getent ahostsv4 "$host" 2>/dev/null)
+    addr=${addr%%$'\n'*}
+    addr=${addr%% *}
   elif command -v nslookup >/dev/null 2>&1; then
     # Bound the resolver: some networks silently DROP queries (filtered
     # zones), and default retries then stall each lookup for minutes.

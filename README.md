@@ -130,6 +130,7 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --json # JSON output
 ./ipregion.sh --debug # Debug mode
 ./ipregion.sh --parallel 6 # Run checks in parallel
+PARALLEL_WORKER_TIMEOUT=60 ./ipregion.sh # Kill checks stuck >60s (default 120; cell reads N/A)
 ./ipregion.sh --progress-log # Progress lines instead of spinner
 ./ipregion.sh --metrics # Show per-service metrics table
 ./ipregion.sh --emoji # Show country flags and group icons
@@ -583,7 +584,7 @@ Forked from the original repository and heavily rewritten, with key improvements
 - Per-service HTTP/latency metrics, JSON/CSV export and service include/exclude filters
 - macOS support (brew dependency install, BSD-compatible tools)
 - Robust debug-log redaction with consent-gated uploads and paste-service fallbacks
-- Safer legacy fallback for parallel waiting on older bash
+- Per-worker watchdog: a check stuck longer than `PARALLEL_WORKER_TIMEOUT` seconds (default 120) is killed and reported as N/A instead of stalling the whole run (works around a bash 5.3 subshell wedge)
 
 Original: https://github.com/vernette/ipregion
 
