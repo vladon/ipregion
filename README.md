@@ -80,7 +80,8 @@ ipregion.sh --watch 300 --fail-on-block dns_integrity --fail-on-block cert_expir
 - Result export to JSON/CSV, service include/exclude filters, and `--list` check registry
 - IPv4/IPv6 support with SOCKS5 proxy and custom network interface
 - IP address caching with TTL (auto-cleared when the proxy changes)
-- JSON output and color-coded tables; parallel checks by default (auto-detected)
+- Card-based report: verdict header with a checks-passed bar, paired group cards, an Attention card for anomalies; `--emoji` country flags and group icons, `--no-attention` to hide the card
+- Terminal-aware output: colors render only on a TTY (`NO_COLOR` honored), progress goes to stderr, piped output stays clean; parallel checks by default (auto-detected)
 - Runs on Linux and macOS (Homebrew bash; missing dependencies are offered via brew)
 
 ## Dependencies
@@ -125,6 +126,51 @@ Explicit `--include-service` checks are selected across all groups, regardless o
 the default profile or `-g`. Repeat the flag to select multiple checks.
 `--fail-on-block` adds its check to the selected profile/include list, even if it
 would otherwise be excluded. Repeat this flag for multiple verdict gates.
+
+## Report
+
+Every run ends with a card-based report:
+
+```text
+┃  Made with <3 by vladon · github.com/vladon/ipregion
+┃
+┃ IPv4  50.7.*.*          AS208677 Cloud.ru  registered in US
+┃    DE   seen by most services
+┃   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━────────────────────  18/26 checks passed
+
+╭─ Attention ───────────────────────────────────────────────────────────╮
+│ Service           Value   Issue                                       │
+│ Signal Service    ⊘       DNS block                                   │
+│ 2 services        ✗       blocked:                                    │
+│ Telegram DC, WhatsApp DC                                              │
+│ 2 services        RU      different country:                          │
+│ cloudflare.com, maxmind.com                                           │
+│ ipapi.co          ?       Rate-limit                                  │
+╰───────────────────────────────────────────────────────────────────────╯
+
+╭─ GeoIP services ─────────────╮ ╭─ Popular services ─────────╮
+│ Service           IPv4       │ │ Service          IPv4      │
+│ maxmind.com       RU         │ │ Telegram Access  ✓         │
+│ cloudflare.com    RU         │ │ Telegram DC      ✗         │
+│ ifconfig.co       DE         │ │ WhatsApp         ✓         │
+│ country.is        US         │ │ Signal Service   ⊘         │
+╰──────────────────────────────╯ ╰────────────────────────────╯
+
+╭─ DNS diagnostics ──────────────╮
+│ Service         IPv4           │
+│ DNS Integrity   ✓              │
+│ DNS Latency     28/156 ms      │
+╰────────────────────────────────╯
+
+  ✓ works · ✗ no/blocked · ⊘ IP blocked · ? no answer · bright country = verdict
+```
+
+- The header block shows the masked addresses with ASN and registered country, then the **verdict** — the country most GeoIP services agree on, pooled across IPv4 and IPv6 (ties are listed) with the full country name on interactive runs — and a `checks passed` bar colored by the share of healthy checks.
+- The **Attention** card groups every abnormal check by value and reason: countries that disagree with the verdict, `No`/blocked results, IP-level blocks and unanswered probes. Identical cells aggregate as `N services` with the wrapped service list. `--no-attention` hides the card.
+- Cells: a country code is where the service places you — bright when it matches the verdict, yellow otherwise; `✓` works, `✗` no/blocked, `⊘` this IP is blocked, `?` no usable answer, `-` not checked; informational values (latency/jitter, certificate expiry) render dim and never count as anomalies.
+- Group cards render side by side when two groups are displayed; card width adapts to the longest service name and widest value.
+- `--emoji` adds country flags (regional indicators) and group icons.
+- Colors render only on a terminal and `NO_COLOR` disables them; progress and logs go to stderr, so piped output is clean — `ipregion.sh --json | jq` and `ipregion.sh | tee run.txt` contain no ANSI codes or spinner frames.
 
 > [!NOTE]
 > Debug mode writes a local log file and may include sensitive data. If you choose to upload it, the script uses a redacted copy, but review the file before sharing.
@@ -202,7 +248,7 @@ Before the checks run, the script discovers your external IPv4/IPv6 addresses th
 
 ### GeoIP (primary)
 
-MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iplocation.com, country.is, geojs.io, ipapi.is, ipbase.com, ipquery.io, ipwhois.io, ipwho.is, ip-api.com, ipregistry.co, Detector404, Geoapify — consensus country, ASN and registered country are derived from these.
+MaxMind, RIPE, IPinfo, Cloudflare, ipapi.co, ifconfig.co, ip2location.io, iplocation.com, country.is, geojs.io, ipapi.is, ipbase.com, ipquery.io, ipwhois.io, ipwho.is, ip-api.com, ipregistry.co, Detector404, Geoapify — consensus country, ASN and registered country are derived from these. The report header pools the per-protocol consensus into a single verdict (ties are listed) and highlights every card cell that matches it.
 
 ### Availability (Yes/No per network)
 
