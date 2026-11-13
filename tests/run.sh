@@ -2081,6 +2081,59 @@ timeout 8 env PATH="$STUB_GETENT:$PATH" bash -c '
 assert_false "host_resolves bounds a stalled getent resolver" test "$stalled_probe_rc" -eq 124
 rm -rf "$STUB_GETENT"
 
+# Exercise parser -> dispatch -> real result aggregation/gate, with only the
+# network probe stubbed. Direct should_skip_service tests miss scheduling bugs.
+selection_fixture() {
+  bash -e -s -- "$ROOT_DIR" "$@" <<'FIXTURE'
+  source "$1/ipregion.sh"
+  jobs="$2" verdict="$3"
+  shift 3
+  parse_arguments "$@"
+  [[ "$GROUPS_TO_SHOW" == default ]] && DEFAULT_PROFILE=true
+  PARALLEL_JOBS="$jobs"
+  JSON_OUTPUT=false
+  PROGRESS_LOG=false
+  process_service() {
+    local key="$1" group
+    for group in primary custom cdn devinfra dns; do
+      if is_service_in_list "$key" ${SERVICE_GROUPS[$group]}; then
+        add_result "$group" "$(fail_on_block_display "$key")" "$verdict" "" "" ""
+        return
+      fi
+    done
+    return 1
+  }
+  rc=0
+  run_selected_groups || rc=$?
+  finalize_json
+  printf 'rc=%s total=%s\n' "$rc" "$CHECKS_TOTAL"
+  jq -r '[.results[][] | .service] | sort | .[]' <<<"$RESULT_JSON"
+  printf 'cards=%s\n' "$(selected_display_groups | tr '\n' ',')"
+FIXTURE
+}
+
+for selection_jobs in 1 2; do
+  selection_output=$(selection_fixture "$selection_jobs" Yes --include-service maxmind --include-service google)
+  assert_contains "$selection_output" "total=2" "explicit cross-group count ($selection_jobs workers)"
+  assert_contains "$selection_output" "maxmind.com" "explicit MaxMind scheduled ($selection_jobs workers)"
+  assert_contains "$selection_output" "Google" "explicit Google scheduled ($selection_jobs workers)"
+  selection_output=$(selection_fixture "$selection_jobs" Yes --include-service deezer --include-service bilibili)
+  assert_contains "$selection_output" "total=2" "non-default include pair scheduled ($selection_jobs workers)"
+  assert_contains "$selection_output" "Deezer" "explicit Deezer scheduled ($selection_jobs workers)"
+  assert_contains "$selection_output" "Bilibili" "explicit Bilibili scheduled ($selection_jobs workers)"
+  selection_output=$(selection_fixture "$selection_jobs" Yes --fail-on-block cert_expiry)
+  assert_contains "$selection_output" "rc=0 total=29" "certificate gate schedules its probe ($selection_jobs workers)"
+  assert_contains "$selection_output" "devinfra," "certificate gate result rendered ($selection_jobs workers)"
+  selection_output=$(selection_fixture "$selection_jobs" No --include-service maxmind --fail-on-block cert_expiry 2>/dev/null)
+  assert_contains "$selection_output" "rc=1 total=2" "real blocked gate still fails ($selection_jobs workers)"
+  selection_output=$(selection_fixture "$selection_jobs" Yes -g primary --include-service cert_expiry --include-service cert_expiry --exclude-service cert_expiry --fail-on-block cert_expiry)
+  assert_contains "$selection_output" "rc=0 total=1" "explicit gate deduplicates and wins exclusion ($selection_jobs workers)"
+done
+selection_output=$(selection_fixture 1 Yes)
+assert_contains "$selection_output" "total=28" "bare invocation retains curated profile"
+selection_output=$(selection_fixture 1 Yes --include-service dns_integrity --fail-on-block dns_integrity --fail-on-block cert_expiry)
+assert_contains "$selection_output" "rc=0 total=2" "repeatable DNS and certificate gates execute once"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1

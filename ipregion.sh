@@ -2157,6 +2157,11 @@ validate_known_service() {
 should_skip_service() {
   local service_name="$1"
 
+  # A requested verdict gate must run even outside the profile/include list.
+  if is_service_in_list "$service_name" "${FAIL_ON_BLOCK_KEYS[@]}"; then
+    return 1
+  fi
+
   if ((${#INCLUDED_SERVICES[@]} > 0)); then
     # Explicit inclusion wins over both exclusion lists: a default-excluded
     # check must stay runnable via --include-service.
@@ -4540,7 +4545,11 @@ selected_display_groups() {
   local -a wanted=()
   local group
 
-  case "$GROUPS_TO_SHOW" in
+  local display_selection="$GROUPS_TO_SHOW"
+  if ((${#INCLUDED_SERVICES[@]} > 0 || ${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
+    display_selection=all
+  fi
+  case "$display_selection" in
   default) wanted=(primary custom dns) ;;
   all) wanted=(primary custom cdn devinfra dns) ;;
   *) wanted=("$GROUPS_TO_SHOW") ;;
@@ -5255,7 +5264,11 @@ print_results() {
 
   print_report
 
-  case "$GROUPS_TO_SHOW" in
+  local metrics_selection="$GROUPS_TO_SHOW"
+  if ((${#INCLUDED_SERVICES[@]} > 0 || ${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
+    metrics_selection=all
+  fi
+  case "$metrics_selection" in
   primary) print_metrics_group "primary" "GeoIP service metrics" ;;
   custom) print_metrics_group "custom" "Popular service metrics" ;;
   cdn) print_metrics_group "cdn" "CDN metrics" ;;
@@ -8065,6 +8078,29 @@ lookup_youtube_no_ads() {
   fi
 }
 
+# Build one deduplicated dispatch list for explicit requests. Inclusion selects
+# from the complete registry, independent of the profile. Verdict gates add
+# their checks to the selected profile (or include list), never silently skip.
+prepare_explicit_selection() {
+  local group key
+  local -a candidates=() keys=() selected=()
+  if ((${#INCLUDED_SERVICES[@]} > 0)); then
+    candidates=("${INCLUDED_SERVICES[@]}")
+  elif [[ "$GROUPS_TO_SHOW" == all ]]; then
+    for group in primary custom cdn devinfra dns; do
+      read -ra keys <<<"${SERVICE_GROUPS[$group]}"
+      candidates+=("${keys[@]}")
+    done
+  else
+    read -ra candidates <<<"${SERVICE_GROUPS[$GROUPS_TO_SHOW]}"
+  fi
+  candidates+=("${FAIL_ON_BLOCK_KEYS[@]}")
+  for key in "${candidates[@]}"; do
+    is_service_in_list "$key" "${selected[@]}" || selected+=("$key")
+  done
+  SERVICE_GROUPS[explicit]="${selected[*]}"
+}
+
 # Runs the checks for the groups selected via --group: resets per-run
 # accumulators, publishes the planned total, dispatches all groups.
 run_selected_groups() {
@@ -8075,9 +8111,16 @@ run_selected_groups() {
   ARR_DEVINFRA=()
   [[ -n "${CHECKS_DONE_FILE:-}" ]] && : >"$CHECKS_DONE_FILE"
 
+  local dispatch_group="$GROUPS_TO_SHOW"
+  if ((${#INCLUDED_SERVICES[@]} > 0 || ${#FAIL_ON_BLOCK_KEYS[@]} > 0)); then
+    prepare_explicit_selection
+    dispatch_group=explicit
+  fi
+
   if [[ "$JSON_OUTPUT" != "true" && "$PROGRESS_LOG" != true ]]; then
     local selected_groups total_group
-    case "$GROUPS_TO_SHOW" in
+    case "$dispatch_group" in
+    explicit) selected_groups=(explicit) ;;
     primary) selected_groups=(primary) ;;
     custom) selected_groups=(custom) ;;
     cdn) selected_groups=(cdn) ;;
@@ -8093,7 +8136,14 @@ run_selected_groups() {
     [[ -n "${CHECKS_TOTAL_FILE:-}" ]] && printf '%s' "$CHECKS_TOTAL" >"$CHECKS_TOTAL_FILE"
   fi
 
-  case "$GROUPS_TO_SHOW" in
+  case "$dispatch_group" in
+  explicit)
+    if ((PARALLEL_JOBS > 1)); then
+      run_service_group_parallel "explicit"
+    else
+      run_service_group "explicit"
+    fi
+    ;;
   primary)
     if ((PARALLEL_JOBS > 1)); then
       run_service_group_parallel "primary"

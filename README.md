@@ -62,7 +62,7 @@ One-line DNS-family summary every cycle, and verdict gating on a monitor:
 
 ```bash
 ipregion.sh -g dns --watch 60 --dns-summary --only-changes
-ipregion.sh --watch 300 --fail-on-block dns_integrity cert_expiry
+ipregion.sh --watch 300 --fail-on-block dns_integrity --fail-on-block cert_expiry
 ```
 
 ## Features
@@ -120,6 +120,11 @@ Missing commands are detected on start and can be installed automatically (apt/p
 ./ipregion.sh --output result.json # Save output
 ./ipregion.sh --output result.csv # Save output as CSV
 ```
+
+Explicit `--include-service` checks are selected across all groups, regardless of
+the default profile or `-g`. Repeat the flag to select multiple checks.
+`--fail-on-block` adds its check to the selected profile/include list, even if it
+would otherwise be excluded. Repeat this flag for multiple verdict gates.
 
 > [!NOTE]
 > Debug mode writes a local log file and may include sensitive data. If you choose to upload it, the script uses a redacted copy, but review the file before sharing.
