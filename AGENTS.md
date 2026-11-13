@@ -38,6 +38,7 @@ Flat repository, no source tree:
 | `.shellcheckrc` | Shared shellcheck config: `source-path=SCRIPTDIR`, extra optional checks (warnings only — the gate stays `shellcheck -S error`) |
 | `.cursor/rules/trunk-based-pr-workflow.mdc` | Git workflow rules (see below) |
 | `ipregion.ps1` / `ipregion.cmd` | Windows launchers: locate a bash env (Git Bash/MSYS2/Cygwin/WSL), fetch the script to %LOCALAPPDATA% and run with arg passthrough; attached to release assets by the deploy workflow |
+| `.github/workflows/scoop-bump.yml` | Release-triggered (plus manual tag input): waits for the ps1 asset, computes sha256 and bumps `vladon/scoop-bucket` manifest via the contents API; requires the `SCOOP_TOKEN` secret (write access to the bucket repo) |
 | `plans/` | Design docs (`ip-cache-fallback-architecture.md`, `versioning-fix.md`) |
 | `fonts/` | Medeo Sans + Medeo Mono variable webfonts (OFL) used by `index.html` |
 | `README.md` | User-facing usage; update when CLI changes |
