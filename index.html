@@ -5,7 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ipregion — IP geolocation &amp; region availability from your terminal</title>
 <meta name="description" content="Single-file Bash CLI that reports IP geolocation and whether popular services are available in your region, over IPv4 and IPv6.">
+<link rel="preload" href="fonts/MedeoSansVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/MedeoMonoVariable.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+	@font-face {
+		font-family: "Medeo Sans";
+		src: url("fonts/MedeoSansVariable.woff2") format("woff2");
+		font-weight: 100 900;
+		font-style: normal;
+		font-display: swap;
+	}
+	@font-face {
+		font-family: "Medeo Mono";
+		src: url("fonts/MedeoMonoVariable.woff2") format("woff2");
+		font-weight: 100 900;
+		font-style: normal;
+		font-display: swap;
+	}
 	:root {
 		color-scheme: light dark;
 		--bg: #0d1117;
@@ -31,13 +47,13 @@
 	body {
 		background: var(--bg);
 		color: var(--fg);
-		font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+		font: 16px/1.6 "Medeo Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 		-webkit-font-smoothing: antialiased;
 	}
 	main { max-width: 760px; margin: 0 auto; padding: 64px 24px 48px; }
 	.logo {
 		display: inline-block;
-		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-family: "Medeo Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 		font-size: 15px;
 		font-weight: 600;
 		border: 1px solid var(--border);
@@ -49,7 +65,7 @@
 	h1 { font-size: 40px; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 12px; }
 	.tagline { font-size: 19px; color: var(--muted); margin-bottom: 36px; }
 	.tagline code {
-		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-family: "Medeo Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 		font-size: 15px;
 		color: var(--fg);
 	}
@@ -66,7 +82,7 @@
 	}
 	.install-card code {
 		flex: 1;
-		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-family: "Medeo Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 		font-size: 14px;
 		overflow-x: auto;
 		white-space: nowrap;
@@ -90,7 +106,7 @@
 		color: var(--muted);
 	}
 	.alt-commands code {
-		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-family: "Medeo Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 		font-size: 13px;
 		color: var(--fg);
 		background: var(--card);
@@ -161,14 +177,14 @@
 	<section id="usage">
 		<h2>Quick start</h2>
 		<ul class="features">
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion</code> <span class="detail">— curated default: GeoIP consensus, messenger transports, DNS health; --full runs everything</span></li>
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion -g custom</code> <span class="detail">— 189 region checks: messengers, social networks, AI services, streaming, dev hosting</span></li>
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion -g dns</code> <span class="detail">— 15 reference-based DNS diagnostics: spoofing, interception, DoT/DoH, TTL honesty, rebinding</span></li>
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion -g devinfra</code> <span class="detail">— GitHub, npm, PyPI, Docker Hub, registries, cert expiry, proxy egress</span></li>
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion -g cdn</code> <span class="detail">— CDN nodes: YouTube, Cloudflare, Netflix</span></li>
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion --watch 300</code> <span class="detail">— monitoring mode: verdict diffs on an interval, optional Telegram push, one-line --dns-summary</span></li>
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion --json</code> / <code style="font-family: ui-monospace, Menlo, monospace;">--output result.csv</code> <span class="detail">— machine-readable output; --fail-on-block exits 1 on red verdicts</span></li>
-			<li><code style="font-family: ui-monospace, Menlo, monospace;">ipregion --proxy socks5://…</code> <span class="detail">— or bind to a specific interface; IPv4 and IPv6 run in parallel</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion</code> <span class="detail">— curated default: GeoIP consensus, messenger transports, DNS health; --full runs everything</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion -g custom</code> <span class="detail">— 189 region checks: messengers, social networks, AI services, streaming, dev hosting</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion -g dns</code> <span class="detail">— 15 reference-based DNS diagnostics: spoofing, interception, DoT/DoH, TTL honesty, rebinding</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion -g devinfra</code> <span class="detail">— GitHub, npm, PyPI, Docker Hub, registries, cert expiry, proxy egress</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion -g cdn</code> <span class="detail">— CDN nodes: YouTube, Cloudflare, Netflix</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion --watch 300</code> <span class="detail">— monitoring mode: verdict diffs on an interval, optional Telegram push, one-line --dns-summary</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion --json</code> / <code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">--output result.csv</code> <span class="detail">— machine-readable output; --fail-on-block exits 1 on red verdicts</span></li>
+			<li><code style="font-family: 'Medeo Mono', ui-monospace, Menlo, monospace;">ipregion --proxy socks5://…</code> <span class="detail">— or bind to a specific interface; IPv4 and IPv6 run in parallel</span></li>
 		</ul>
 	</section>
 

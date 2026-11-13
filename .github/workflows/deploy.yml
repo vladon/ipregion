@@ -122,6 +122,7 @@ jobs:
         run: |
           install -d deploy-stage
           cp ipregion.sh index.html README.md LICENSE deploy-stage/
+          cp -a fonts deploy-stage/fonts
           rsync -az --delete \
             deploy-stage/ \
             orange-ipregion:/srv/www/ipregion.top/
