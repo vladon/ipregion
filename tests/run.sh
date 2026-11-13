@@ -2147,7 +2147,7 @@ assert_contains "$selection_output" "DNS Integrity" "--full schedules the dns gr
 # (GitHub CI images ship neither nslookup, dig, nor host; the failed dns
 # subcheck used to silence every check on such runners)
 DNS_FALLBACK_BIN=$(mktemp -d)
-ln -s /bin/bash "$DNS_FALLBACK_BIN/bash"
+ln -s "$(command -v bash)" "$DNS_FALLBACK_BIN/bash"
 printf '#!/bin/sh\necho "8.8.8.8 0"\n' >"$DNS_FALLBACK_BIN/getent"
 chmod +x "$DNS_FALLBACK_BIN/getent"
 dns_fallback_rc=$(PATH="$DNS_FALLBACK_BIN" bash -c '
@@ -2169,7 +2169,7 @@ rm -rf "$DNS_FALLBACK_BIN"
 # probe: GitHub CI runners drop outbound ping, which used to fail the whole
 # protocol support chain
 conn_stub_bin=$(mktemp -d)
-ln -s /bin/bash "$conn_stub_bin/bash"
+ln -s "$(command -v bash)" "$conn_stub_bin/bash"
 printf '#!/bin/sh\nexit 1\n' >"$conn_stub_bin/ping"
 chmod +x "$conn_stub_bin/ping"
 conn_probe_rc=$(PATH="$conn_stub_bin:$PATH" bash -c '
