@@ -80,6 +80,13 @@
 		align-items: center;
 		gap: 12px;
 	}
+	.install-line {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+		flex: 1;
+		min-width: 0;
+	}
 	.install-tabs {
 		display: flex;
 		flex-wrap: wrap;
@@ -199,7 +206,9 @@
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="docker">docker</button>
 		</div>
 		<div class="install-card">
-			<span class="prompt">$</span><code id="install-cmd">bash -c 'bash &lt;(wget -qO- https://ipregion.top)'</code>
+			<div class="install-line">
+				<span class="prompt">$</span><code id="install-cmd">bash -c 'bash &lt;(wget -qO- https://ipregion.top)'</code>
+			</div>
 			<button class="copy-btn" id="copy-btn" type="button">Copy</button>
 		</div>
 		<p class="hint" id="install-note">Works from fish and sh, too — the outer bash parses process substitution.</p>
