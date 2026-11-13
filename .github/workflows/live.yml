@@ -21,7 +21,7 @@ jobs:
         run: pipx install check-jsonschema
 
       - name: Run against real services
-        run: bash ipregion.sh --json >report.json
+        run: bash ipregion.sh --json >report.json 2>report.stderr.log
 
       - name: Validate JSON schema
         run: check-jsonschema --schemafile schema/ipregion-v1.schema.json report.json
@@ -46,5 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: live-report
-          path: report.json
+          path: |
+            report.json
+            report.stderr.log
           retention-days: 30

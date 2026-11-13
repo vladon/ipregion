@@ -2580,8 +2580,16 @@ check_ip_dns() {
       log "$LOG_INFO" "IPv${version} DNS resolution works via host"
       return 0
     fi
+  elif is_command_available "getent"; then
+    # glibc systems without bind tools (CI images, slim containers)
+    local getent_command="ahostsv4"
+    [[ "$record_type" == "AAAA" ]] && getent_command="ahostsv6"
+    if [[ -n "$(getent "$getent_command" "$test_domain" 2>/dev/null)" ]]; then
+      log "$LOG_INFO" "IPv${version} DNS resolution works via getent"
+      return 0
+    fi
   else
-    log "$LOG_WARN" "Neither nslookup, dig, nor host is available to check IPv${version} DNS resolution"
+    log "$LOG_WARN" "Neither nslookup, dig, host, nor getent is available to check IPv${version} DNS resolution"
     return 1
   fi
 
@@ -8480,6 +8488,10 @@ main() {
 
   if [[ "$IPV6_ONLY" == true && "$IPV6_SUPPORTED" -ne 0 ]]; then
     error_exit "IPv6 is not supported on this system"
+  fi
+
+  if ! ipv4_enabled && ! ipv6_enabled; then
+    error_exit "Neither IPv4 nor IPv6 passed the support checks on this system; there is nothing to check. Re-run with --verbose to see which check failed."
   fi
 
   discover_external_ips

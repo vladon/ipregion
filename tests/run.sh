@@ -2143,6 +2143,28 @@ assert_contains "$selection_output" "YouTube CDN" "--full schedules the cdn grou
 assert_contains "$selection_output" "GitHub" "--full schedules the devinfra group"
 assert_contains "$selection_output" "DNS Integrity" "--full schedules the dns group"
 
+# check_ip_dns must fall back to getent on glibc systems without bind tools
+# (GitHub CI images ship neither nslookup, dig, nor host; the failed dns
+# subcheck used to silence every check on such runners)
+DNS_FALLBACK_BIN=$(mktemp -d)
+ln -s /bin/bash "$DNS_FALLBACK_BIN/bash"
+printf '#!/bin/sh\necho "8.8.8.8 0"\n' >"$DNS_FALLBACK_BIN/getent"
+chmod +x "$DNS_FALLBACK_BIN/getent"
+dns_fallback_rc=$(PATH="$DNS_FALLBACK_BIN" bash -c '
+  source "'"$ROOT_DIR"'/ipregion.sh" >/dev/null 2>&1
+  check_ip_dns 4 >/dev/null 2>&1
+  echo $?
+')
+assert_eq "0" "$dns_fallback_rc" "check_ip_dns falls back to getent without bind tools"
+printf '#!/bin/sh\nexit 2\n' >"$DNS_FALLBACK_BIN/getent"
+dns_fallback_rc=$(PATH="$DNS_FALLBACK_BIN" bash -c '
+  source "'"$ROOT_DIR"'/ipregion.sh" >/dev/null 2>&1
+  check_ip_dns 4 >/dev/null 2>&1
+  echo $?
+')
+assert_eq "1" "$dns_fallback_rc" "check_ip_dns reports failure when getent yields nothing"
+rm -rf "$DNS_FALLBACK_BIN"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
