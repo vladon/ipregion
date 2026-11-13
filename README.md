@@ -49,6 +49,13 @@ Invoke-WebRequest https://github.com/vladon/ipregion/releases/latest/download/ip
 .\ipregion.cmd -g dns          # cmd
 ```
 
+Or install from the scoop bucket (updates with `scoop update ipregion`):
+
+```powershell
+scoop bucket add vladon https://github.com/vladon/scoop-bucket
+scoop install vladon/ipregion
+```
+
 The launcher finds a bash environment automatically (Git Bash, MSYS2, Cygwin or WSL), downloads the script to `%LOCALAPPDATA%\ipregion` on first run and passes all arguments through. Re-download the latest version with `.\ipregion.ps1 -Update`. Without a bash environment it prints install hints (Git for Windows or `wsl --install`).
 
 ### Shell completions
