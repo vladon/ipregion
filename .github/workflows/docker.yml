@@ -47,10 +47,17 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.authors=vladon (https://vladon.dev)
+          annotations: |
+            org.opencontainers.image.authors=vladon (https://vladon.dev)
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=sha,format=short
+        env:
+          # GHCR reads the package-page description from index-level annotations (multi-arch builds)
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
 
       - name: Build and push image
         uses: docker/build-push-action@v6
@@ -59,5 +66,6 @@ jobs:
           push: ${{ github.event_name == 'push' || github.event_name == 'release' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
