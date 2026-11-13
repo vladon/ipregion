@@ -2,6 +2,8 @@
 
 [![Deploy to FTPS](https://github.com/vladon/ipregion/actions/workflows/deploy.yml/badge.svg)](https://github.com/vladon/ipregion/actions/workflows/deploy.yml)
 
+Author: [vladon](https://vladon.dev) · heavily rewritten fork of [vernette/ipregion](https://github.com/vernette/ipregion)
+
 ## Usage
 
 ### Download and run locally
