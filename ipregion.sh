@@ -4778,10 +4778,11 @@ group_has_results() {
 }
 
 # Rows of one group straight from the result arrays, no jq involved:
-# "service<TAB>ipv4<TAB>ipv6<TAB>metric4<TAB>metric6" per line; empty and
-# literal "null" cells are normalized to empty strings.
+# "service<US>ipv4<US>ipv6<US>metric4<US>metric6" per line (US = \x1f unit
+# separator: empty and literal "null" cells are normalized to empty strings,
+# and `read` must not collapse them the way it collapses tabs).
 read_group_rows() {
-  local group="$1" row service v4 v6
+  local group="$1" row service v4 v6 m4 m6
   local -n rows_ref="ARR_${group^^}"
 
   for row in "${rows_ref[@]}"; do
@@ -4790,9 +4791,14 @@ read_group_rows() {
     v4="${row%%|||*}"
     row="${row#*|||}"
     v6="${row%%|||*}"
+    row="${row#*|||}"
+    m4="${row%%|||*}"
+    m6="${row#*|||}"
     [[ -z "$v4" || "$v4" == "null" ]] && v4=""
     [[ -z "$v6" || "$v6" == "null" ]] && v6=""
-    printf '%s\t%s\t%s\t%s\t%s\n' "$service" "$v4" "$v6" "${row%%|||*}" "${row#*|||}"
+    # \037 (unit separator) instead of \t: \t is IFS whitespace, so `read`
+    # collapses consecutive tabs and empty fields shift into their neighbors.
+    printf '%s\037%s\037%s\037%s\037%s\n' "$service" "$v4" "$v6" "$m4" "$m6"
   done
 }
 
@@ -4834,7 +4840,7 @@ group_card_text() {
   mapfile -t rows < <(read_group_rows "$group")
 
   for row in "${rows[@]}"; do
-    IFS=$'\t' read -r service v4 v6 _ _ <<<"$row"
+    IFS=$'\x1f' read -r service v4 v6 _ _ <<<"$row"
     names+=("$service")
     if [[ "$show_ipv4" == true ]]; then
       vals4+=("${v4:-}")
@@ -4965,7 +4971,7 @@ print_metrics_group() {
   mapfile -t rows < <(read_group_rows "$group")
 
   for row in "${rows[@]}"; do
-    IFS=$'\t' read -r s _ _ m4 m6 <<<"$row"
+    IFS=$'\x1f' read -r s _ _ m4 m6 <<<"$row"
     m4="$(parse_metric_string "$m4")"
     m6="$(parse_metric_string "$m6")"
     names+=("$s")
@@ -5041,7 +5047,7 @@ compute_report_verdict() {
 
   # Pool GeoIP cells across IPv4 and IPv6: the country most services
   # agree on wins, alphabetical order breaks ties
-  while IFS=$'\t' read -r _ v4 v6 _ _; do
+  while IFS=$'\x1f' read -r _ v4 v6 _ _; do
     [[ "$v4" =~ ^[A-Z]{2}$ ]] && counts[$v4]=$((${counts[$v4]:-0} + 1))
     [[ "$v6" =~ ^[A-Z]{2}$ ]] && counts[$v6]=$((${counts[$v6]:-0} + 1))
   done < <(read_group_rows primary)
@@ -5141,7 +5147,7 @@ count_report_checks() {
   ((${#groups[@]} > 0)) || return 0
 
   for group in "${groups[@]}"; do
-    while IFS=$'\t' read -r _ v4 v6 _ _; do
+    while IFS=$'\x1f' read -r _ v4 v6 _ _; do
       if can_use_ipv4 && [[ -n "$v4" ]]; then
         CHECKS_TOTAL=$((CHECKS_TOTAL + 1))
         case "$(classify_cell_value "$v4")" in
@@ -5325,7 +5331,7 @@ collect_attention_rows() {
   ((${#groups[@]} > 0)) || return 0
 
   for group in "${groups[@]}"; do
-    while IFS=$'\t' read -r service v4 v6 _ _; do
+    while IFS=$'\x1f' read -r service v4 v6 _ _; do
       if can_use_ipv4 && [[ -n "$v4" ]]; then
         class="$(classify_cell_value "$v4")"
         if is_abnormal_cell "$class" "$v4"; then
@@ -8502,7 +8508,7 @@ fail_on_block_check() {
   done
 
   for group in "${ALL_GROUPS[@]}"; do
-    while IFS=$'\t' read -r service v4 v6 _ _; do
+    while IFS=$'\x1f' read -r service v4 v6 _ _; do
       cell_by_service[$service]="$v4"$'\x1f'"$v6"
     done < <(read_group_rows "$group")
   done
@@ -8544,7 +8550,7 @@ collect_verdict_lines() {
   local group service v4 v6
 
   for group in "${ALL_GROUPS[@]}"; do
-    while IFS=$'\t' read -r service v4 v6 _ _; do
+    while IFS=$'\x1f' read -r service v4 v6 _ _; do
       printf '%s=%s/%s\n' "$service" "${v4:--}" "${v6:--}"
     done < <(read_group_rows "$group")
   done
@@ -8590,7 +8596,7 @@ dns_summary_line() {
   local key token verdict out="DNS" service v4
   declare -A dns_cells=()
 
-  while IFS=$'\t' read -r service v4 _ _ _; do
+  while IFS=$'\x1f' read -r service v4 _ _ _; do
     dns_cells[$service]="$v4"
   done < <(read_group_rows dns)
 
