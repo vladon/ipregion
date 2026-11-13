@@ -30,6 +30,14 @@ bash ipregion.sh
 
 All releases: https://github.com/vladon/ipregion/releases
 
+### Install with Homebrew
+
+```bash
+brew install vladon/ipregion/ipregion
+```
+
+Updates with `brew upgrade ipregion`. The formula tracks the latest release: [vladon/homebrew-ipregion](https://github.com/vladon/homebrew-ipregion).
+
 ### Shell completions
 
 ```bash

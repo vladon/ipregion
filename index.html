@@ -202,6 +202,7 @@
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="curl">curl</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="file">download</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="release">release</button>
+			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="brew">brew</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="completions">completions</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="docker">docker</button>
 		</div>
@@ -212,7 +213,7 @@
 			<button class="copy-btn" id="copy-btn" type="button">Copy</button>
 		</div>
 		<p class="hint" id="install-note">Works from fish and sh, too — the outer bash parses process substitution.</p>
-		<p class="alt-commands">Script needs <b>bash ≥ 4.3</b>, plus <code>curl</code> and <code>jq</code>.</p>
+		<p class="alt-commands">Script needs <b>bash ≥ 4.3</b> and <code>curl</code>; <code>jq</code> is optional (<code>--json</code>, output files, IP cache).</p>
 		<p class="hint">curl and wget always receive the raw script — this page is shown only to browsers. The script itself is always available at <a href="/ipregion.sh" style="color: var(--accent);">/ipregion.sh</a>.</p>
 	</section>
 
@@ -278,6 +279,10 @@
 		release: {
 			cmd: "wget -qO ipregion.sh https://github.com/vladon/ipregion/releases/latest/download/ipregion.sh && bash ipregion.sh",
 			note: "Version-stamped script from the latest release instead of master — all releases: github.com/vladon/ipregion/releases"
+		},
+		brew: {
+			cmd: "brew install vladon/ipregion/ipregion",
+			note: "macOS Homebrew or Linuxbrew; updates with brew upgrade ipregion."
 		},
 		completions: {
 			cmd: "mkdir -p ~/.local/share/bash-completion/completions && wget -qO ~/.local/share/bash-completion/completions/ipregion https://raw.githubusercontent.com/vladon/ipregion/master/completions/ipregion.bash",
