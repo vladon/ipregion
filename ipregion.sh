@@ -1786,6 +1786,10 @@ detect_distro() {
     distro="termux"
   elif [[ "$(uname -s)" == "Darwin" ]]; then
     distro="macos"
+  elif [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
+    # Git Bash / MSYS2 / Cygwin: no system package manager, dependencies
+    # are managed by the environment itself
+    distro="msys"
   fi
 }
 
@@ -1793,6 +1797,10 @@ detect_package_manager() {
   local pkg_manager
 
   case "$distro" in
+  msys | cygwin)
+    # No system package manager: dependency auto-install is unavailable
+    pkg_manager=""
+    ;;
   ubuntu | debian | termux)
     pkg_manager="apt"
     ;;
@@ -1987,6 +1995,15 @@ install_dependencies() {
   log "$LOG_INFO" "Missing commands: ${missing_commands[*]}"
 
   pkg_manager=$(detect_package_manager)
+
+  if [[ -z "$pkg_manager" ]]; then
+    # Environment without a package manager (Git Bash/MSYS2/Cygwin):
+    # auto-install is unavailable, keep running with reduced capabilities
+    printf "%s %s\n" \
+      "$(color WARN '[WARN]')" \
+      "No package manager detected: cannot auto-install ${missing_commands[*]}. Continuing - some features may be unavailable." >&2
+    return 0
+  fi
 
   log "$LOG_INFO" "Detected package manager: $pkg_manager"
 
@@ -2660,8 +2677,11 @@ check_ip_interfaces() {
       fi
     fi
   else
+    # No enumeration tools (Git Bash, slim images): cannot verify, but
+    # connectivity and DNS subchecks stay authoritative, so don't fail
+    # the whole protocol here.
     log "$LOG_WARN" "Neither ip nor ifconfig is available to check IPv${version} interfaces"
-    return 1
+    return 0
   fi
 
   log "$LOG_ERROR" "No global IPv${version} addresses found on interfaces"

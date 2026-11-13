@@ -38,6 +38,19 @@ brew install vladon/ipregion/ipregion
 
 Updates with `brew upgrade ipregion`. The formula tracks the latest release: [vladon/homebrew-ipregion](https://github.com/vladon/homebrew-ipregion).
 
+### Windows (PowerShell / cmd)
+
+Download the two launchers from the latest release and run from PowerShell or cmd:
+
+```powershell
+Invoke-WebRequest https://github.com/vladon/ipregion/releases/latest/download/ipregion.ps1 -OutFile ipregion.ps1
+Invoke-WebRequest https://github.com/vladon/ipregion/releases/latest/download/ipregion.cmd -OutFile ipregion.cmd
+.\ipregion.ps1 -g dns          # PowerShell
+.\ipregion.cmd -g dns          # cmd
+```
+
+The launcher finds a bash environment automatically (Git Bash, MSYS2, Cygwin or WSL), downloads the script to `%LOCALAPPDATA%\ipregion` on first run and passes all arguments through. Re-download the latest version with `.\ipregion.ps1 -Update`. Without a bash environment it prints install hints (Git for Windows or `wsl --install`).
+
 ### Shell completions
 
 ```bash

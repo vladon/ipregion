@@ -37,6 +37,7 @@ Flat repository, no source tree:
 | `.github/workflows/docker.yml` | Build + push `ghcr.io/vladon/ipregion` (latest/SHA/release tags) on master push and releases |
 | `.shellcheckrc` | Shared shellcheck config: `source-path=SCRIPTDIR`, extra optional checks (warnings only — the gate stays `shellcheck -S error`) |
 | `.cursor/rules/trunk-based-pr-workflow.mdc` | Git workflow rules (see below) |
+| `ipregion.ps1` / `ipregion.cmd` | Windows launchers: locate a bash env (Git Bash/MSYS2/Cygwin/WSL), fetch the script to %LOCALAPPDATA% and run with arg passthrough; attached to release assets by the deploy workflow |
 | `plans/` | Design docs (`ip-cache-fallback-architecture.md`, `versioning-fix.md`) |
 | `fonts/` | Medeo Sans + Medeo Mono variable webfonts (OFL) used by `index.html` |
 | `README.md` | User-facing usage; update when CLI changes |
