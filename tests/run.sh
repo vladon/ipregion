@@ -13,6 +13,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/ipregion.sh"
 JQ_AVAILABLE=true
 export JQ_AVAILABLE
+CURL_AVAILABLE=true
+export CURL_AVAILABLE
 
 # Handler tests must not depend on real DNS: web and transport probes both
 # consult host_resolves before connecting. Set DNS_STUB_MODE=blocked locally
@@ -1526,6 +1528,7 @@ assert_contains "$dns_summary_out" "dohvia=Yes" "dns summary carries doh via pro
 ARR_DNS=()
 dns_summary_out=$(dns_summary_line 2>&1)
 assert_contains "$dns_summary_out" "integrity=n/a" "dns summary renders n/a without dns results"
+
 unset dns_summary_out
 server_latency_reset
 RESOLVER_LATENCY_MODE="all"
@@ -2100,6 +2103,9 @@ selection_fixture() {
   bash -e -s -- "$ROOT_DIR" "$@" <<'FIXTURE'
   source "$1/ipregion.sh"
   JQ_AVAILABLE="${JQ_AVAILABLE:-true}"
+  CURL_AVAILABLE=true
+  [[ "${NO_CURL_FIXTURE:-false}" == true ]] && CURL_AVAILABLE=false
+  echo "FIXTURE-CURL=[$CURL_AVAILABLE]" >&2
   jobs="$2" verdict="$3"
   shift 3
   parse_arguments "$@"
@@ -2163,6 +2169,27 @@ assert_contains "$selection_output" "YouTube CDN" "--full schedules the cdn grou
 assert_contains "$selection_output" "GitHub" "--full schedules the devinfra group"
 assert_contains "$selection_output" "DNS Integrity" "--full schedules the dns group"
 
+# no-curl degraded --full: curl-needing services are excluded from the
+# schedule and totals; resolver DNS, TCP probes and cert expiry remain
+export NO_CURL_FIXTURE=true
+nojq_fixture_out=""
+nojq_fixture_out=$(selection_fixture 1 Yes --full)
+unset NO_CURL_FIXTURE
+assert_contains "$nojq_fixture_out" "DNS Integrity" "no-curl full run schedules dns family"
+assert_contains "$nojq_fixture_out" "Cert Expiry" "no-curl full run schedules cert expiry"
+assert_contains "$nojq_fixture_out" "Telegram DC" "no-curl full run schedules tcp probes"
+assert_contains "$nojq_fixture_out" "Deezer" "no-curl full run schedules tcp customs"
+no_failures_before=$failures
+for skipped_service in maxmind.com Bing "Proxy Egress"; do
+  if [[ "$nojq_fixture_out" == *"$skipped_service"* ]]; then
+    echo "FAIL: no-curl full run must skip $skipped_service"
+    failures=$((failures + 1))
+  fi
+done
+if [[ "$failures" == "$no_failures_before" ]]; then
+  echo "OK: no-curl full run skips every HTTP-based check"
+fi
+
 # check_ip_dns must fall back to getent on glibc systems without bind tools
 # (GitHub CI images ship neither nslookup, dig, nor host; the failed dns
 # subcheck used to silence every check on such runners)
@@ -2184,6 +2211,35 @@ dns_fallback_rc=$(PATH="$DNS_FALLBACK_BIN" bash -c '
 ')
 assert_eq "1" "$dns_fallback_rc" "check_ip_dns reports failure when getent yields nothing"
 rm -rf "$DNS_FALLBACK_BIN"
+
+# curl-optional gating: HTTP-based checks are skipped without curl,
+# DNS resolver checks, DoT/DoH TCP probes and cert expiry keep running
+CURL_AVAILABLE=false
+assert_true "no curl skips HTTP geoip checks" should_skip_service MAXMIND
+assert_true "no curl skips HTTP custom checks" should_skip_service TELEGRAM_ACCESS
+assert_false "no curl keeps dns resolver checks" should_skip_service DNS_INTEGRITY
+assert_false "no curl keeps dot tcp probes" should_skip_service DOT_GOOGLE
+assert_false "no curl keeps doh tcp probes" should_skip_service DOH_GOOGLE
+assert_false "no curl keeps cert expiry" should_skip_service CERT_EXPIRY
+assert_false "no curl keeps telegram dc tcp probe" should_skip_service TELEGRAM_DC
+CURL_AVAILABLE=true
+assert_false "curl restored unschedules the skip" should_skip_service MAXMIND
+CURL_AVAILABLE=false
+
+# drift guards: every mapped key must exist in a registry; every
+# tcp-target service must be mapped (a new curl-free check added
+# without CURL_FREE_CHECKS would silently vanish without curl)
+for key in "${!CURL_FREE_CHECKS[@]}"; do
+  assert_true "curl-free key $key exists in a registry" test -n "${DNS_DIAG_SERVICES[$key]:-}${CUSTOM_SERVICES[$key]:-}${CDN_SERVICES[$key]:-}${DEVINFRA_SERVICES[$key]:-}${PRIMARY_SERVICES[$key]:-}"
+done
+for key in "${!CUSTOM_SERVICES[@]}"; do
+  handler="${CUSTOM_SERVICES_HANDLERS[$key]:-}"
+  [[ -z "$handler" ]] && continue
+  if [[ "$(declare -f "$handler")" == *lookup_tcp_targets* ]]; then
+    assert_true "tcp service $key mapped CURL_FREE_CHECKS" test -n "${CURL_FREE_CHECKS[$key]:-}"
+  fi
+done
+CURL_AVAILABLE=true
 
 # Handlers emit plain cell values: the card renderer, classification,
 # verdict gating and the JSON report operate on raw text (a regression
