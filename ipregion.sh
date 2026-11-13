@@ -215,6 +215,7 @@ MAIN_INTERFACE=""
 DEBUG=false
 IPV4_SUPPORTED=0
 IPV6_SUPPORTED=0
+IP_SUPPORT_FAILURES=""
 EXTERNAL_IPV4=""
 EXTERNAL_IPV6=""
 EXTERNAL_IPV4_SOURCE=""
@@ -2729,24 +2730,30 @@ check_ip_support() {
   log "$LOG_INFO" "Starting comprehensive IPv${version} support check"
 
   if ! check_ip_default_route "$version"; then
-    log "$LOG_ERROR" "IPv${version} is not fully supported. Failed checks: no-default-route"
-    return 1
+    failed+=("no-default-route")
   fi
 
-  for check in "${checks[@]}"; do
-    if ! "check_ip_${check}" "$version"; then
-      failed+=("$check")
-      break
-    fi
-  done
+  if ((${#failed[@]} == 0)); then
+    for check in "${checks[@]}"; do
+      if ! "check_ip_${check}" "$version"; then
+        failed+=("$check")
+        break
+      fi
+    done
+  fi
 
   if [[ ${#failed[@]} -eq 0 ]]; then
     log "$LOG_INFO" "IPv${version} is fully supported (${checks[*]})"
     return 0
-  else
-    log "$LOG_ERROR" "IPv${version} is not fully supported. Failed checks: ${failed[*]}"
-    return 1
   fi
+
+  # Visible without --verbose: a failed support check silently disables the
+  # whole protocol and has historically produced all-null reports.
+  printf "%s %s\n" \
+    "$(color WARN '[WARN]')" \
+    "IPv${version} is not fully supported. Failed checks: ${failed[*]}" >&2
+  IP_SUPPORT_FAILURES="${IP_SUPPORT_FAILURES:+$IP_SUPPORT_FAILURES; }IPv${version}: ${failed[*]}"
+  return 1
 }
 
 ipv4_enabled() {
@@ -8491,7 +8498,7 @@ main() {
   fi
 
   if ! ipv4_enabled && ! ipv6_enabled; then
-    error_exit "Neither IPv4 nor IPv6 passed the support checks on this system; there is nothing to check. Re-run with --verbose to see which check failed."
+    error_exit "Neither IPv4 nor IPv6 passed the support checks on this system${IP_SUPPORT_FAILURES:+ ($IP_SUPPORT_FAILURES)}; there is nothing to check."
   fi
 
   discover_external_ips
