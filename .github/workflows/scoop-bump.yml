@@ -48,16 +48,22 @@ jobs:
         env:
           PS1_URL: ${{ steps.rel.outputs.ps1_url }}
         run: |
+          # Download to a file and check curl's own exit code: piping curl
+          # into sha256sum inside an if masks a 404 (sha256sum happily
+          # hashes the empty stream -> hash of nothing, no pipefail here)
           HASH=""
           for i in $(seq 1 60); do
-            if HASH=$(curl -fsSL "$PS1_URL" | sha256sum | cut -d' ' -f1); then
-              echo "hash=$HASH" >> "$GITHUB_OUTPUT"
-              echo "Asset hash: $HASH"
-              break
+            if curl -fsSL "$PS1_URL" -o /tmp/ipregion.ps1; then
+              HASH=$(sha256sum /tmp/ipregion.ps1 | cut -d' ' -f1)
+              if [[ -n "$HASH" && "$HASH" != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ]]; then
+                echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+                echo "Asset hash: $HASH"
+                break
+              fi
             fi
             sleep 5
           done
-          [[ -n "$HASH" ]] || { echo "::error::ipregion.ps1 asset never appeared at $PS1_URL"; exit 1; }
+          [[ -n "$HASH" && "$HASH" != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ]] || { echo "::error::ipregion.ps1 asset never appeared at $PS1_URL"; exit 1; }
 
       - name: Update bucket manifest
         env:
