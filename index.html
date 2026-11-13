@@ -189,6 +189,7 @@
 			<button class="install-tab active" type="button" role="tab" aria-selected="true" data-method="wget">wget</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="curl">curl</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="file">download</button>
+			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="release">release</button>
 			<button class="install-tab" type="button" role="tab" aria-selected="false" data-method="docker">docker</button>
 		</div>
 		<div class="install-card">
@@ -258,6 +259,10 @@
 		file: {
 			cmd: "wget -O ipregion.sh https://ipregion.top && chmod +x ipregion.sh && ./ipregion.sh",
 			note: "Or drop ipregion.sh somewhere on your PATH."
+		},
+		release: {
+			cmd: "wget -qO ipregion.sh https://github.com/vladon/ipregion/releases/latest/download/ipregion.sh && bash ipregion.sh",
+			note: "Version-stamped script from the latest release instead of master — all releases: github.com/vladon/ipregion/releases"
 		},
 		docker: {
 			cmd: "docker run --rm ghcr.io/vladon/ipregion:latest",
