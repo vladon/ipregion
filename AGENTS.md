@@ -38,6 +38,7 @@ Flat repository, no source tree:
 | `.shellcheckrc` | Shared shellcheck config: `source-path=SCRIPTDIR`, extra optional checks (warnings only — the gate stays `shellcheck -S error`) |
 | `.cursor/rules/trunk-based-pr-workflow.mdc` | Git workflow rules (see below) |
 | `plans/` | Design docs (`ip-cache-fallback-architecture.md`, `versioning-fix.md`) |
+| `fonts/` | Medeo Sans + Medeo Mono variable webfonts (OFL) used by `index.html` |
 | `README.md` | User-facing usage; update when CLI changes |
 
 ## Development Commands
