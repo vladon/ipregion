@@ -2523,7 +2523,7 @@ check_ip_connectivity() {
   local test_hosts_v6=("2001:4860:4860::8888" "2001:4860:4860::8844" "2606:4700:4700::1111" "2606:4700:4700::1001" "2620:fe::9")
   local timeout=3
   local count=1
-  local test_hosts ping_cmd
+  local test_hosts ping_cmd tcp_host
 
   log "$LOG_INFO" "Checking IPv${version} connectivity"
 
@@ -2546,6 +2546,18 @@ check_ip_connectivity() {
       return 0
     fi
   done
+
+  # ICMP is frequently blocked outright (CI runners, corporate filters) while
+  # TCP egress - which every actual check depends on - keeps working.
+  if [[ "$version" == "4" ]]; then
+    tcp_host="8.8.8.8"
+  else
+    tcp_host="2001:4860:4860::8888"
+  fi
+  if tcp_probe "$tcp_host" 53 3; then
+    log "$LOG_INFO" "IPv${version} connectivity confirmed via TCP probe to ${tcp_host}:53 (ICMP blocked)"
+    return 0
+  fi
 
   log "$LOG_ERROR" "IPv${version} connectivity test failed"
   return 1

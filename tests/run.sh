@@ -2165,6 +2165,29 @@ dns_fallback_rc=$(PATH="$DNS_FALLBACK_BIN" bash -c '
 assert_eq "1" "$dns_fallback_rc" "check_ip_dns reports failure when getent yields nothing"
 rm -rf "$DNS_FALLBACK_BIN"
 
+# check_ip_connectivity must survive ICMP-blocked environments via a TCP
+# probe: GitHub CI runners drop outbound ping, which used to fail the whole
+# protocol support chain
+conn_stub_bin=$(mktemp -d)
+ln -s /bin/bash "$conn_stub_bin/bash"
+printf '#!/bin/sh\nexit 1\n' >"$conn_stub_bin/ping"
+chmod +x "$conn_stub_bin/ping"
+conn_probe_rc=$(PATH="$conn_stub_bin:$PATH" bash -c '
+  source "'"$ROOT_DIR"'/ipregion.sh" >/dev/null 2>&1
+  tcp_probe() { return 0; }
+  check_ip_connectivity 4 >/dev/null 2>&1
+  echo $?
+')
+assert_eq "0" "$conn_probe_rc" "connectivity falls back to TCP probe when ICMP is blocked"
+conn_probe_rc=$(PATH="$conn_stub_bin:$PATH" bash -c '
+  source "'"$ROOT_DIR"'/ipregion.sh" >/dev/null 2>&1
+  tcp_probe() { return 1; }
+  check_ip_connectivity 4 >/dev/null 2>&1
+  echo $?
+')
+assert_eq "1" "$conn_probe_rc" "connectivity still fails when both ping and TCP are dead"
+rm -rf "$conn_stub_bin"
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
