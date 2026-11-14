@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ipregion — IP geolocation &amp; region availability from your terminal</title>
 <meta name="description" content="Single-file Bash CLI that reports IP geolocation and whether popular services are available in your region, over IPv4 and IPv6.">
+<meta name="theme-color" content="#0d1117">
+<script>
+	(function () {
+		try {
+			var t = localStorage.getItem("theme");
+			if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+		} catch (e) {}
+	})();
+</script>
 <link rel="preload" href="fonts/MedeoSansVariable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/MedeoMonoVariable.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -32,8 +41,30 @@
 		--accent: #3fb950;
 		--accent-dim: #238636;
 	}
+	:root[data-theme="dark"] {
+		color-scheme: dark;
+		--bg: #0d1117;
+		--fg: #e6edf3;
+		--muted: #8d96a0;
+		--card: #161b22;
+		--border: #30363d;
+		--accent: #3fb950;
+		--accent-dim: #238636;
+	}
+
+	:root[data-theme="light"] {
+		color-scheme: light;
+		--bg: #ffffff;
+		--fg: #1f2328;
+		--muted: #59636e;
+		--card: #f6f8fa;
+		--border: #d1d9e0;
+		--accent: #1a7f37;
+		--accent-dim: #1a7f37;
+	}
+
 	@media (prefers-color-scheme: light) {
-		:root {
+		:root:not([data-theme="dark"]) {
 			--bg: #ffffff;
 			--fg: #1f2328;
 			--muted: #59636e;
@@ -180,6 +211,61 @@
 		color: var(--muted);
 	}
 	footer a { color: var(--muted); }
+	.theme-toggle {
+		position: fixed;
+		top: 1rem;
+		right: 1rem;
+		z-index: 10;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
+		border: none;
+		border-radius: 4px;
+		background: transparent;
+		color: var(--muted);
+		cursor: pointer;
+		transition: color 0.2s ease-out;
+	}
+
+	.theme-toggle:hover {
+		color: var(--fg);
+	}
+
+	.theme-toggle svg {
+		width: 1.125rem;
+		height: 1.125rem;
+	}
+
+	.theme-toggle .icon-sun {
+		display: none;
+	}
+
+	:root[data-theme="dark"] .theme-toggle .icon-moon {
+		display: none;
+	}
+
+	:root[data-theme="dark"] .theme-toggle .icon-sun {
+		display: block;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		:root:not([data-theme="light"]) .theme-toggle .icon-moon {
+			display: none;
+		}
+
+		:root:not([data-theme="light"]) .theme-toggle .icon-sun {
+			display: block;
+		}
+	}
+
+	.theme-toggle:focus-visible {
+		outline: 2px solid var(--fg);
+		outline-offset: 4px;
+		border-radius: 4px;
+	}
 	@media (max-width: 560px) {
 		h1 { font-size: 30px; }
 		.install-card { flex-direction: column; align-items: stretch; text-align: left; }
@@ -188,6 +274,26 @@
 </style>
 </head>
 <body>
+<button type="button" class="theme-toggle" aria-label="Switch to dark theme">
+	<svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+		<circle cx="12" cy="12" r="9" fill="currentColor"/>
+		<circle cx="16.5" cy="9" r="7.5" fill="var(--bg)"/>
+	</svg>
+	<svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+		<circle cx="12" cy="12" r="4.5" fill="currentColor"/>
+		<g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+			<line x1="12" y1="1.5" x2="12" y2="4.5"/>
+			<line x1="12" y1="19.5" x2="12" y2="22.5"/>
+			<line x1="1.5" y1="12" x2="4.5" y2="12"/>
+			<line x1="19.5" y1="12" x2="22.5" y2="12"/>
+			<line x1="4.6" y1="4.6" x2="6.7" y2="6.7"/>
+			<line x1="17.3" y1="17.3" x2="19.4" y2="19.4"/>
+			<line x1="4.6" y1="19.4" x2="6.7" y2="17.3"/>
+			<line x1="17.3" y1="6.7" x2="19.4" y2="4.6"/>
+		</g>
+	</svg>
+</button>
+<noscript><style>.theme-toggle { display: none; }</style></noscript>
 <main>
 	<header>
 		<span class="logo">$ ipregion</span>
@@ -311,6 +417,40 @@
 			});
 		});
 	});
+</script>
+<script>
+	(function () {
+		var button = document.querySelector(".theme-toggle");
+		var root = document.documentElement;
+		if (!button) return;
+
+		var meta = document.querySelector('meta[name="theme-color"]');
+
+		function apply(theme) {
+			var dark;
+			if (theme === "dark" || theme === "light") {
+				root.setAttribute("data-theme", theme);
+				dark = theme === "dark";
+			} else {
+				root.removeAttribute("data-theme");
+				dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+			}
+			button.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+			if (meta) meta.setAttribute("content", dark ? "#0d1117" : "#ffffff");
+		}
+
+		apply(root.getAttribute("data-theme"));
+
+		button.addEventListener("click", function () {
+			var dark = root.getAttribute("data-theme") === "dark" ||
+				(!root.getAttribute("data-theme") && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+			var next = dark ? "light" : "dark";
+			try {
+				localStorage.setItem("theme", next);
+			} catch (e) {}
+			apply(next);
+		});
+	})();
 </script>
 </body>
 </html>
