@@ -1741,7 +1741,7 @@ prune_parallel_pids() {
       remaining_service+=("${PARALLEL_PID_SERVICE[i]}")
       remaining_result+=("${PARALLEL_PID_RESULT[i]}")
     else
-      wait "$pid" 2>/dev/null
+      wait "$pid" 2>/dev/null || true
     fi
   done
 
@@ -1751,27 +1751,30 @@ prune_parallel_pids() {
   PARALLEL_PID_RESULT=("${remaining_result[@]}")
 }
 
-# Kill a wedged worker and its command-substitution descendants (TERM,
-# then KILL). Snapshot children first so no fork can escape the sweep.
+# Freeze each parent before discovering its children: a running shell can
+# otherwise fork replacements while we sweep. ps pid=/ppid= works on BSD
+# as well as GNU ps. No fixed depth: command substitutions nest deeply.
+freeze_worker_subtree() {
+  local root="$1" child parent
+  kill -STOP "$root" 2>/dev/null || return 0
+  worker_targets+=("$root")
+  while read -r child parent; do
+    [[ "$parent" == "$root" ]] || continue
+    freeze_worker_subtree "$child"
+  done < <(ps -A -o pid=,ppid=)
+}
+
+# A timed-out worker may be stuck inside Bash itself, with signals/traps
+# unable to run. Freeze the whole subtree, then kill leaves before parents
+# so blocked command substitutions cannot resume and spawn more work.
 kill_worker_subtree() {
   local root="$1"
-  local -a targets=()
-  local pid child grandchild
+  local -a worker_targets=()
+  local i
 
-  targets+=("$root")
-  for child in $(ps --no-headers -o pid --ppid "$root" 2>/dev/null); do
-    targets+=("$child")
-    for grandchild in $(ps --no-headers -o pid --ppid "$child" 2>/dev/null); do
-      targets+=("$grandchild")
-    done
-  done
-
-  for pid in "${targets[@]}"; do
-    kill -TERM "$pid" 2>/dev/null || true
-  done
-  sleep 0.3
-  for pid in "${targets[@]}"; do
-    kill -KILL "$pid" 2>/dev/null || true
+  freeze_worker_subtree "$root"
+  for ((i = ${#worker_targets[@]} - 1; i >= 0; i--)); do
+    kill -KILL "${worker_targets[i]}" 2>/dev/null || true
   done
 }
 
@@ -1834,7 +1837,7 @@ reap_expired_parallel_workers() {
     result_file="${PARALLEL_PID_RESULT[i]}"
     kill_worker_subtree "$pid"
     append_worker_timeout_result "$service" "$result_file"
-    wait "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null || true
   done
 }
 
@@ -1848,6 +1851,7 @@ wait_for_parallel_slot() {
 }
 
 register_parallel_pid() {
+  WORKER_OWNER_PID=${WORKER_OWNER_PID:-$BASHPID}
   local pid="$1"
   local service="$2"
   local result_file="$3"
@@ -3666,6 +3670,19 @@ spinner_update() {
 }
 
 cleanup_on_exit() {
+  # Only the owning shell may touch its worker list. Subshells inherit
+  # trap functions and copies of these PIDs, not ownership of the jobs.
+  if [[ "$BASHPID" == "${WORKER_OWNER_PID:-$$}" ]]; then
+    local pid
+    for pid in "${PARALLEL_PIDS[@]}"; do
+      kill_worker_subtree "$pid"
+      wait "$pid" 2>/dev/null || true
+    done
+    PARALLEL_PIDS=()
+    PARALLEL_PID_STARTED=()
+    PARALLEL_PID_SERVICE=()
+    PARALLEL_PID_RESULT=()
+  fi
   spinner_stop
   if [[ "$DEBUG" == true ]]; then
     cleanup_debug
@@ -6522,7 +6539,7 @@ lookup_spotify_signup() {
 # With no resolver tool available there is no data, which is not a DNS block.
 host_resolves() {
   local host="$1"
-  local addr=""
+  local addr="" resolver_output line
 
   # IP literals need no resolution: asking a resolver for an address
   # yields PTR data or nothing, which would fake a DNS block verdict.
@@ -6543,9 +6560,21 @@ host_resolves() {
   elif command -v nslookup >/dev/null 2>&1; then
     # Bound the resolver: some networks silently DROP queries (filtered
     # zones), and default retries then stall each lookup for minutes.
-    addr=$(nslookup -timeout=2 -retry=1 "$host" 2>/dev/null | awk '/^Address/ {print $NF}' | grep -v '#' | tail -n 1)
+    local -a fields=()
+    resolver_output=$(nslookup -timeout=2 -retry=1 "$host" 2>/dev/null)
+    while IFS= read -r line; do
+      [[ "$line" == Address* && "$line" != *'#'* ]] || continue
+      read -ra fields <<<"$line"
+      addr=${fields[${#fields[@]} - 1]}
+    done <<<"$resolver_output"
   elif command -v host >/dev/null 2>&1; then
-    addr=$(host -W 2 "$host" 2>/dev/null | awk '/has address/{print $NF; exit}')
+    resolver_output=$(host -W 2 "$host" 2>/dev/null)
+    while IFS= read -r line; do
+      if [[ "$line" == *'has address'* ]]; then
+        addr=${line##* }
+        break
+      fi
+    done <<<"$resolver_output"
   else
     return 1
   fi
@@ -8821,6 +8850,7 @@ run_monitor_loop() {
 }
 
 main() {
+  WORKER_OWNER_PID=$BASHPID
   parse_arguments "$@"
 
   # The curated default profile only filters when actually selected;

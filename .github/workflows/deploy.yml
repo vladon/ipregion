@@ -14,10 +14,15 @@ on:
       - .github/workflows/deploy.yml
   release:
     types: [published]
+  pull_request:
+    paths:
+      - ipregion.sh
+      - tests/**
+      - .github/workflows/deploy.yml
   workflow_dispatch:
 
 concurrency:
-  group: deploy-ipregion-top
+  group: deploy-ipregion-top-${{ github.event.pull_request.number || 'main' }}
   cancel-in-progress: true
 
 jobs:
@@ -26,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bash_image: ["bash:4.4", "bash:5.2"]
+        bash_image: ["bash:4.4", "bash:5.2", "bash:5.3"]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -55,6 +60,7 @@ jobs:
         run: shfmt -i 2 -d ipregion.sh tests/run.sh tests/golden.sh
 
   deploy:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs: [quality, lint]
     permissions:
