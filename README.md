@@ -153,6 +153,12 @@ PARALLEL_WORKER_TIMEOUT=60 ./ipregion.sh # Kill checks stuck >60s (default 120; 
 ./ipregion.sh --output result.csv # Save output as CSV
 ```
 
+The worker deadline also terminates nested child processes. On normal exit or
+INT/TERM/HUP, the owning shell cleans up its remaining parallel workers. Cleanup
+freezes each worker subtree before killing it so nested shells cannot escape or
+spawn replacements during the sweep. An uncatchable SIGKILL of the main shell
+cannot run this cleanup.
+
 Explicit `--include-service` checks are selected across all groups, regardless of
 the default profile or `-g`. Repeat the flag to select multiple checks.
 `--fail-on-block` adds its check to the selected profile/include list, even if it

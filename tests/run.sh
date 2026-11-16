@@ -2336,6 +2336,110 @@ fi
 EXTERNAL_IPV4=""
 ARR_PRIMARY=()
 
+# Worker lifecycle regressions: a six-level command-substitution-like tree
+# must not survive a timeout, normal exit, or TERM of the owning shell.
+# Keep every fixture PID for emergency cleanup even if the fixture times out.
+worker_fixture_dir=$(mktemp -d)
+cat >"$worker_fixture_dir/fixture.sh" <<'FIXTURE'
+source "$1/ipregion.sh"
+DEBUG=false
+WORKER_OWNER_PID=$BASHPID
+mode=$2
+fixture_dir=$3
+trap cleanup_on_exit EXIT
+trap cleanup_on_interrupt TERM
+nest_worker() {
+  printf '%s\n' "$BASHPID" >>"$fixture_dir/pids"
+  trap '' TERM
+  if (($1 > 0)); then
+    nest_worker "$(($1 - 1))" &
+    wait "$!"
+  else
+    : >"$fixture_dir/ready"
+    while :; do sleep 1; done
+  fi
+}
+nest_worker 5 &
+worker=$!
+register_parallel_pid "$worker" IPAPIIS "$fixture_dir/result"
+for ((i = 0; i < 100; i++)); do
+  [[ -f "$fixture_dir/ready" ]] && break
+  sleep 0.05
+done
+[[ -f "$fixture_dir/ready" ]] || exit 9
+# An inherited cleanup function must not kill the owner's workers.
+(cleanup_on_exit)
+kill -0 "$worker" || exit 10
+case "$mode" in
+timeout)
+  sleep 30 &
+  unrelated=$!
+  PARALLEL_WORKER_TIMEOUT=1
+  PARALLEL_PID_STARTED=("$((SECONDS - 2))")
+  reap_expired_parallel_workers
+  prune_parallel_pids
+  [[ ${#PARALLEL_PIDS[@]} == 0 ]] || exit 11
+  grep -q worker_timeout "$fixture_dir/result" || exit 12
+  kill -0 "$unrelated" || exit 13
+  kill "$unrelated"
+  wait "$unrelated" 2>/dev/null || true
+  ;;
+exit) exit 7 ;;
+signal) kill -TERM "$BASHPID" ;;
+esac
+FIXTURE
+for worker_fixture_mode in timeout exit signal; do
+  rm -f "$worker_fixture_dir/ready" "$worker_fixture_dir/pids"
+  worker_fixture_rc=0
+  timeout -k 2 12 bash "$worker_fixture_dir/fixture.sh" "$ROOT_DIR" "$worker_fixture_mode" "$worker_fixture_dir" \
+    >"$worker_fixture_dir/out" 2>"$worker_fixture_dir/err" || worker_fixture_rc=$?
+  case "$worker_fixture_mode" in
+  timeout) worker_fixture_expected=0 ;;
+  exit) worker_fixture_expected=7 ;;
+  signal) worker_fixture_expected=130 ;;
+  esac
+  assert_eq "$worker_fixture_expected" "$worker_fixture_rc" "worker $worker_fixture_mode preserves exit status"
+  worker_fixture_survivors=0
+  while read -r worker_fixture_pid; do
+    worker_fixture_state=$(ps -A -o pid=,stat= | awk -v pid="$worker_fixture_pid" '$1 == pid {print $2}')
+    if [[ -n "$worker_fixture_state" && "$worker_fixture_state" != Z* ]]; then
+      worker_fixture_survivors=$((worker_fixture_survivors + 1))
+      kill -KILL "$worker_fixture_pid" 2>/dev/null || true
+    fi
+  done <"$worker_fixture_dir/pids"
+  assert_eq 0 "$worker_fixture_survivors" "worker $worker_fixture_mode leaves no descendants at any depth"
+done
+rm -rf "$worker_fixture_dir"
+unset worker_fixture_dir worker_fixture_mode worker_fixture_rc worker_fixture_expected
+unset worker_fixture_survivors worker_fixture_pid worker_fixture_state
+
+dns_resolver_fixture=$(
+  bash -s -- "$ROOT_DIR" <<'FIXTURE'
+source "$1/ipregion.sh"
+resolver=nslookup
+command() {
+  case "$*" in
+  '-v getent') return 1 ;;
+  '-v nslookup') [[ "$resolver" == nslookup ]] ;;
+  *) builtin command "$@" ;;
+  esac
+}
+nslookup() { printf '%s\n' "$answer"; }
+host() { printf '%s\n' "$answer"; }
+answer=$'Server: 192.0.2.53\nAddress: 192.0.2.53#53\n\nName: example.test\nAddress: 192.0.2.1\nAddress: 2001:db8::1'
+host_resolves example.test && echo nslookup-ok
+answer=$'Server: 192.0.2.53\nAddress: 192.0.2.53#53\n** server cannot find example.test: NXDOMAIN'
+host_resolves example.test || echo nslookup-empty
+resolver=host
+answer=$'example.test has address 192.0.2.1\nexample.test has IPv6 address 2001:db8::1'
+host_resolves example.test && echo host-ok
+answer='Host example.test not found: 3(NXDOMAIN)'
+host_resolves example.test || echo host-empty
+FIXTURE
+)
+assert_eq $'nslookup-ok\nnslookup-empty\nhost-ok\nhost-empty' "$dns_resolver_fixture" "DNS fallbacks parse answers without nested pipelines"
+unset dns_resolver_fixture
+
 if [[ "$failures" -gt 0 ]]; then
   echo "$failures test(s) failed."
   exit 1
