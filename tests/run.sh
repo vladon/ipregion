@@ -103,10 +103,6 @@ assert_false "is_valid_proxy_addr rejects bad port" is_valid_proxy_addr "127.0.0
 assert_eq "GOOGLE_SEARCH_CAPTCHA" "$(normalize_service_name "google-search-captcha")" "normalize_service_name normalizes separators"
 assert_eq "GEMINI" "$(normalize_service_name "gemini")" "normalize_service_name normalizes gemini"
 
-assert_eq "1016" "$(parse_gemini_user_status_code '[["wrb.fr","otAQ7b","[6,[false,null,false],true,null,null,null,false,null,null,null,null,null,false,false,1016,[]]"]]')" "parse_gemini_user_status_code reads signed-out status"
-assert_eq "1060" "$(parse_gemini_user_status_code '[["wrb.fr","otAQ7b","[6,[false,null,false],false,null,null,null,false,null,null,null,null,null,false,false,1060,[]]"]]')" "parse_gemini_user_status_code reads location rejected"
-assert_empty "$(parse_gemini_user_status_code '')" "parse_gemini_user_status_code handles empty input"
-
 assert_eq "stream" "$(gemini_batch_needs_stream_probe '[["wrb.fr","otAQ7b","[6,[false,null,false],true,null,null,null,false,null,null,null,null,null,false,false,1000,[]]"]]')" "gemini_batch_needs_stream_probe maps available"
 assert_eq "stream" "$(gemini_batch_needs_stream_probe '[["wrb.fr","otAQ7b","[6,[false,null,false],true,null,null,null,false,null,null,null,null,null,false,false,1016,[[\"id\",\"Flash\",null,null,null,null,null,true]]]"]]')" "gemini_batch_needs_stream_probe maps unsigned with enabled model"
 assert_eq "no" "$(gemini_batch_needs_stream_probe '[["wrb.fr","otAQ7b","[6,[false,null,false],true,null,null,null,false,null,null,null,null,null,false,false,1016,[]]"]]')" "gemini_batch_needs_stream_probe maps unsigned without models"

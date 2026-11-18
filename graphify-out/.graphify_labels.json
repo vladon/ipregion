@@ -16,7 +16,6 @@
   "16": "Debug & Cleanup Lifecycle",
   "17": "DNS Latency & Jitter",
   "19": "Resolver Latency Checks",
-  "20": "Bash Completions",
   "21": "Route Printing Helpers",
   "22": "TCP Probe Stubs",
   "23": "DNS Integrity Stubs",

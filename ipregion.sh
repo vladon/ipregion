@@ -2937,20 +2937,6 @@ print_gateway_interface() {
   done < <(print_default_routes "$ip_version")
 }
 
-has_default_route_through() {
-  local ip_version="$1"
-  local interface="$2"
-  local iface flags
-
-  while read -r iface flags; do
-    if [[ "$iface" == "$interface" ]] && has_route_flag "$flags" "$ROUTE_FLAG_UP"; then
-      return 0
-    fi
-  done < <(print_default_routes "$ip_version")
-
-  return 1
-}
-
 has_default_route() {
   local ip_version="$1"
   local iface flags
@@ -5893,33 +5879,6 @@ lookup_google_search_captcha() {
   fi
 
   print_value_or_colored "No" "SERVICE"
-}
-
-parse_gemini_user_status_code() {
-  local batch_response="$1"
-  local line inner_json status
-
-  if [[ -z "$batch_response" ]]; then
-    echo ""
-    return
-  fi
-
-  line=$(grep_wrapper '^\[\["wrb.fr","otAQ7b"' <<<"$batch_response" | head -n1)
-
-  if [[ -z "$line" ]]; then
-    echo ""
-    return
-  fi
-
-  inner_json=$(process_json "$line" '.[0][2]')
-
-  if [[ -z "$inner_json" ]]; then
-    echo ""
-    return
-  fi
-
-  status=$(process_json "$inner_json" '.[14]')
-  echo "$status"
 }
 
 gemini_batch_needs_stream_probe() {
